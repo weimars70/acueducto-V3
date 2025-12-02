@@ -12,11 +12,11 @@ async function bootstrap() {
 
       const allowedOrigins = [
         'https://bolt.new',
-        'http://localhost:5173',
+        'http://localhost:5174',
         'http://localhost',
         'http://localhost:3306',
         'http://localhost:8443',
-        'http://108.181.193.178:5173',
+        'http://108.181.193.178:5174',
         'http://108.181.193.178:443',
         'http://108.181.193.178',
         'http://108.181.193.178:3006',
@@ -24,7 +24,7 @@ async function bootstrap() {
         'capacitor://108.181.193.178',
         'capacitor://',   // 👈 agregar este
         null ,             // 👈 permitir requests sin origin
-        'https://zp1v56uxy8rdx5ypatb0ockcb9tr6a-oci3--5173--4d9fd228.local-credentialless.webcontainer-api.io/',
+        'https://zp1v56uxy8rdx5ypatb0ockcb9tr6a-oci3--5174--4d9fd228.local-credentialless.webcontainer-api.io/',
       ];
 
       if (allowedOrigins.includes(origin)) {

@@ -7,6 +7,7 @@ import { InstalacionesModule } from './instalaciones/instalaciones.module';
 import { DatabaseModule } from './database/database.module';
 import { PdfModule } from './pdf/pdf.module';
 import { GenericCaptureModule } from './generic-capture/generic-capture.module';
+import { BancosModule } from './bancos/bancos.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { GenericCaptureModule } from './generic-capture/generic-capture.module';
     InstalacionesModule,
     PdfModule,
     GenericCaptureModule,
+    BancosModule,
   ],
 })
 export class AppModule {}

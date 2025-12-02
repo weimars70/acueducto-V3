@@ -58,6 +58,20 @@ const routes = [
       {
         path: '/estratos',
         component: () => import('../pages/generic-capture/EstratosPage.vue')
+      },
+      {
+        path: '/bancos',
+        component: () => import('../pages/BancosPage.vue')
+      },
+      {
+        path: '/bancos/new',
+        component: () => import('../pages/NewBancoPage.vue')
+      },
+      {
+        path: '/bancos/edit/:id',
+        name: 'edit-banco',
+        component: () => import('../pages/EditBancoPage.vue'),
+        props: true
       }
     ]
   },
@@ -100,7 +114,8 @@ router.beforeEach((to, from, next) => {
         { icon: 'request_quote', label: 'Subsidios', route: '/subsidies', closable: true },
         { icon: 'location_city', label: 'Sectores', route: '/sectores', closable: true },
         { icon: 'payments', label: 'Tarifas', route: '/tarifas', closable: true },
-        { icon: 'group_work', label: 'Estratos', route: '/estratos', closable: true }
+        { icon: 'group_work', label: 'Estratos', route: '/estratos', closable: true },
+        { icon: 'account_balance', label: 'Bancos', route: '/bancos', closable: true }
       ];
       
       const menuItem = menuItems.find(item => item.route === to.path);

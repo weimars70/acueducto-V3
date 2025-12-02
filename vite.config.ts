@@ -19,7 +19,7 @@ export default defineConfig({
   },
   server: {
     host: true,
-    port: 5173,
+    port: 5174,
     proxy: {
       '/api': {
         target: 'https://localhost:3006',
@@ -29,7 +29,7 @@ export default defineConfig({
     }
   },
   preview: {
-    port: 5173,
+    port: 5174,
     host: true
   }
 });

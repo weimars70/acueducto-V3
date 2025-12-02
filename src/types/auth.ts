@@ -5,7 +5,7 @@ export interface LoginCredentials {
 
 export interface User {
   id: number;
-  email: string;
-  name: string;
+  email?: string;
+  name?: string;
   username: string;
 }

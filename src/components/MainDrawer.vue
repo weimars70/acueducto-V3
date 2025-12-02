@@ -42,6 +42,17 @@ const menuItems = [
   }
 ];
 
+const maestrosExpanded = ref(false);
+
+const maestrosItems = [
+  {
+    icon: 'account_balance',
+    label: 'Bancos',
+    route: '/bancos',
+    closable: true,
+  }
+];
+
 const navigateTo = (item: typeof menuItems[0]) => {
   tabsStore.addTab({
     name: item.label,
@@ -120,12 +131,12 @@ const handleSync = async () => {
       <q-item v-if="authStore.user">
         <q-item-section avatar>
           <q-avatar color="primary" text-color="white">
-            {{ authStore.user.name.charAt(0).toUpperCase() }}
+            {{ authStore.user.name?.charAt(0).toUpperCase() || 'U' }}
           </q-avatar>
         </q-item-section>
         <q-item-section>
-          <q-item-label>{{ authStore.user.name }}</q-item-label>
-          <q-item-label caption>{{ authStore.user.email }}</q-item-label>
+          <q-item-label>{{ authStore.user.name || 'Usuario' }}</q-item-label>
+          <q-item-label caption>{{ authStore.user.email || '' }}</q-item-label>
         </q-item-section>
       </q-item>
 
@@ -148,6 +159,34 @@ const handleSync = async () => {
           {{ item.label }}
         </q-item-section>
       </q-item>
+
+      <q-separator spaced />
+
+      <!-- Maestros Section -->
+      <q-expansion-item
+        v-model="maestrosExpanded"
+        icon="folder"
+        label="Maestros"
+        header-class="text-weight-bold"
+      >
+        <q-item
+          v-for="item in maestrosItems"
+          :key="item.route"
+          clickable
+          v-ripple
+          :active="router.currentRoute.value.path === item.route"
+          active-class="text-primary"
+          @click="navigateTo(item)"
+          class="q-pl-lg"
+        >
+          <q-item-section avatar>
+            <q-icon :name="item.icon" />
+          </q-item-section>
+          <q-item-section>
+            {{ item.label }}
+          </q-item-section>
+        </q-item>
+      </q-expansion-item>
 
       <!-- Sync Button -->
       <q-separator spaced />
