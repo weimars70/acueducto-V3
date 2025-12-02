@@ -3,22 +3,21 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { useAuthStore } from '../stores/auth';
-import { hashPassword } from '../utils/crypto';
 
 const router = useRouter();
 const $q = useQuasar();
 const authStore = useAuthStore();
 
-const username = ref('');
+const email = ref('');
 const password = ref('');
 const loading = ref(false);
 const isPwd = ref(true);
 
 async function handleLogin() {
-  if (!username.value || !password.value) {
+  if (!email.value || !password.value) {
     $q.notify({
       color: 'negative',
-      message: 'Please fill in all fields',
+      message: 'Por favor complete todos los campos',
       icon: 'warning'
     });
     return;
@@ -27,21 +26,21 @@ async function handleLogin() {
   try {
     loading.value = true;
     const success = await authStore.login({
-      username: username.value,
-      password: hashPassword(password.value)
+      email: email.value,
+      password: password.value
     });
 
     if (success) {
       $q.notify({
         color: 'positive',
-        message: 'Login successful',
+        message: 'Inicio de sesión exitoso',
         icon: 'check'
       });
       await router.push('/dashboard');
     } else {
       $q.notify({
         color: 'negative',
-        message: 'Invalid credentials',
+        message: 'Credenciales inválidas',
         icon: 'error'
       });
     }
@@ -49,7 +48,7 @@ async function handleLogin() {
     console.error('Login error:', error);
     $q.notify({
       color: 'negative',
-      message: 'An error occurred during login',
+      message: 'Ocurrió un error durante el inicio de sesión',
       icon: 'error'
     });
   } finally {
@@ -68,15 +67,16 @@ async function handleLogin() {
       <q-card-section>
         <q-form @submit.prevent="handleLogin" class="q-gutter-md">
           <q-input
-            v-model="username"
-            label="Username"
+            v-model="email"
+            label="Email"
+            type="email"
             outlined
-            :rules="[val => !!val || 'Username is required']"
-            autocomplete="username"
-            inputmode="text"
+            :rules="[val => !!val || 'Email es requerido']"
+            autocomplete="email"
+            inputmode="email"
           >
             <template v-slot:prepend>
-              <q-icon name="person" />
+              <q-icon name="email" />
             </template>
           </q-input>
 

@@ -72,6 +72,20 @@ const routes = [
         name: 'edit-banco',
         component: () => import('../pages/EditBancoPage.vue'),
         props: true
+      },
+      {
+        path: '/users',
+        component: () => import('../pages/UsersPage.vue')
+      },
+      {
+        path: '/users/new',
+        component: () => import('../pages/NewUserPage.vue')
+      },
+      {
+        path: '/users/edit/:id',
+        name: 'edit-user',
+        component: () => import('../pages/EditUserPage.vue'),
+        props: true
       }
     ]
   },
@@ -115,7 +129,8 @@ router.beforeEach((to, from, next) => {
         { icon: 'location_city', label: 'Sectores', route: '/sectores', closable: true },
         { icon: 'payments', label: 'Tarifas', route: '/tarifas', closable: true },
         { icon: 'group_work', label: 'Estratos', route: '/estratos', closable: true },
-        { icon: 'account_balance', label: 'Bancos', route: '/bancos', closable: true }
+        { icon: 'account_balance', label: 'Bancos', route: '/bancos', closable: true },
+        { icon: 'people', label: 'Usuarios', route: '/users', closable: true }
       ];
       
       const menuItem = menuItems.find(item => item.route === to.path);

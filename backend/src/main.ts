@@ -5,6 +5,16 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Middleware para loggear todas las peticiones
+  app.use((req, res, next) => {
+    console.log('====================================');
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    console.log('Headers:', req.headers);
+    console.log('Body:', req.body);
+    console.log('====================================');
+    next();
+  });
+
   app.enableCors({
     origin: (origin, callback) => {
       // Permitir requests sin 'origin' (ej: desde apps móviles nativas con Capacitor)
