@@ -7,6 +7,7 @@ export interface User {
   role_id: number;
   role_nombre?: string;
   role_descripcion?: string;
+  usuario?: string;
 }
 
 export interface CreateUserDto {
@@ -17,6 +18,7 @@ export interface CreateUserDto {
   phone?: string;
   password: string;
   active?: boolean;
+  usuario?: string;
 }
 
 export interface UpdateUserDto {
@@ -27,6 +29,7 @@ export interface UpdateUserDto {
   phone?: string;
   password?: string;
   active?: boolean;
+  usuario?: string;
 }
 
 export interface UserFormData {
@@ -38,4 +41,5 @@ export interface UserFormData {
   phone?: string;
   password?: string;
   active: boolean;
+  usuario?: string;
 }

@@ -38,12 +38,9 @@ export class Banco {
   @Column({ type: 'text', nullable: true })
   observaciones: string;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  fecha_creacion: Date;
-
-  @Column({ length: 50, nullable: true })
-  creado_por: string;
-
   @Column()
   tipo_cuenta: number;
+
+  @Column({ length: 100, nullable: true })
+  usuario: string;
 }

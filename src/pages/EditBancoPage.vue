@@ -4,10 +4,12 @@ import { useQuasar } from 'quasar';
 import { useRouter, useRoute } from 'vue-router';
 import { bancoService } from '../services/api/banco.service';
 import type { UpdateBancoDto, Banco } from '../types/banco';
+import { useAuthStore } from '../stores/auth';
 
 const $q = useQuasar();
 const router = useRouter();
 const route = useRoute();
+const authStore = useAuthStore();
 const loading = ref(false);
 const loadingData = ref(true);
 const bancoId = ref<number>(parseInt(route.params.id as string));
@@ -74,7 +76,11 @@ const handleSubmit = async () => {
 
   try {
     loading.value = true;
-    await bancoService.update(bancoId.value, formData.value);
+    const dataToUpdate = {
+      ...formData.value,
+      usuario: authStore.user?.email || ''
+    };
+    await bancoService.update(bancoId.value, dataToUpdate);
     $q.notify({
       type: 'positive',
       message: 'Banco actualizado exitosamente'

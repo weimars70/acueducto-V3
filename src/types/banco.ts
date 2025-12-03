@@ -15,6 +15,7 @@ export interface Banco {
   creado_por?: string;
   tipo_cuenta: number;
   cuenta?: string; // Campo de la vista
+  usuario?: string;
 }
 
 export interface CreateBancoDto {
@@ -31,6 +32,7 @@ export interface CreateBancoDto {
   observaciones?: string;
   creado_por?: string;
   tipo_cuenta: number;
+  usuario?: string;
 }
 
 export interface UpdateBancoDto extends Partial<CreateBancoDto> {}

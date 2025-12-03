@@ -4,9 +4,11 @@ import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
 import { userService } from '../services/api/user.service';
 import type { CreateUserDto } from '../types/user';
+import { useAuthStore } from '../stores/auth';
 
 const $q = useQuasar();
 const router = useRouter();
+const authStore = useAuthStore();
 const loading = ref(false);
 
 const formData = ref<CreateUserDto>({
@@ -16,7 +18,8 @@ const formData = ref<CreateUserDto>({
   email: '',
   phone: '',
   password: '',
-  active: true
+  active: true,
+  usuario: authStore.user?.email || ''
 });
 
 const passwordConfirm = ref('');

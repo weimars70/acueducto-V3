@@ -24,7 +24,8 @@ const formData = ref<CreateBancoDto>({
   activa: true,
   observaciones: '',
   creado_por: authStore.user?.username || '',
-  tipo_cuenta: 1
+  tipo_cuenta: 1,
+  usuario: authStore.user?.email || ''
 });
 
 const monedas = [

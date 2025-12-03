@@ -39,6 +39,13 @@ export class BancosService {
       const queryParams: any[] = [];
       let paramCount = 1;
 
+      // FILTRO OBLIGATORIO POR EMPRESA
+      if (filters.empresaId) {
+        query += ` AND empresa_id = $${paramCount}`;
+        queryParams.push(filters.empresaId);
+        paramCount++;
+      }
+
       if (filters.codigo) {
         query += ` AND codigo ILIKE $${paramCount}`;
         queryParams.push(`%${filters.codigo}%`);
@@ -104,20 +111,28 @@ export class BancosService {
     }
   }
 
-  async create(createBancoDto: CreateBancoDto) {
+  async create(createBancoDto: any) {
     try {
-      // Verificar duplicados por código
+      const empresaId = createBancoDto.empresaId;
+
+      // Verificar duplicados por código dentro de la misma empresa
       const existingCodigo = await this.bancoRepository.findOne({
-        where: { codigo: createBancoDto.codigo },
+        where: {
+          codigo: createBancoDto.codigo,
+          // empresaId (si la entidad tiene ese campo)
+        },
       });
 
       if (existingCodigo) {
         throw new Error('Ya existe un banco con este código');
       }
 
-      // Verificar duplicados por número de cuenta
+      // Verificar duplicados por número de cuenta dentro de la misma empresa
       const existingCuenta = await this.bancoRepository.findOne({
-        where: { numero_cuenta: createBancoDto.numero_cuenta },
+        where: {
+          numero_cuenta: createBancoDto.numero_cuenta,
+          // empresaId (si la entidad tiene ese campo)
+        },
       });
 
       if (existingCuenta) {

@@ -4,10 +4,12 @@ import { useQuasar } from 'quasar';
 import { useRouter, useRoute } from 'vue-router';
 import { userService } from '../services/api/user.service';
 import type { UpdateUserDto } from '../types/user';
+import { useAuthStore } from '../stores/auth';
 
 const $q = useQuasar();
 const router = useRouter();
 const route = useRoute();
+const authStore = useAuthStore();
 const loading = ref(false);
 const loadingData = ref(true);
 
@@ -97,7 +99,8 @@ const handleSubmit = async () => {
       name: formData.value.name,
       email: formData.value.email,
       phone: formData.value.phone,
-      active: formData.value.active
+      active: formData.value.active,
+      usuario: authStore.user?.email || ''
     };
 
     if (changePassword.value && formData.value.password) {

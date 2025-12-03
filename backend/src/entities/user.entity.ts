@@ -25,4 +25,7 @@ export class User {
 
   @Column({ default: true })
   active: boolean;
+
+  @Column({ length: 100, nullable: true })
+  usuario: string;
 }
