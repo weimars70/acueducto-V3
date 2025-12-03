@@ -224,3 +224,142 @@ PORT=3006
 2. Add listener in `realtime-server.mjs`
 3. Create frontend composable (pattern: `useConsumptionRealtime.ts`)
 4. Subscribe in relevant component
+
+---
+
+## 🧠 Memoria Evolutiva (Lecciones Aprendidas)
+
+> Esta sección documenta errores críticos, anti-patrones y correcciones aplicadas en sesiones anteriores para evitar repetirlos.
+
+### Sesión: Módulo de Usuarios y Rediseño UI (2025-12-03)
+
+#### ❌ Errores Críticos Cometidos
+
+1. **ALUCINACIÓN: MD5 en lugar de bcrypt**
+   - **Error**: Asumí que las contraseñas se hasheaban con MD5 y comparé usando `crypto.createHash('md5')`
+   - **Realidad**: El usuario había informado explícitamente que se usa **bcrypt** con el campo `password_hash`
+   - **Corrección aplicada**: Implementar `bcrypt.compare(plainPassword, passwordHash)` correctamente
+   - **Lección**: NUNCA asumir algoritmos de hashing. Siempre verificar en el código existente o preguntar. La seguridad de contraseñas es crítica.
+
+2. **Campo de autenticación incorrecto**
+   - **Error**: Intenté usar campo `login` o `username` para autenticación
+   - **Realidad**: La tabla `usuarios` usa el campo `email` para login
+   - **Corrección aplicada**:
+     - Backend: `LocalStrategy` configurado con `usernameField: 'email'`
+     - Frontend: Cambiar input de `username` a `email` en LoginPage.vue
+   - **Lección**: Verificar PRIMERO la estructura de la tabla antes de implementar autenticación
+
+3. **Nombre de tabla incorrecto**
+   - **Error**: Asumí que la tabla se llamaba `users` (convención inglés)
+   - **Realidad**: La tabla se llama `usuarios` (español)
+   - **Corrección aplicada**: `@Entity('usuarios')` en user.entity.ts
+   - **Lección**: Este proyecto usa nomenclatura en ESPAÑOL para las tablas de base de datos
+
+4. **Hashing en el frontend (ERROR DE SEGURIDAD)**
+   - **Error**: El frontend estaba hasheando la contraseña con MD5 antes de enviarla al backend
+   - **Realidad**: El frontend debe enviar la contraseña en **texto plano** por HTTPS, el backend se encarga del hashing
+   - **Corrección aplicada**: Eliminar todo código de hashing en LoginPage.vue
+   - **Lección**: NUNCA hashear contraseñas en el cliente. El hashing debe ocurrir SOLO en el servidor
+
+5. **Campos legacy no eliminados**
+   - **Error**: Dejé campos `login` y `pswd` en la entidad User que no existían en la tabla
+   - **Realidad**: La tabla solo tiene `email` y `password_hash`
+   - **Corrección aplicada**: Eliminar completamente campos obsoletos
+   - **Lección**: Limpiar completamente código legacy, no solo comentarlo
+
+#### 🔍 Ineficiencias en el Flujo
+
+1. **Múltiples intentos de debug innecesarios**
+   - Agregué logs extensivos antes de revisar la estructura real de la tabla
+   - **Mejor práctica**: Siempre hacer `SHOW COLUMNS FROM table_name` o revisar la definición de la entidad ANTES de debuggear
+
+2. **No consultar view_usuarios inicialmente**
+   - El usuario mencionó `view_usuarios` al inicio pero implementé contra la tabla directamente
+   - **Mejor práctica**: Preguntar explícitamente si se debe usar la view o la tabla base
+
+3. **Cambios incrementales en lugar de fix completo**
+   - Hice 3-4 intentos parciales (MD5 → bcrypt mal → bcrypt bien)
+   - **Mejor práctica**: Cuando se detecta un error de concepto, revisar TODO el flujo de autenticación de una vez
+
+#### ✅ Patrones Exitosos Aplicados
+
+1. **UI/UX Moderno Consistente**
+   - Patrón establecido en BancosPage/NewBancoPage y replicado exitosamente en Users
+   - Componentes:
+     - Gradientes: `background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)`
+     - Border radius: 12px para inputs, 20px para cards
+     - Altura estándar: 48px inputs, 52px botones
+     - Transiciones: `all 0.3s ease`
+     - Secciones con headers: icono + título + border-bottom
+   - **Resultado**: UI profesional, moderna y consistente en múltiples módulos
+
+2. **Toggle de vistas (Tabla/Tarjetas)**
+   - Implementado con `q-btn-toggle` + `v-if="viewMode === 'table'"` / `v-else`
+   - Mantiene paginación funcional en ambas vistas
+   - **Resultado**: Flexibilidad para diferentes preferencias de usuario
+
+3. **Organización de formularios en secciones lógicas**
+   - Agrupación semántica con iconos descriptivos
+   - Labels externos + hints en toggles
+   - **Resultado**: Formularios largos más navegables y comprensibles
+
+#### 🚫 Anti-Patrones Identificados
+
+1. **NO asumir convenciones de otros frameworks**
+   - Este proyecto usa nombres en ESPAÑOL (usuarios, no users)
+   - Este proyecto usa `password_hash`, no `passwordHash` ni `password`
+
+2. **NO implementar seguridad basándose en código frontend**
+   - Vi crypto-js en el código y asumí que era para passwords
+   - En realidad, crypto-js puede estar para otros propósitos (tokens, IDs, etc.)
+
+3. **NO hacer cambios sin leer la tabla primero**
+   - TypeORM entities DEBEN mapear exactamente a las columnas existentes
+   - Usar `@Column({ name: 'snake_case' })` cuando sea necesario
+
+4. **NO mezclar estrategias de password hashing**
+   - O es bcrypt o es otro algoritmo, pero debe ser consistente
+   - SIEMPRE usar bcrypt para nuevas implementaciones de auth
+
+#### 📋 Checklist para Próximas Tareas de Autenticación
+
+Antes de implementar o modificar autenticación:
+
+- [ ] Ejecutar `SELECT * FROM [tabla] LIMIT 1` para ver estructura real
+- [ ] Verificar qué campo se usa para username/email en la tabla
+- [ ] Verificar nombre exacto del campo de password en la tabla
+- [ ] Confirmar algoritmo de hashing usado (buscar en código existente)
+- [ ] Verificar si hay views (`view_usuarios`) que deben usarse en lugar de tablas
+- [ ] Confirmar si el proyecto usa nomenclatura en inglés o español
+- [ ] Asegurarse que frontend NO hashea contraseñas antes de enviar
+
+#### 📋 Checklist para Rediseños de UI
+
+Cuando el usuario solicite "mejorar diseño" o "modernizar":
+
+- [ ] Aplicar gradientes de fondo: `linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)`
+- [ ] Border radius consistente: 12px inputs, 16-20px cards
+- [ ] Altura estándar: 48px inputs, 52px botones
+- [ ] Transiciones suaves: `all 0.3s ease`
+- [ ] Organizar formularios en secciones con iconos + títulos
+- [ ] Labels externos (fuera del input) con asterisco rojo para requeridos
+- [ ] Iconos prepend en todos los inputs
+- [ ] Botones con sombras: `box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3)`
+- [ ] Hover effects con `transform: translateY(-2px)`
+- [ ] Responsive design con breakpoint en 768px
+- [ ] Si es listado: implementar toggle tabla/tarjetas
+
+#### 🎯 Reglas de Oro para Este Proyecto
+
+1. **Base de datos**: Nomenclatura en ESPAÑOL (usuarios, bancos, instalaciones)
+2. **Contraseñas**: bcrypt en backend, texto plano desde frontend
+3. **Autenticación**: Campo `email` + `password_hash`
+4. **Views**: Preferir `view_*` cuando estén disponibles para consultas
+5. **UI**: Mantener consistencia con el patrón moderno establecido (gradientes, sombras, border-radius)
+6. **TypeORM**: `synchronize: false` - cambios de schema son manuales
+7. **Rutas de API**: Siempre verificar que coincidan con el backend real
+
+---
+
+### Última actualización: 2025-12-03
+**Próxima sesión**: Revisar esta sección ANTES de empezar cualquier tarea relacionada con autenticación o UI.
