@@ -11,12 +11,6 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
-    console.log('=================================');
-    console.log('=== VALIDANDO USUARIO ===');
-    console.log('Email:', email);
-    console.log('Password (longitud):', password?.length);
-    console.log('=================================');
-
     try {
       const user = await this.usersService.findByEmail(email);
       console.log('Usuario obtenido:', {
@@ -26,20 +20,28 @@ export class AuthService {
         passwordHash: user.passwordHash ? `${user.passwordHash.substring(0, 20)}...` : 'NO HASH'
       });
 
-      console.log('=================================');
-      console.log('=== COMPARACIÓN DE CONTRASEÑAS ===');
-      console.log('Password recibida del frontend (texto plano):', password);
-      console.log('Longitud password recibida:', password.length);
-      console.log('Password hash almacenado en BD:', user.passwordHash);
-      console.log('Longitud del hash BD:', user.passwordHash?.length);
-      console.log('Hash es bcrypt? (empieza con $2):', user.passwordHash?.startsWith('$2'));
+
+      // DEBUG: Verificar valores exactos
+      console.log('=== DEBUG PASSWORD VALIDATION ===');
+      console.log('password (entrada):', JSON.stringify(password));
+      console.log('password length:', password.length);
+      console.log('password type:', typeof password);
+      console.log('user.passwordHash:', JSON.stringify(user.passwordHash));
+      console.log('user.passwordHash length:', user.passwordHash ? user.passwordHash.length : 0);
+      console.log('user.passwordHash type:', typeof user.passwordHash);
+
+      
+      // Limpiar espacios en blanco
+      const cleanPassword = password.trim();
+      const cleanHash = user.passwordHash.trim();
+
+      console.log('cleanPassword:', JSON.stringify(cleanPassword));
+      console.log('cleanHash:', JSON.stringify(cleanHash));
       console.log('=================================');
 
       // Comparar contraseña en texto plano con el hash bcrypt de la BD
-      const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-      console.log('Resultado bcrypt.compare():', isPasswordValid);
-      console.log('=================================');
-
+      const isPasswordValid = await bcrypt.compare(cleanPassword, cleanHash);
+      console.log('isPasswordValid:', isPasswordValid);
       if (isPasswordValid) {
         console.log('✓ La contraseña coincide - autenticación exitosa');
         const { passwordHash, ...result } = user;

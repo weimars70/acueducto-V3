@@ -25,19 +25,30 @@ async function handleLogin() {
 
   try {
     loading.value = true;
+    console.log('=== INICIANDO LOGIN ===');
+    console.log('Email:', email.value);
+
     const success = await authStore.login({
       email: email.value,
       password: password.value
     });
 
+    console.log('Login success:', success);
+    console.log('Auth store state:', { user: authStore.user, token: authStore.token });
+
     if (success) {
+      console.log('✓ Login exitoso, mostrando notificación');
       $q.notify({
         color: 'positive',
         message: 'Inicio de sesión exitoso',
         icon: 'check'
       });
+
+      console.log('Redirigiendo a dashboard...');
       await router.push('/dashboard');
+      console.log('✓ Redirección completada');
     } else {
+      console.log('✗ Login falló - credenciales inválidas');
       $q.notify({
         color: 'negative',
         message: 'Credenciales inválidas',
@@ -45,7 +56,11 @@ async function handleLogin() {
       });
     }
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('❌ ERROR EN LOGIN:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown',
+      stack: error instanceof Error ? error.stack : 'No stack'
+    });
     $q.notify({
       color: 'negative',
       message: 'Ocurrió un error durante el inicio de sesión',
@@ -53,6 +68,7 @@ async function handleLogin() {
     });
   } finally {
     loading.value = false;
+    console.log('=== FIN LOGIN ===');
   }
 }
 </script>
