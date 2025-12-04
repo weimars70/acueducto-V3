@@ -604,15 +604,17 @@ onMounted(() => {
   gap: 12px;
   justify-content: flex-end;
   padding-top: 16px;
-  border-top: 2px solid #e2e8f0;
+  border-top: 1px solid #e2e8f0;
 }
 
 .action-btn {
-  min-width: 140px;
-  border-radius: 10px;
+  min-width: 110px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 8px;
   font-weight: 500;
-  font-size: 14px;
-  letter-spacing: 0.3px;
+  font-size: 13px;
+  letter-spacing: 0.2px;
   transition: all 0.3s ease;
 }
 

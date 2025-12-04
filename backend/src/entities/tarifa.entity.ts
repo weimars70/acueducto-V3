@@ -1,13 +1,25 @@
-import { Entity, Column, PrimaryColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 @Entity('tarifas')
 export class Tarifa {
-  @PrimaryColumn()
-  codigo: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-  @Column()
-  nombre: string;
+  @Column({ type: 'integer' })
+  basico: number;
 
-  @Column()
-  abreviado: string;
+  @Column({ type: 'integer' })
+  complementario: number;
+
+  @Column({ type: 'date' })
+  desde: Date;
+
+  @Column({ type: 'date' })
+  hasta: Date;
+
+  @Column({ name: 'empresa_id', type: 'integer' })
+  empresaId: number;
+
+  @Column({ type: 'text', nullable: true })
+  usuario?: string;
 }

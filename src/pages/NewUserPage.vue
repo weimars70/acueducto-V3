@@ -502,14 +502,16 @@ onMounted(() => {
 
 .form-actions {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   justify-content: flex-end;
-  padding-top: 12px;
+  padding-top: 16px;
   border-top: 1px solid #e2e8f0;
 }
 
 .action-btn {
-  min-width: 120px;
+  min-width: 110px;
+  height: 38px;
+  padding: 0 16px;
   border-radius: 8px;
   font-weight: 500;
   font-size: 13px;

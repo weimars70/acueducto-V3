@@ -51,6 +51,72 @@ const maestrosItems = [
     label: 'Bancos',
     route: '/bancos',
     closable: true,
+  },
+  {
+    icon: 'account_tree',
+    label: 'Centro de Costos',
+    route: '/centro-costos',
+    closable: true,
+  },
+  {
+    icon: 'location_city',
+    label: 'Ciudades',
+    route: '/ciudades',
+    closable: true,
+  },
+  {
+    icon: 'people_alt',
+    label: 'Clientes',
+    route: '/clientes',
+    closable: true,
+  },
+  {
+    icon: 'receipt',
+    label: 'Impuestos',
+    route: '/impuestos',
+    closable: true,
+  },
+  {
+    icon: 'speed',
+    label: 'Marcas Medidor',
+    route: '/marcas-medidor',
+    closable: true,
+  },
+  {
+    icon: 'payments',
+    label: 'Tarifas Maestro',
+    route: '/tarifas-maestro',
+    closable: true,
+  },
+  {
+    icon: 'badge',
+    label: 'Tipo Identificación',
+    route: '/tipo-ident',
+    closable: true,
+  },
+  {
+    icon: 'receipt_long',
+    label: 'Tipo Impuesto',
+    route: '/tipo-impuesto',
+    closable: true,
+  },
+  {
+    icon: 'person',
+    label: 'Tipo Persona',
+    route: '/tipo-persona',
+    closable: true,
+  },
+  {
+    icon: 'business',
+    label: 'Tipo Régimen',
+    route: '/tipo-regimen',
+    closable: true,
+  },
+  {
+    icon: 'calendar_today',
+    label: 'Años',
+    route: '/years',
+    closable: true,
   }
 ];
 
