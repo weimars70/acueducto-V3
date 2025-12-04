@@ -317,7 +317,6 @@ onMounted(() => {
               outline
               label="Cancelar"
               color="grey-7"
-              size="lg"
               class="action-btn cancel-btn"
               @click="handleCancel"
               :disable="loading"
@@ -328,7 +327,6 @@ onMounted(() => {
               label="Crear Usuario"
               type="submit"
               color="primary"
-              size="lg"
               class="action-btn save-btn"
               :loading="loading"
               icon="person_add"
@@ -512,7 +510,6 @@ onMounted(() => {
 
 .action-btn {
   min-width: 120px;
-  height: 38px;
   border-radius: 8px;
   font-weight: 500;
   font-size: 13px;
@@ -522,8 +519,9 @@ onMounted(() => {
 
 .cancel-btn {
   &:hover {
-    background: #f7fafc;
-    border-color: #a0aec0;
+    background: #fff4e6 !important;
+    border-color: #fb923c !important;
+    color: #ea580c !important;
   }
 }
 
@@ -531,7 +529,9 @@ onMounted(() => {
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 
   &:hover {
-    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+    background: #28A745 !important;
+    border-color: #28A745 !important;
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4) !important;
     transform: translateY(-2px);
   }
 

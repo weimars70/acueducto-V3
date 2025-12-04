@@ -463,7 +463,6 @@ onMounted(() => {
 .action-btn {
   font-weight: 600;
   padding: 0 24px;
-  height: 42px;
   border-radius: 8px;
 }
 

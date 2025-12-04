@@ -129,197 +129,513 @@ onMounted(() => {
 </script>
 
 <template>
-  <q-page padding>
-    <div class="q-pa-md">
-      <div class="text-h5 q-mb-md">Editar Banco</div>
+  <q-page class="form-page">
+    <div class="form-container">
+      <!-- Header -->
+      <div class="form-header">
+        <q-btn
+          flat
+          round
+          icon="arrow_back"
+          color="grey-7"
+          @click="handleCancel"
+          class="back-btn"
+        >
+          <q-tooltip>Volver</q-tooltip>
+        </q-btn>
+        <div class="header-content">
+          <q-icon name="account_balance" size="40px" color="primary" />
+          <div class="header-text">
+            <h1 class="form-title">Editar Banco</h1>
+            <p class="form-subtitle">Modifique la información de la cuenta bancaria</p>
+          </div>
+        </div>
+      </div>
 
-      <q-card>
-        <q-card-section v-if="loadingData" class="text-center">
+      <!-- Loading State -->
+      <q-card v-if="loadingData" flat class="form-card">
+        <q-card-section class="loading-section">
           <q-spinner color="primary" size="3em" />
-          <div class="q-mt-md">Cargando datos...</div>
+          <div class="loading-text">Cargando datos del banco...</div>
         </q-card-section>
+      </q-card>
 
-        <q-card-section v-else>
-          <q-form @submit="handleSubmit" class="q-gutter-md">
-            <!-- Fila 1: Código, Nombre -->
+      <!-- Form Card -->
+      <q-card v-else flat class="form-card">
+        <q-form @submit="handleSubmit" class="form-content">
+          <!-- Sección: Información Básica -->
+          <div class="form-section">
             <div class="row q-col-gutter-md">
-              <div class="col-12 col-md-3">
-                <q-input
-                  v-model="formData.codigo"
-                  label="Código *"
-                  outlined
-                  dense
-                  :rules="[val => !!val || 'Campo requerido']"
-                />
+              <div class="col-12 col-md-4">
+                <div class="input-wrapper">
+                  <label class="input-label">Código <span class="required">*</span></label>
+                  <q-input
+                    v-model="formData.codigo"
+                    placeholder="Ej: BCO001"
+                    outlined
+                    :rules="[val => !!val || 'Campo requerido']"
+                    class="modern-input"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon name="tag" color="grey-6" />
+                    </template>
+                  </q-input>
+                </div>
               </div>
-              <div class="col-12 col-md-9">
-                <q-input
-                  v-model="formData.nombre"
-                  label="Nombre *"
-                  outlined
-                  dense
-                  :rules="[val => !!val || 'Campo requerido']"
-                />
+              <div class="col-12 col-md-8">
+                <div class="input-wrapper">
+                  <label class="input-label">Nombre del Banco <span class="required">*</span></label>
+                  <q-input
+                    v-model="formData.nombre"
+                    placeholder="Ej: Banco Ejemplo S.A."
+                    outlined
+                    :rules="[val => !!val || 'Campo requerido']"
+                    class="modern-input"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon name="account_balance" color="grey-6" />
+                    </template>
+                  </q-input>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sección: Datos de la Cuenta -->
+          <div class="form-section">
+            <div class="row q-col-gutter-md">
+              <div class="col-12 col-md-6">
+                <div class="input-wrapper">
+                  <label class="input-label">Número de Cuenta <span class="required">*</span></label>
+                  <q-input
+                    v-model="formData.numero_cuenta"
+                    placeholder="Ingrese el número de cuenta"
+                    outlined
+                    :rules="[val => !!val || 'Campo requerido']"
+                    class="modern-input"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon name="numbers" color="grey-6" />
+                    </template>
+                  </q-input>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <div class="input-wrapper">
+                  <label class="input-label">Entidad Financiera</label>
+                  <q-input
+                    v-model="formData.entidad_financiera"
+                    placeholder="Ej: Bancolombia"
+                    outlined
+                    class="modern-input"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon name="business" color="grey-6" />
+                    </template>
+                  </q-input>
+                </div>
               </div>
             </div>
 
-            <!-- Fila 2: Número de Cuenta, Entidad Financiera -->
             <div class="row q-col-gutter-md">
-              <div class="col-12 col-md-6">
-                <q-input
-                  v-model="formData.numero_cuenta"
-                  label="Número de Cuenta *"
-                  outlined
-                  dense
-                  :rules="[val => !!val || 'Campo requerido']"
-                />
+              <div class="col-12 col-md-4">
+                <div class="input-wrapper">
+                  <label class="input-label">Moneda</label>
+                  <q-select
+                    v-model="formData.moneda"
+                    :options="monedas"
+                    outlined
+                    emit-value
+                    map-options
+                    class="modern-input"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon name="monetization_on" color="grey-6" />
+                    </template>
+                  </q-select>
+                </div>
               </div>
-              <div class="col-12 col-md-6">
-                <q-input
-                  v-model="formData.entidad_financiera"
-                  label="Entidad Financiera"
-                  outlined
-                  dense
-                />
+              <div class="col-12 col-md-4">
+                <div class="input-wrapper">
+                  <label class="input-label">Tipo de Cuenta <span class="required">*</span></label>
+                  <q-select
+                    v-model="formData.tipo_cuenta"
+                    :options="tiposCuenta"
+                    option-value="id"
+                    option-label="nombre"
+                    emit-value
+                    map-options
+                    outlined
+                    :loading="loadingTiposCuenta"
+                    :rules="[val => !!val || 'Campo requerido']"
+                    class="modern-input"
+                    placeholder="Seleccione un tipo"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon name="category" color="grey-6" />
+                    </template>
+                    <template v-slot:no-option>
+                      <q-item>
+                        <q-item-section class="text-grey">
+                          No hay tipos de cuenta
+                        </q-item-section>
+                      </q-item>
+                    </template>
+                  </q-select>
+                </div>
+              </div>
+              <div class="col-12 col-md-4">
+                <div class="input-wrapper">
+                  <label class="input-label">Estado</label>
+                  <div class="toggle-wrapper">
+                    <q-toggle
+                      v-model="formData.activa"
+                      label="Cuenta Activa"
+                      color="positive"
+                      size="lg"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
+          </div>
 
-            <!-- Fila 3: Titular, NIT Titular -->
+          <!-- Sección: Titular -->
+          <div class="form-section">
             <div class="row q-col-gutter-md">
               <div class="col-12 col-md-8">
-                <q-input
-                  v-model="formData.titular"
-                  label="Titular"
-                  outlined
-                  dense
-                />
+                <div class="input-wrapper">
+                  <label class="input-label">Titular</label>
+                  <q-input
+                    v-model="formData.titular"
+                    placeholder="Nombre completo del titular"
+                    outlined
+                    class="modern-input"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon name="badge" color="grey-6" />
+                    </template>
+                  </q-input>
+                </div>
               </div>
               <div class="col-12 col-md-4">
-                <q-input
-                  v-model="formData.nit_titular"
-                  label="NIT Titular"
-                  outlined
-                  dense
-                />
+                <div class="input-wrapper">
+                  <label class="input-label">NIT/Documento</label>
+                  <q-input
+                    v-model="formData.nit_titular"
+                    placeholder="NIT o cédula"
+                    outlined
+                    class="modern-input"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon name="fingerprint" color="grey-6" />
+                    </template>
+                  </q-input>
+                </div>
               </div>
             </div>
+          </div>
 
-            <!-- Fila 4: Moneda, Cuenta Contable, Centro Costo -->
-            <div class="row q-col-gutter-md">
-              <div class="col-12 col-md-4">
-                <q-select
-                  v-model="formData.moneda"
-                  :options="monedas"
-                  label="Moneda"
-                  outlined
-                  dense
-                  emit-value
-                  map-options
-                />
-              </div>
-              <div class="col-12 col-md-4">
-                <q-input
-                  v-model="formData.cuenta_contable"
-                  label="Cuenta Contable"
-                  outlined
-                  dense
-                />
-              </div>
-              <div class="col-12 col-md-4">
-                <q-input
-                  v-model.number="formData.centro_costo_id"
-                  label="Centro de Costo ID"
-                  type="number"
-                  outlined
-                  dense
-                />
-              </div>
-            </div>
-
-            <!-- Fila 5: Tipo Cuenta, Estado -->
+          <!-- Sección: Información Contable -->
+          <div class="form-section">
             <div class="row q-col-gutter-md">
               <div class="col-12 col-md-6">
-                <q-select
-                  v-model="formData.tipo_cuenta"
-                  :options="tiposCuenta"
-                  option-value="id"
-                  option-label="nombre"
-                  emit-value
-                  map-options
-                  label="Tipo de Cuenta *"
-                  outlined
-                  dense
-                  :loading="loadingTiposCuenta"
-                  :rules="[val => !!val || 'Campo requerido']"
-                >
-                  <template v-slot:no-option>
-                    <q-item>
-                      <q-item-section class="text-grey">
-                        No hay tipos de cuenta
-                      </q-item-section>
-                    </q-item>
-                  </template>
-                </q-select>
+                <div class="input-wrapper">
+                  <label class="input-label">Cuenta Contable</label>
+                  <q-input
+                    v-model="formData.cuenta_contable"
+                    placeholder="Código de cuenta contable"
+                    outlined
+                    class="modern-input"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon name="receipt_long" color="grey-6" />
+                    </template>
+                  </q-input>
+                </div>
               </div>
               <div class="col-12 col-md-6">
-                <q-toggle
-                  v-model="formData.activa"
-                  label="Cuenta Activa"
-                  color="positive"
-                />
+                <div class="input-wrapper">
+                  <label class="input-label">Centro de Costo</label>
+                  <q-input
+                    v-model.number="formData.centro_costo_id"
+                    type="number"
+                    placeholder="ID del centro de costo"
+                    outlined
+                    class="modern-input"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon name="account_tree" color="grey-6" />
+                    </template>
+                  </q-input>
+                </div>
               </div>
             </div>
+          </div>
 
-            <!-- Fila 6: Observaciones -->
-            <div class="row">
-              <div class="col-12">
-                <q-input
-                  v-model="formData.observaciones"
-                  label="Observaciones"
-                  type="textarea"
-                  outlined
-                  rows="3"
-                />
-              </div>
+          <!-- Sección: Observaciones -->
+          <div class="form-section">
+            <div class="input-wrapper">
+              <label class="input-label">Observaciones</label>
+              <q-input
+                v-model="formData.observaciones"
+                type="textarea"
+                placeholder="Agregue cualquier nota o comentario adicional..."
+                outlined
+                rows="4"
+                class="modern-input"
+              />
             </div>
+          </div>
 
-            <!-- Botones -->
-            <div class="row q-col-gutter-md q-mt-md">
-              <div class="col-12 col-md-6">
-                <q-btn
-                  label="Cancelar"
-                  color="grey"
-                  class="full-width"
-                  @click="handleCancel"
-                  :disable="loading"
-                />
-              </div>
-              <div class="col-12 col-md-6">
-                <q-btn
-                  label="Guardar Cambios"
-                  type="submit"
-                  color="primary"
-                  class="full-width"
-                  :loading="loading"
-                />
-              </div>
-            </div>
-          </q-form>
-        </q-card-section>
+          <!-- Botones de Acción -->
+          <div class="form-actions">
+            <q-btn
+              outline
+              label="Cancelar"
+              color="grey-7"
+              class="action-btn cancel-btn"
+              @click="handleCancel"
+              :disable="loading"
+              icon="close"
+            />
+            <q-btn
+              unelevated
+              label="Actualizar Banco"
+              type="submit"
+              color="primary"
+              class="action-btn save-btn"
+              :loading="loading"
+              icon="save"
+            />
+          </div>
+        </q-form>
       </q-card>
     </div>
   </q-page>
 </template>
 
 <style scoped lang="scss">
-.q-page {
+.form-page {
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   min-height: 100vh;
   padding: 24px;
+}
 
-  :deep(.q-page__container) {
-    max-width: 1400px;
-    margin: 0 auto;
+.form-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.form-header {
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.back-btn {
+  position: absolute;
+  left: 0;
+  top: 8px;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding-left: 60px;
+}
+
+.header-text {
+  flex: 1;
+}
+
+.form-title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 500;
+  color: #1a202c;
+  line-height: 1.2;
+}
+
+.form-subtitle {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: #718096;
+  font-weight: 400;
+}
+
+.form-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.form-content {
+  padding: 20px 32px;
+}
+
+.loading-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 32px;
+  gap: 16px;
+}
+
+.loading-text {
+  font-size: 14px;
+  color: #718096;
+  font-weight: 400;
+}
+
+.form-section {
+  margin-bottom: 16px;
+
+  &:last-of-type {
+    margin-bottom: 12px;
+  }
+}
+
+.input-wrapper {
+  margin-bottom: 4px;
+}
+
+.input-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #4a5568;
+  margin-bottom: 6px;
+  letter-spacing: 0.3px;
+}
+
+.required {
+  color: #e53e3e;
+  font-weight: 600;
+}
+
+.modern-input {
+  :deep(.q-field__control) {
+    border-radius: 10px;
+    height: 40px;
+    min-height: 40px;
+    background: #fafafa;
+    transition: all 0.3s ease;
+
+    &:before {
+      border-color: #e2e8f0;
+    }
+
+    &:hover:before {
+      border-color: #cbd5e0;
+    }
+  }
+
+  :deep(.q-field__control--focused) {
+    background: white;
+
+    &:before {
+      border-color: #3b82f6 !important;
+      border-width: 2px !important;
+    }
+  }
+
+  :deep(.q-field__native),
+  :deep(.q-field__input) {
+    font-size: 14px;
+    color: #2d3748;
+    font-weight: 500;
+  }
+
+  :deep(.q-field__prepend) {
+    padding-right: 10px;
+  }
+
+  :deep(textarea) {
+    min-height: 80px;
+    resize: vertical;
+  }
+}
+
+.toggle-wrapper {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  padding-left: 10px;
+  background: #fafafa;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 2px solid #e2e8f0;
+}
+
+.action-btn {
+  min-width: 140px;
+  border-radius: 10px;
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.3px;
+  transition: all 0.3s ease;
+}
+
+.cancel-btn {
+  &:hover {
+    background: #fff4e6 !important;
+    border-color: #fb923c !important;
+    color: #ea580c !important;
+  }
+}
+
+.save-btn {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+
+  &:hover {
+    background: #28A745 !important;
+    border-color: #28A745 !important;
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4) !important;
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .form-page {
+    padding: 16px;
+  }
+
+  .form-content {
+    padding: 24px;
+  }
+
+  .form-title {
+    font-size: 24px;
+  }
+
+  .form-subtitle {
+    font-size: 14px;
+  }
+
+  .header-content {
+    padding-left: 50px;
+  }
+
+  .form-actions {
+    flex-direction: column;
+
+    .action-btn {
+      width: 100%;
+    }
   }
 }
 </style>

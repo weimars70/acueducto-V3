@@ -165,13 +165,18 @@
       <div class="col-12 row justify-end q-gutter-sm q-mt-sm">
         <q-btn
           label="Cancelar"
-          color="negative"
-          flat
+          color="grey-7"
+          outline
+          icon="close"
+          class="cancel-btn"
           @click="onCancel"
         />
         <q-btn
           :label="mode === 'edit' ? 'Actualizar' : 'Guardar'"
           color="primary"
+          unelevated
+          :icon="mode === 'edit' ? 'save' : 'save'"
+          class="save-btn"
           @click="handleSave"
         />
       </div>
@@ -369,6 +374,23 @@ defineExpose({
   }
   .show-on-mobile {
     display: none;
+  }
+}
+
+// Button hover effects
+.cancel-btn {
+  &:hover {
+    background: #fff4e6 !important;
+    border-color: #fb923c !important;
+    color: #ea580c !important;
+  }
+}
+
+.save-btn {
+  &:hover {
+    background: #28A745 !important;
+    border-color: #28A745 !important;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4) !important;
   }
 }
 </style>
