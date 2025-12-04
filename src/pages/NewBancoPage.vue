@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
 import { bancoService } from '../services/api/banco.service';
+import { tipoCuentaService, type TipoCuenta } from '../services/api/tipo-cuenta.service';
 import type { CreateBancoDto } from '../types/banco';
 import { useAuthStore } from '../stores/auth';
 
@@ -10,6 +11,8 @@ const $q = useQuasar();
 const router = useRouter();
 const authStore = useAuthStore();
 const loading = ref(false);
+const tiposCuenta = ref<TipoCuenta[]>([]);
+const loadingTiposCuenta = ref(false);
 
 const formData = ref<CreateBancoDto>({
   codigo: '',
@@ -33,6 +36,23 @@ const monedas = [
   { label: 'Dólar (USD)', value: 'USD' },
   { label: 'Euro (EUR)', value: 'EUR' }
 ];
+
+const loadTiposCuenta = async () => {
+  try {
+    loadingTiposCuenta.value = true;
+    const empresaId = authStore.user?.empresaId || 1;
+    const allTipos = await tipoCuentaService.getByEmpresa(empresaId);
+    tiposCuenta.value = allTipos;
+  } catch (error: any) {
+    console.error('Error al cargar tipos de cuenta:', error);
+    $q.notify({
+      type: 'warning',
+      message: 'No se pudieron cargar los tipos de cuenta disponibles'
+    });
+  } finally {
+    loadingTiposCuenta.value = false;
+  }
+};
 
 const handleSubmit = async () => {
   if (!formData.value.codigo || !formData.value.nombre || !formData.value.numero_cuenta) {
@@ -66,6 +86,10 @@ const handleSubmit = async () => {
 const handleCancel = () => {
   router.push('/bancos');
 };
+
+onMounted(() => {
+  loadTiposCuenta();
+});
 </script>
 
 <template>
@@ -97,12 +121,9 @@ const handleCancel = () => {
         <q-form @submit="handleSubmit" class="form-content">
           <!-- Sección: Información Básica -->
           <div class="form-section">
-            <div class="section-header">
-              <q-icon name="info" size="24px" color="primary" />
-              <h2 class="section-title">Información Básica</h2>
-            </div>
+           
 
-            <div class="row q-col-gutter-lg">
+            <div class="row q-col-gutter-md">
               <div class="col-12 col-md-4">
                 <div class="input-wrapper">
                   <label class="input-label">Código <span class="required">*</span></label>
@@ -140,12 +161,9 @@ const handleCancel = () => {
 
           <!-- Sección: Datos de la Cuenta -->
           <div class="form-section">
-            <div class="section-header">
-              <q-icon name="credit_card" size="24px" color="primary" />
-              <h2 class="section-title">Datos de la Cuenta</h2>
-            </div>
+            
 
-            <div class="row q-col-gutter-lg">
+            <div class="row q-col-gutter-md">
               <div class="col-12 col-md-6">
                 <div class="input-wrapper">
                   <label class="input-label">Número de Cuenta <span class="required">*</span></label>
@@ -179,7 +197,7 @@ const handleCancel = () => {
               </div>
             </div>
 
-            <div class="row q-col-gutter-lg">
+            <div class="row q-col-gutter-md">
               <div class="col-12 col-md-4">
                 <div class="input-wrapper">
                   <label class="input-label">Moneda</label>
@@ -200,18 +218,30 @@ const handleCancel = () => {
               <div class="col-12 col-md-4">
                 <div class="input-wrapper">
                   <label class="input-label">Tipo de Cuenta <span class="required">*</span></label>
-                  <q-input
-                    v-model.number="formData.tipo_cuenta"
-                    type="number"
-                    placeholder="1"
+                  <q-select
+                    v-model="formData.tipo_cuenta"
+                    :options="tiposCuenta"
+                    option-value="id"
+                    option-label="nombre"
+                    emit-value
+                    map-options
                     outlined
+                    :loading="loadingTiposCuenta"
                     :rules="[val => !!val || 'Campo requerido']"
                     class="modern-input"
+                    placeholder="Seleccione un tipo"
                   >
                     <template v-slot:prepend>
                       <q-icon name="category" color="grey-6" />
                     </template>
-                  </q-input>
+                    <template v-slot:no-option>
+                      <q-item>
+                        <q-item-section class="text-grey">
+                          No hay tipos de cuenta
+                        </q-item-section>
+                      </q-item>
+                    </template>
+                  </q-select>
                 </div>
               </div>
               <div class="col-12 col-md-4">
@@ -232,12 +262,9 @@ const handleCancel = () => {
 
           <!-- Sección: Titular -->
           <div class="form-section">
-            <div class="section-header">
-              <q-icon name="person" size="24px" color="primary" />
-              <h2 class="section-title">Información del Titular</h2>
-            </div>
+            
 
-            <div class="row q-col-gutter-lg">
+            <div class="row q-col-gutter-md">
               <div class="col-12 col-md-8">
                 <div class="input-wrapper">
                   <label class="input-label">Titular</label>
@@ -273,12 +300,9 @@ const handleCancel = () => {
 
           <!-- Sección: Información Contable -->
           <div class="form-section">
-            <div class="section-header">
-              <q-icon name="calculate" size="24px" color="primary" />
-              <h2 class="section-title">Información Contable</h2>
-            </div>
+            
 
-            <div class="row q-col-gutter-lg">
+            <div class="row q-col-gutter-md">
               <div class="col-12 col-md-6">
                 <div class="input-wrapper">
                   <label class="input-label">Cuenta Contable</label>
@@ -315,10 +339,7 @@ const handleCancel = () => {
 
           <!-- Sección: Observaciones -->
           <div class="form-section">
-            <div class="section-header">
-              <q-icon name="notes" size="24px" color="primary" />
-              <h2 class="section-title">Notas Adicionales</h2>
-            </div>
+          
 
             <div class="input-wrapper">
               <label class="input-label">Observaciones</label>
@@ -370,12 +391,12 @@ const handleCancel = () => {
 }
 
 .form-container {
-  max-width: 1000px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
 .form-header {
-  margin-bottom: 32px;
+  margin-bottom: 16px;
   position: relative;
 }
 
@@ -398,15 +419,15 @@ const handleCancel = () => {
 
 .form-title {
   margin: 0;
-  font-size: 32px;
-  font-weight: 700;
+  font-size: 26px;
+  font-weight: 500;
   color: #1a202c;
   line-height: 1.2;
 }
 
 .form-subtitle {
-  margin: 8px 0 0;
-  font-size: 16px;
+  margin: 4px 0 0;
+  font-size: 14px;
   color: #718096;
   font-weight: 400;
 }
@@ -419,55 +440,56 @@ const handleCancel = () => {
 }
 
 .form-content {
-  padding: 40px;
+  padding: 20px 32px;
 }
 
 .form-section {
-  margin-bottom: 40px;
+  margin-bottom: 16px;
 
   &:last-of-type {
-    margin-bottom: 32px;
+    margin-bottom: 12px;
   }
 }
 
 .section-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 24px;
-  padding-bottom: 12px;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
   border-bottom: 2px solid #e2e8f0;
 }
 
 .section-title {
   margin: 0;
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 500;
   color: #2d3748;
 }
 
 .input-wrapper {
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .input-label {
   display: block;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
   color: #4a5568;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   letter-spacing: 0.3px;
 }
 
 .required {
   color: #e53e3e;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .modern-input {
   :deep(.q-field__control) {
-    border-radius: 12px;
-    height: 48px;
+    border-radius: 10px;
+    height: 40px;
+    min-height: 40px;
     background: #fafafa;
     transition: all 0.3s ease;
 
@@ -491,46 +513,46 @@ const handleCancel = () => {
 
   :deep(.q-field__native),
   :deep(.q-field__input) {
-    font-size: 15px;
+    font-size: 14px;
     color: #2d3748;
     font-weight: 500;
   }
 
   :deep(.q-field__prepend) {
-    padding-right: 12px;
+    padding-right: 10px;
   }
 
   :deep(textarea) {
-    min-height: 100px;
+    min-height: 80px;
     resize: vertical;
   }
 }
 
 .toggle-wrapper {
-  height: 48px;
+  height: 40px;
   display: flex;
   align-items: center;
-  padding-left: 12px;
+  padding-left: 10px;
   background: #fafafa;
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid #e2e8f0;
 }
 
 .form-actions {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   justify-content: flex-end;
-  padding-top: 24px;
+  padding-top: 16px;
   border-top: 2px solid #e2e8f0;
 }
 
 .action-btn {
-  min-width: 160px;
-  height: 52px;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 15px;
-  letter-spacing: 0.5px;
+  min-width: 140px;
+  height: 44px;
+  border-radius: 10px;
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.3px;
   transition: all 0.3s ease;
 }
 

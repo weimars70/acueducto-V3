@@ -34,6 +34,18 @@ export class UsersController {
     return this.usersService.findAll(pageNumber, pageSize, filters);
   }
 
+  @Get('roles/by-empresa/:empresaId')
+  @UseGuards(JwtAuthGuard)
+  async getRolesByEmpresa(@Param('empresaId') empresaId: string) {
+    return this.usersService.getRolesByEmpresa(parseInt(empresaId, 10));
+  }
+
+  @Get('tipos-cuenta/by-empresa/:empresaId')
+  @UseGuards(JwtAuthGuard)
+  async getTiposCuentaByEmpresa(@Param('empresaId') empresaId: string) {
+    return this.usersService.getTiposCuentaByEmpresa(parseInt(empresaId, 10));
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   async findOne(@Param('id') id: string) {

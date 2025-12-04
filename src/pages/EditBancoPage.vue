@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRouter, useRoute } from 'vue-router';
 import { bancoService } from '../services/api/banco.service';
+import { tipoCuentaService, type TipoCuenta } from '../services/api/tipo-cuenta.service';
 import type { UpdateBancoDto, Banco } from '../types/banco';
 import { useAuthStore } from '../stores/auth';
 
@@ -13,6 +14,8 @@ const authStore = useAuthStore();
 const loading = ref(false);
 const loadingData = ref(true);
 const bancoId = ref<number>(parseInt(route.params.id as string));
+const tiposCuenta = ref<TipoCuenta[]>([]);
+const loadingTiposCuenta = ref(false);
 
 const formData = ref<UpdateBancoDto>({
   codigo: '',
@@ -34,6 +37,23 @@ const monedas = [
   { label: 'Dólar (USD)', value: 'USD' },
   { label: 'Euro (EUR)', value: 'EUR' }
 ];
+
+const loadTiposCuenta = async () => {
+  try {
+    loadingTiposCuenta.value = true;
+    const empresaId = authStore.user?.empresaId || 1;
+    const allTipos = await tipoCuentaService.getByEmpresa(empresaId);
+    tiposCuenta.value = allTipos;
+  } catch (error: any) {
+    console.error('Error al cargar tipos de cuenta:', error);
+    $q.notify({
+      type: 'warning',
+      message: 'No se pudieron cargar los tipos de cuenta disponibles'
+    });
+  } finally {
+    loadingTiposCuenta.value = false;
+  }
+};
 
 const loadBanco = async () => {
   try {
@@ -103,6 +123,7 @@ const handleCancel = () => {
 };
 
 onMounted(() => {
+  loadTiposCuenta();
   loadBanco();
 });
 </script>
@@ -218,14 +239,27 @@ onMounted(() => {
             <!-- Fila 5: Tipo Cuenta, Estado -->
             <div class="row q-col-gutter-md">
               <div class="col-12 col-md-6">
-                <q-input
-                  v-model.number="formData.tipo_cuenta"
+                <q-select
+                  v-model="formData.tipo_cuenta"
+                  :options="tiposCuenta"
+                  option-value="id"
+                  option-label="nombre"
+                  emit-value
+                  map-options
                   label="Tipo de Cuenta *"
-                  type="number"
                   outlined
                   dense
+                  :loading="loadingTiposCuenta"
                   :rules="[val => !!val || 'Campo requerido']"
-                />
+                >
+                  <template v-slot:no-option>
+                    <q-item>
+                      <q-item-section class="text-grey">
+                        No hay tipos de cuenta
+                      </q-item-section>
+                    </q-item>
+                  </template>
+                </q-select>
               </div>
               <div class="col-12 col-md-6">
                 <q-toggle
@@ -277,8 +311,15 @@ onMounted(() => {
   </q-page>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .q-page {
-  background-color: #f5f5f5;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+  padding: 24px;
+
+  :deep(.q-page__container) {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
 }
 </style>

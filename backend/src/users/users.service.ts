@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { User } from '../entities/user.entity';
+import { Role } from '../entities/role.entity';
+import { TipoCuenta } from '../entities/tipo-cuenta.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
@@ -11,6 +13,10 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Role)
+    private readonly roleRepository: Repository<Role>,
+    @InjectRepository(TipoCuenta)
+    private readonly tipoCuentaRepository: Repository<TipoCuenta>,
     @InjectDataSource()
     private dataSource: DataSource,
   ) {}
@@ -214,6 +220,30 @@ export class UsersService {
       return { message: 'Usuario eliminado exitosamente' };
     } catch (error) {
       throw error;
+    }
+  }
+
+  async getRolesByEmpresa(empresaId: number) {
+    try {
+      return await this.roleRepository.find({
+        where: { empresaId },
+        select: ['id', 'nombre'],
+        order: { nombre: 'ASC' },
+      });
+    } catch (error) {
+      throw new Error(`Error al obtener roles: ${error.message}`);
+    }
+  }
+
+  async getTiposCuentaByEmpresa(empresaId: number) {
+    try {
+      return await this.tipoCuentaRepository.find({
+        where: { empresaId },
+        select: ['id', 'nombre'],
+        order: { nombre: 'ASC' },
+      });
+    } catch (error) {
+      throw new Error(`Error al obtener tipos de cuenta: ${error.message}`);
     }
   }
 }

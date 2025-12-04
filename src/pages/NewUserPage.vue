@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
 import { userService } from '../services/api/user.service';
+import { roleService, type Role } from '../services/api/role.service';
 import type { CreateUserDto } from '../types/user';
 import { useAuthStore } from '../stores/auth';
 
@@ -10,9 +11,11 @@ const $q = useQuasar();
 const router = useRouter();
 const authStore = useAuthStore();
 const loading = ref(false);
+const roles = ref<Role[]>([]);
+const loadingRoles = ref(false);
 
 const formData = ref<CreateUserDto>({
-  empresaId: 1,
+  empresaId: authStore.user?.empresaId || 1,
   roleId: 1,
   name: '',
   email: '',
@@ -23,6 +26,11 @@ const formData = ref<CreateUserDto>({
 });
 
 const passwordConfirm = ref('');
+
+// Computed para mostrar el nombre de la empresa (por ahora solo el ID)
+const empresaDisplay = computed(() => {
+  return `Empresa ${formData.value.empresaId}`;
+});
 
 const handleSubmit = async () => {
   if (!formData.value.name || !formData.value.email || !formData.value.password) {
@@ -72,6 +80,26 @@ const handleSubmit = async () => {
 const handleCancel = () => {
   router.push('/users');
 };
+
+const loadRoles = async () => {
+  try {
+    loadingRoles.value = true;
+    const allRoles = await roleService.getByEmpresa(formData.value.empresaId);
+    roles.value = allRoles;
+  } catch (error: any) {
+    console.error('Error al cargar roles:', error);
+    $q.notify({
+      type: 'warning',
+      message: 'No se pudieron cargar los roles disponibles'
+    });
+  } finally {
+    loadingRoles.value = false;
+  }
+};
+
+onMounted(() => {
+  loadRoles();
+});
 </script>
 
 <template>
@@ -101,34 +129,29 @@ const handleCancel = () => {
       <!-- Form Card -->
       <q-card flat class="form-card">
         <q-form @submit="handleSubmit" class="form-content">
-          <!-- Sección: Información Personal -->
+          <!-- Sección:  -->
           <div class="form-section">
-            <div class="section-header">
-              <q-icon name="person" size="24px" color="primary" />
-              <h2 class="section-title">Información Personal</h2>
-            </div>
+            
 
-            <div class="row q-col-gutter-lg">
-              <div class="col-12">
+            <div class="row q-col-gutter-sm">
+              <div class="col-12 col-md-4">
                 <div class="input-wrapper">
                   <label class="input-label">Nombre Completo <span class="required">*</span></label>
                   <q-input
                     v-model="formData.name"
                     placeholder="Ej: Juan Pérez"
                     outlined
+                    dense
                     :rules="[val => !!val || 'Campo requerido']"
                     class="modern-input"
                   >
                     <template v-slot:prepend>
-                      <q-icon name="badge" color="grey-6" />
+                      <q-icon name="badge" size="18px" color="grey-6" />
                     </template>
                   </q-input>
                 </div>
               </div>
-            </div>
-
-            <div class="row q-col-gutter-lg">
-              <div class="col-12 col-md-6">
+              <div class="col-12 col-md-4">
                 <div class="input-wrapper">
                   <label class="input-label">Email <span class="required">*</span></label>
                   <q-input
@@ -136,6 +159,7 @@ const handleCancel = () => {
                     type="email"
                     placeholder="correo@ejemplo.com"
                     outlined
+                    dense
                     :rules="[
                       val => !!val || 'Campo requerido',
                       val => /.+@.+\..+/.test(val) || 'Email inválido'
@@ -143,22 +167,23 @@ const handleCancel = () => {
                     class="modern-input"
                   >
                     <template v-slot:prepend>
-                      <q-icon name="email" color="grey-6" />
+                      <q-icon name="email" size="18px" color="grey-6" />
                     </template>
                   </q-input>
                 </div>
               </div>
-              <div class="col-12 col-md-6">
+              <div class="col-12 col-md-4">
                 <div class="input-wrapper">
                   <label class="input-label">Teléfono</label>
                   <q-input
                     v-model="formData.phone"
                     placeholder="Número de contacto"
                     outlined
+                    dense
                     class="modern-input"
                   >
                     <template v-slot:prepend>
-                      <q-icon name="phone" color="grey-6" />
+                      <q-icon name="phone" size="18px" color="grey-6" />
                     </template>
                   </q-input>
                 </div>
@@ -168,12 +193,9 @@ const handleCancel = () => {
 
           <!-- Sección: Credenciales -->
           <div class="form-section">
-            <div class="section-header">
-              <q-icon name="lock" size="24px" color="primary" />
-              <h2 class="section-title">Seguridad y Acceso</h2>
-            </div>
+            
 
-            <div class="row q-col-gutter-lg">
+            <div class="row q-col-gutter-sm">
               <div class="col-12 col-md-6">
                 <div class="input-wrapper">
                   <label class="input-label">Contraseña <span class="required">*</span></label>
@@ -182,6 +204,7 @@ const handleCancel = () => {
                     type="password"
                     placeholder="Mínimo 6 caracteres"
                     outlined
+                    dense
                     :rules="[
                       val => !!val || 'Campo requerido',
                       val => val.length >= 6 || 'Mínimo 6 caracteres'
@@ -189,7 +212,7 @@ const handleCancel = () => {
                     class="modern-input"
                   >
                     <template v-slot:prepend>
-                      <q-icon name="vpn_key" color="grey-6" />
+                      <q-icon name="vpn_key" size="18px" color="grey-6" />
                     </template>
                   </q-input>
                 </div>
@@ -202,6 +225,7 @@ const handleCancel = () => {
                     type="password"
                     placeholder="Repita la contraseña"
                     outlined
+                    dense
                     :rules="[
                       val => !!val || 'Campo requerido',
                       val => val === formData.password || 'Las contraseñas no coinciden'
@@ -209,7 +233,7 @@ const handleCancel = () => {
                     class="modern-input"
                   >
                     <template v-slot:prepend>
-                      <q-icon name="check_circle" color="grey-6" />
+                      <q-icon name="check_circle" size="18px" color="grey-6" />
                     </template>
                   </q-input>
                 </div>
@@ -219,62 +243,68 @@ const handleCancel = () => {
 
           <!-- Sección: Permisos y Rol -->
           <div class="form-section">
-            <div class="section-header">
-              <q-icon name="admin_panel_settings" size="24px" color="primary" />
-              <h2 class="section-title">Permisos y Configuración</h2>
-            </div>
+           
 
-            <div class="row q-col-gutter-lg">
-              <div class="col-12 col-md-6">
+            <div class="row q-col-gutter-sm">
+              <div class="col-12 col-md-4">
                 <div class="input-wrapper">
-                  <label class="input-label">Empresa <span class="required">*</span></label>
+                  <label class="input-label">Empresa</label>
                   <q-input
-                    v-model.number="formData.empresaId"
-                    type="number"
-                    placeholder="ID de la empresa"
+                    :model-value="empresaDisplay"
+                    placeholder="Empresa asignada"
                     outlined
-                    :rules="[val => !!val || 'Campo requerido']"
+                    dense
+                    readonly
+                    disable
                     class="modern-input"
                   >
                     <template v-slot:prepend>
-                      <q-icon name="business" color="grey-6" />
+                      <q-icon name="business" size="18px" color="grey-6" />
                     </template>
                   </q-input>
+                  <div class="field-hint">Asignada automáticamente</div>
                 </div>
               </div>
-              <div class="col-12 col-md-6">
+              <div class="col-12 col-md-4">
                 <div class="input-wrapper">
                   <label class="input-label">Rol <span class="required">*</span></label>
-                  <q-input
-                    v-model.number="formData.roleId"
-                    type="number"
-                    placeholder="ID del rol"
+                  <q-select
+                    v-model="formData.roleId"
+                    :options="roles"
+                    option-value="id"
+                    option-label="nombre"
+                    emit-value
+                    map-options
                     outlined
+                    dense
+                    :loading="loadingRoles"
                     :rules="[val => !!val || 'Campo requerido']"
                     class="modern-input"
+                    placeholder="Seleccione un rol"
                   >
                     <template v-slot:prepend>
-                      <q-icon name="assignment_ind" color="grey-6" />
+                      <q-icon name="assignment_ind" size="18px" color="grey-6" />
                     </template>
-                  </q-input>
+                    <template v-slot:no-option>
+                      <q-item>
+                        <q-item-section class="text-grey">
+                          No hay roles
+                        </q-item-section>
+                      </q-item>
+                    </template>
+                  </q-select>
                 </div>
               </div>
-            </div>
-
-            <div class="row">
-              <div class="col-12">
+              <div class="col-12 col-md-4">
                 <div class="input-wrapper">
-                  <label class="input-label">Estado del Usuario</label>
+                  <label class="input-label">Estado</label>
                   <div class="toggle-wrapper">
                     <q-toggle
                       v-model="formData.active"
                       label="Usuario Activo"
                       color="positive"
-                      size="lg"
+                      size="md"
                     />
-                    <span class="toggle-hint">
-                      {{ formData.active ? 'El usuario podrá acceder al sistema' : 'El usuario no podrá iniciar sesión' }}
-                    </span>
                   </div>
                 </div>
               </div>
@@ -314,30 +344,30 @@ const handleCancel = () => {
 .form-page {
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   min-height: 100vh;
-  padding: 24px;
+  padding: 16px;
 }
 
 .form-container {
-  max-width: 900px;
+  max-width: 1600px;
   margin: 0 auto;
 }
 
 .form-header {
-  margin-bottom: 32px;
+  margin-bottom: 8px;
   position: relative;
 }
 
 .back-btn {
   position: absolute;
   left: 0;
-  top: 8px;
+  top: 2px;
 }
 
 .header-content {
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding-left: 60px;
+  gap: 12px;
+  padding-left: 50px;
 }
 
 .header-text {
@@ -346,76 +376,77 @@ const handleCancel = () => {
 
 .form-title {
   margin: 0;
-  font-size: 32px;
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 500;
   color: #1a202c;
-  line-height: 1.2;
+  line-height: 1.1;
 }
 
 .form-subtitle {
-  margin: 8px 0 0;
-  font-size: 16px;
+  margin: 2px 0 0;
+  font-size: 12px;
   color: #718096;
   font-weight: 400;
 }
 
 .form-card {
   background: white;
-  border-radius: 20px;
+  border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   overflow: hidden;
 }
 
 .form-content {
-  padding: 40px;
+  padding: 12px 24px;
 }
 
 .form-section {
-  margin-bottom: 40px;
+  margin-bottom: 8px;
 
   &:last-of-type {
-    margin-bottom: 32px;
+    margin-bottom: 8px;
   }
 }
 
 .section-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 24px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #e2e8f0;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .section-title {
   margin: 0;
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 500;
   color: #2d3748;
 }
 
 .input-wrapper {
-  margin-bottom: 8px;
+  margin-bottom: 0;
 }
 
 .input-label {
   display: block;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 500;
   color: #4a5568;
-  margin-bottom: 8px;
-  letter-spacing: 0.3px;
+  margin-bottom: 4px;
+  letter-spacing: 0.2px;
 }
 
 .required {
   color: #e53e3e;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .modern-input {
   :deep(.q-field__control) {
-    border-radius: 12px;
-    height: 48px;
+    border-radius: 8px;
+    height: 36px;
+    min-height: 36px;
     background: #fafafa;
     transition: all 0.3s ease;
 
@@ -439,46 +470,53 @@ const handleCancel = () => {
 
   :deep(.q-field__native),
   :deep(.q-field__input) {
-    font-size: 15px;
+    font-size: 13px;
     color: #2d3748;
     font-weight: 500;
   }
 
   :deep(.q-field__prepend) {
-    padding-right: 12px;
+    padding-right: 8px;
   }
 }
 
 .toggle-wrapper {
-  padding: 16px;
+  padding: 10px;
   background: #fafafa;
-  border-radius: 12px;
+  border-radius: 8px;
   border: 1px solid #e2e8f0;
 }
 
 .toggle-hint {
   display: block;
-  margin-top: 8px;
-  font-size: 13px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #718096;
+  font-style: italic;
+}
+
+.field-hint {
+  margin-top: 2px;
+  font-size: 11px;
   color: #718096;
   font-style: italic;
 }
 
 .form-actions {
   display: flex;
-  gap: 16px;
+  gap: 10px;
   justify-content: flex-end;
-  padding-top: 24px;
-  border-top: 2px solid #e2e8f0;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
 }
 
 .action-btn {
-  min-width: 160px;
-  height: 52px;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 15px;
-  letter-spacing: 0.5px;
+  min-width: 120px;
+  height: 38px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0.2px;
   transition: all 0.3s ease;
 }
 
