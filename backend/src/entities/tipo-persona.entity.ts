@@ -1,16 +1,19 @@
-import { Entity, Column, PrimaryColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('tipo_persona')
 export class TipoPersona {
-    @PrimaryColumn()
+    @PrimaryGeneratedColumn()
     codigo: number;
 
-    @Column({ unique: true })
+    @Column({ name: 'empresa_id' })
+    empresaId: number;
+
+    @Column({ length: 100 })
     nombre: string;
 
-    @Column({ name: 'empresa_id' })
-    empresa_id: number;
+    @Column({ type: 'text', nullable: true })
+    descripcion: string;
 
-    @Column({ nullable: true })
-    usuario: string;
+    @Column({ default: true })
+    activo: boolean;
 }

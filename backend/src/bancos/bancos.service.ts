@@ -10,10 +10,14 @@ export class BancosService {
   constructor(
     @InjectRepository(Banco)
     private readonly bancoRepository: Repository<Banco>,
-  ) {}
+  ) { }
 
   async findAll(page: number, limit: number, filters: Record<string, any>) {
     try {
+      console.log('=== BANCOS FINDALL ===');
+      console.log('Filters recibidos:', filters);
+      console.log('empresaId:', filters.empresaId);
+
       let query = `
         SELECT
           id,
@@ -81,7 +85,9 @@ export class BancosService {
       // Agregar paginación
       query += ` ORDER BY codigo LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
       queryParams.push(limit, (page - 1) * limit);
-
+      console.log('=== BANCOS FINDALL QUERY ===');
+      console.log('Query:', query);
+      console.log('QueryParams:', queryParams);
       const data = await this.bancoRepository.query(query, queryParams);
 
       return {
@@ -119,24 +125,24 @@ export class BancosService {
       const existingCodigo = await this.bancoRepository.findOne({
         where: {
           codigo: createBancoDto.codigo,
-          // empresaId (si la entidad tiene ese campo)
+          empresaId: empresaId,
         },
       });
 
       if (existingCodigo) {
-        throw new Error('Ya existe un banco con este código');
+        throw new Error('Ya existe un banco con este código en esta empresa');
       }
 
       // Verificar duplicados por número de cuenta dentro de la misma empresa
       const existingCuenta = await this.bancoRepository.findOne({
         where: {
           numero_cuenta: createBancoDto.numero_cuenta,
-          // empresaId (si la entidad tiene ese campo)
+          empresaId: empresaId,
         },
       });
 
       if (existingCuenta) {
-        throw new Error('Ya existe un banco con este número de cuenta');
+        throw new Error('Ya existe un banco con este número de cuenta en esta empresa');
       }
 
       const banco = this.bancoRepository.create(createBancoDto);
@@ -159,22 +165,28 @@ export class BancosService {
       // Verificar duplicados por código si se está actualizando
       if (updateBancoDto.codigo && updateBancoDto.codigo !== banco.codigo) {
         const existingCodigo = await this.bancoRepository.findOne({
-          where: { codigo: updateBancoDto.codigo },
+          where: {
+            codigo: updateBancoDto.codigo,
+            empresaId: banco.empresaId
+          },
         });
 
         if (existingCodigo) {
-          throw new Error('Ya existe un banco con este código');
+          throw new Error('Ya existe un banco con este código en esta empresa');
         }
       }
 
       // Verificar duplicados por número de cuenta si se está actualizando
       if (updateBancoDto.numero_cuenta && updateBancoDto.numero_cuenta !== banco.numero_cuenta) {
         const existingCuenta = await this.bancoRepository.findOne({
-          where: { numero_cuenta: updateBancoDto.numero_cuenta },
+          where: {
+            numero_cuenta: updateBancoDto.numero_cuenta,
+            empresaId: banco.empresaId
+          },
         });
 
         if (existingCuenta) {
-          throw new Error('Ya existe un banco con este número de cuenta');
+          throw new Error('Ya existe un banco con este número de cuenta en esta empresa');
         }
       }
 

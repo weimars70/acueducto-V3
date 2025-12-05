@@ -6,8 +6,11 @@ export class Years {
     year: number;
 
     @Column({ name: 'empresa_id' })
-    empresa_id: number;
+    empresaId: number;
 
-    @Column({ nullable: true })
-    usuario: string;
+    @Column({ type: 'text', nullable: true })
+    descripcion: string;
+
+    @Column({ default: true })
+    activo: boolean;
 }

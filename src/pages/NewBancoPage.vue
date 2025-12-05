@@ -55,10 +55,10 @@ const loadTiposCuenta = async () => {
 };
 
 const handleSubmit = async () => {
-  if (!formData.value.codigo || !formData.value.nombre || !formData.value.numero_cuenta) {
+  if (!formData.value.codigo || !formData.value.nombre || !formData.value.numero_cuenta || !formData.value.tipo_cuenta) {
     $q.notify({
       type: 'warning',
-      message: 'Por favor complete los campos obligatorios'
+      message: 'Por favor complete los campos obligatorios (Código, Nombre, Número de Cuenta y Tipo de Cuenta)'
     });
     return;
   }

@@ -3,6 +3,10 @@ import { IsString, IsNumber, IsBoolean, IsOptional } from 'class-validator';
 
 export class CreateBancoDto {
   @ApiProperty()
+  @IsNumber()
+  empresaId: number;
+
+  @ApiProperty()
   @IsString()
   codigo: string;
 

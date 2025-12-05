@@ -5,6 +5,9 @@ export class Banco {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column({ name: 'empresa_id' })
+  empresaId: number;
+
   @Column({ length: 10, unique: true })
   codigo: string;
 

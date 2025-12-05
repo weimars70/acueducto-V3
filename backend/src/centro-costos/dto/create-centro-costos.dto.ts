@@ -1,17 +1,20 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNumber, IsOptional } from 'class-validator';
+import { IsString, IsBoolean, IsOptional, IsNumber } from 'class-validator';
 
 export class CreateCentroCostosDto {
-  @ApiProperty()
+  @IsNumber()
+  empresaId: number;
+
+  @IsString()
+  codigo: string;
+
   @IsString()
   nombre: string;
 
-  @ApiProperty()
-  @IsNumber()
-  empresa_id: number;
-
-  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
-  usuario?: string;
+  descripcion?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  activo?: boolean;
 }
