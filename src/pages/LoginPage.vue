@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { useAuthStore } from '../stores/auth';
+import { authService } from '../services/api/auth.service';
+import type { UserEmpresa } from '../types/empresa';
 
 const router = useRouter();
 const $q = useQuasar();
@@ -10,11 +12,40 @@ const authStore = useAuthStore();
 
 const email = ref('');
 const password = ref('');
+const selectedEmpresa = ref<number | null>(null);
+const companies = ref<UserEmpresa[]>([]);
 const loading = ref(false);
+const loadingCompanies = ref(false);
 const isPwd = ref(true);
 
+// Watch email changes to load companies
+watch(email, async (newEmail) => {
+  if (newEmail && newEmail.includes('@') && newEmail.length > 5) {
+    try {
+      loadingCompanies.value = true;
+      companies.value = await authService.getCompaniesByEmail(newEmail);
+      
+      // Si solo hay una empresa, seleccionarla automáticamente
+      if (companies.value.length === 1) {
+        selectedEmpresa.value = companies.value[0].empresaId;
+      } else {
+        selectedEmpresa.value = null;
+      }
+    } catch (error) {
+      console.error('Error al buscar empresas:', error);
+      companies.value = [];
+      selectedEmpresa.value = null;
+    } finally {
+      loadingCompanies.value = false;
+    }
+  } else {
+    companies.value = [];
+    selectedEmpresa.value = null;
+  }
+});
+
 async function handleLogin() {
-  if (!email.value || !password.value) {
+  if (!email.value || !password.value || !selectedEmpresa.value) {
     $q.notify({
       color: 'negative',
       message: 'Por favor complete todos los campos',
@@ -27,17 +58,18 @@ async function handleLogin() {
     loading.value = true;
     console.log('=== INICIANDO LOGIN ===');
     console.log('Email:', email.value);
+    console.log('EmpresaId:', selectedEmpresa.value);
 
     const success = await authStore.login({
       email: email.value,
-      password: password.value
+      password: password.value,
+      empresaId: selectedEmpresa.value
     });
 
     console.log('Login success:', success);
-    console.log('Auth store state:', { user: authStore.user, token: authStore.token });
 
     if (success) {
-      console.log('✓ Login exitoso, mostrando notificación');
+      console.log('✓ Login exitoso');
       $q.notify({
         color: 'positive',
         message: 'Inicio de sesión exitoso',
@@ -63,7 +95,7 @@ async function handleLogin() {
     });
     $q.notify({
       color: 'negative',
-      message: 'Ocurrió un error durante el inicio de sesión',
+      message: error instanceof Error ? error.message : 'Ocurrió un error durante el inicio de sesión',
       icon: 'error'
     });
   } finally {
@@ -95,6 +127,32 @@ async function handleLogin() {
               <q-icon name="email" />
             </template>
           </q-input>
+
+          <q-select
+            v-model="selectedEmpresa"
+            :options="companies"
+            option-value="empresaId"
+            option-label="empresa"
+            emit-value
+            map-options
+            label="Empresa"
+            outlined
+            :rules="[val => val !== null || 'Seleccione una empresa']"
+            :loading="loadingCompanies"
+            :disable="companies.length === 0"
+            :hint="companies.length === 0 ? 'Ingrese un email para ver empresas disponibles' : ''"
+          >
+            <template v-slot:prepend>
+              <q-icon name="business" />
+            </template>
+            <template v-slot:no-option>
+              <q-item>
+                <q-item-section class="text-grey">
+                  No hay empresas disponibles
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
 
           <q-input
             v-model="password"

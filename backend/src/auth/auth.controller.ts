@@ -1,19 +1,37 @@
-import { Controller, Post, UseGuards, Request, Body } from '@nestjs/common';
+import { Controller, Post, Body } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LocalAuthGuard } from './guards/local-auth.guard';
+import { GetCompaniesDto } from './dto/get-companies.dto';
+import { LoginDto } from './dto/login.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
-  @UseGuards(LocalAuthGuard)
+  @Post('companies')
+  async getCompanies(@Body() getCompaniesDto: GetCompaniesDto) {
+    console.log('=== GET COMPANIES REQUEST ===');
+    console.log('Email:', getCompaniesDto.email);
+    const companies = await this.authService.getCompaniesByEmail(getCompaniesDto.email);
+    console.log('Companies found:', companies.length);
+    return companies;
+  }
+
   @Post('login')
-  async login(@Request() req, @Body() body: any) {
-    console.log('=================================');
-    console.log('=== PETICIÓN LOGIN RECIBIDA ===');
-    console.log('Body recibido:', body);
-    console.log('Usuario autenticado:', req.user);
-    console.log('=================================');
-    return this.authService.login(req.user);
+  async login(@Body() loginDto: LoginDto) {
+    console.log('=== LOGIN REQUEST ===');
+    console.log('Email:', loginDto.email);
+    console.log('EmpresaId:', loginDto.empresaId);
+
+    const user = await this.authService.validateUser(
+      loginDto.email,
+      loginDto.password,
+      loginDto.empresaId
+    );
+
+    if (!user) {
+      return { success: false, message: 'Credenciales inválidas' };
+    }
+
+    return this.authService.login(user);
   }
 }

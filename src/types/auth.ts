@@ -1,6 +1,9 @@
+import type { Empresa } from './empresa';
+
 export interface LoginCredentials {
   email: string;
   password: string;
+  empresaId: number;
 }
 
 export interface User {
@@ -10,4 +13,10 @@ export interface User {
   username: string;
   empresaId: number;
   role?: string;
+  empresa?: Empresa;
+}
+
+export interface LoginResponse {
+  access_token: string;
+  user: User;
 }
