@@ -19,6 +19,7 @@ import { TipoImpuestoModule } from './tipo-impuesto/tipo-impuesto.module';
 import { TipoPersonaModule } from './tipo-persona/tipo-persona.module';
 import { TipoRegimenModule } from './tipo-regimen/tipo-regimen.module';
 import { YearsModule } from './years/years.module';
+import { TercerosModule } from './terceros/terceros.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { YearsModule } from './years/years.module';
     TipoPersonaModule,
     TipoRegimenModule,
     YearsModule,
+    TercerosModule,
   ],
 })
 export class AppModule { }

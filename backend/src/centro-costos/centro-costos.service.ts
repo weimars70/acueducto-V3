@@ -10,7 +10,7 @@ export class CentroCostosService {
   constructor(
     @InjectRepository(CentroCostos)
     private readonly centroCostosRepository: Repository<CentroCostos>,
-  ) {}
+  ) { }
 
   async findAll(empresaId: number) {
     try {
@@ -45,7 +45,7 @@ export class CentroCostosService {
       const existing = await this.centroCostosRepository.findOne({
         where: {
           nombre: createCentroCostosDto.nombre,
-          empresaId: createCentroCostosDto.empresa_id,
+          empresaId: createCentroCostosDto.empresaId,
         },
       });
 
@@ -53,11 +53,7 @@ export class CentroCostosService {
         throw new Error('Ya existe un centro de costos con este nombre');
       }
 
-      const centroCostos = this.centroCostosRepository.create({
-        nombre: createCentroCostosDto.nombre,
-        empresaId: createCentroCostosDto.empresa_id,
-        usuario: createCentroCostosDto.usuario,
-      });
+      const centroCostos = this.centroCostosRepository.create(createCentroCostosDto);
 
       return await this.centroCostosRepository.save(centroCostos);
     } catch (error) {
@@ -90,12 +86,7 @@ export class CentroCostosService {
       }
 
       // Actualizar solo los campos proporcionados
-      if (updateCentroCostosDto.nombre) {
-        centroCostos.nombre = updateCentroCostosDto.nombre;
-      }
-      if (updateCentroCostosDto.usuario) {
-        centroCostos.usuario = updateCentroCostosDto.usuario;
-      }
+      Object.assign(centroCostos, updateCentroCostosDto);
 
       return await this.centroCostosRepository.save(centroCostos);
     } catch (error) {

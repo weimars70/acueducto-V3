@@ -117,6 +117,12 @@ const maestrosItems = [
     label: 'Años',
     route: '/years',
     closable: true,
+  },
+  {
+    icon: 'people',
+    label: 'Terceros',
+    route: '/terceros',
+    closable: true,
   }
 ];
 

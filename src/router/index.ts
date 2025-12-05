@@ -249,6 +249,23 @@ const routes = [
         name: 'edit-year',
         component: () => import('../pages/EditYearPage.vue'),
         props: true
+      },
+      // Terceros Routes
+      {
+        path: '/terceros',
+        name: 'terceros',
+        component: () => import('../pages/TercerosPage.vue')
+      },
+      {
+        path: '/terceros/new',
+        name: 'new-tercero',
+        component: () => import('../pages/NewTerceroPage.vue')
+      },
+      {
+        path: '/terceros/edit/:codigo',
+        name: 'edit-tercero',
+        component: () => import('../pages/EditTerceroPage.vue'),
+        props: true
       }
     ]
   },
