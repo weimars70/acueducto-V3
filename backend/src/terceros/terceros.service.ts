@@ -71,7 +71,7 @@ export class TercerosService {
             if (contactos && contactos.length > 0) {
                 for (const contacto of contactos) {
                     const queryInsert = `
-                        INSERT INTO public.contactos_tercero (id_tercero, cargo, nombre, telefono, direccion, correo)
+                        INSERT INTO public.terceros_contactos (tercero_codigo, tipo_contacto, nombre, telefono, direccion, correo)
                         VALUES ($1, $2, $3, $4, $5, $6)
                     `;
                     await this.terceroRepository.query(queryInsert, [
