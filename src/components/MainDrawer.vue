@@ -43,6 +43,7 @@ const menuItems = [
 ];
 
 const maestrosExpanded = ref(false);
+const facturacionExpanded = ref(false);
 const configuracionExpanded = ref(false);
 
 const maestrosItems = [
@@ -122,6 +123,15 @@ const maestrosItems = [
     icon: 'people',
     label: 'Terceros',
     route: '/terceros',
+    closable: true,
+  }
+];
+
+const facturacionItems = [
+  {
+    icon: 'receipt',
+    label: 'Conceptos Factura',
+    route: '/conceptos-factura',
     closable: true,
   }
 ];
@@ -271,6 +281,32 @@ const handleSync = async () => {
       </q-expansion-item>
 
       <q-separator spaced />
+
+      <!-- Facturación Section -->
+      <q-expansion-item
+        v-model="facturacionExpanded"
+        icon="receipt_long"
+        label="Facturación"
+        header-class="text-weight-bold"
+      >
+        <q-item
+          v-for="item in facturacionItems"
+          :key="item.route"
+          clickable
+          v-ripple
+          :active="router.currentRoute.value.path === item.route"
+          active-class="text-primary"
+          @click="navigateTo(item)"
+          class="q-pl-lg"
+        >
+          <q-item-section avatar>
+            <q-icon :name="item.icon" />
+          </q-item-section>
+          <q-item-section>
+            {{ item.label }}
+          </q-item-section>
+        </q-item>
+      </q-expansion-item>
 
       <!-- Configuración Section -->
       <q-expansion-item

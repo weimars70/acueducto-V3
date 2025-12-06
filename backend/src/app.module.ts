@@ -20,6 +20,7 @@ import { TipoPersonaModule } from './tipo-persona/tipo-persona.module';
 import { TipoRegimenModule } from './tipo-regimen/tipo-regimen.module';
 import { YearsModule } from './years/years.module';
 import { TercerosModule } from './terceros/terceros.module';
+import { ConceptosFacturaModule } from './conceptos-factura/conceptos-factura.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { TercerosModule } from './terceros/terceros.module';
     TipoRegimenModule,
     YearsModule,
     TercerosModule,
+    ConceptosFacturaModule,
   ],
 })
 export class AppModule { }

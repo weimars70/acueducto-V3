@@ -266,6 +266,23 @@ const routes = [
         name: 'edit-tercero',
         component: () => import('../pages/EditTerceroPage.vue'),
         props: true
+      },
+      // Conceptos Factura Routes
+      {
+        path: '/conceptos-factura',
+        name: 'conceptos-factura',
+        component: () => import('../pages/ConceptosFacturaPage.vue')
+      },
+      {
+        path: '/conceptos-factura/nuevo',
+        name: 'new-concepto-factura',
+        component: () => import('../pages/NewConceptoFacturaPage.vue')
+      },
+      {
+        path: '/conceptos-factura/editar/:id',
+        name: 'edit-concepto-factura',
+        component: () => import('../pages/EditConceptoFacturaPage.vue'),
+        props: true
       }
     ]
   },
