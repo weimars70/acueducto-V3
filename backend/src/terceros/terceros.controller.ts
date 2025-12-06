@@ -12,6 +12,8 @@ import {
 import { TercerosService } from './terceros.service';
 import { CreateTerceroDto } from './dto/create-tercero.dto';
 import { UpdateTerceroDto } from './dto/update-tercero.dto';
+import { CreateContactoDto } from './dto/create-contacto.dto';
+import { UpdateContactoDto } from './dto/update-contacto.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('terceros')
@@ -84,5 +86,45 @@ export class TercerosController {
     @Delete(':codigo')
     remove(@Param('codigo') codigo: string) {
         return this.tercerosService.remove(parseInt(codigo));
+    }
+
+    // =================== ENDPOINTS PARA CONTACTOS ===================
+
+    @Get('select/tipos-contacto')
+    getTiposContacto() {
+        return this.tercerosService.getTiposContacto();
+    }
+
+    @Get(':terceroCodigo/contactos')
+    findContactosByTercero(@Param('terceroCodigo') terceroCodigo: string) {
+        return this.tercerosService.findContactosByTercero(parseInt(terceroCodigo));
+    }
+
+    @Post(':terceroCodigo/contactos')
+    createContacto(
+        @Param('terceroCodigo') terceroCodigo: string,
+        @Body() createContactoDto: CreateContactoDto
+    ) {
+        // Asegurar que el terceroCodigo del parámetro coincida con el del body
+        createContactoDto.terceroCodigo = parseInt(terceroCodigo);
+        return this.tercerosService.createContacto(createContactoDto);
+    }
+
+    @Get('contactos/:codigo')
+    findOneContacto(@Param('codigo') codigo: string) {
+        return this.tercerosService.findOneContacto(parseInt(codigo));
+    }
+
+    @Put('contactos/:codigo')
+    updateContacto(
+        @Param('codigo') codigo: string,
+        @Body() updateContactoDto: UpdateContactoDto
+    ) {
+        return this.tercerosService.updateContacto(parseInt(codigo), updateContactoDto);
+    }
+
+    @Delete('contactos/:codigo')
+    removeContacto(@Param('codigo') codigo: string) {
+        return this.tercerosService.removeContacto(parseInt(codigo));
     }
 }

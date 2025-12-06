@@ -2,14 +2,19 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Tercero } from '../entities/tercero.entity';
+import { TerceroContacto } from '../entities/tercero-contacto.entity';
 import { CreateTerceroDto } from './dto/create-tercero.dto';
 import { UpdateTerceroDto } from './dto/update-tercero.dto';
+import { CreateContactoDto } from './dto/create-contacto.dto';
+import { UpdateContactoDto } from './dto/update-contacto.dto';
 
 @Injectable()
 export class TercerosService {
     constructor(
         @InjectRepository(Tercero)
         private readonly terceroRepository: Repository<Tercero>,
+        @InjectRepository(TerceroContacto)
+        private readonly contactoRepository: Repository<TerceroContacto>,
     ) { }
 
     // Métodos para cargar datos de selects
@@ -37,7 +42,7 @@ export class TercerosService {
         return await this.terceroRepository.query(query, params);
     }
 
-    async create(createTerceroDto: CreateTerceroDto) {
+    async create(createTerceroDto: any) {
         try {
             const empresaId = createTerceroDto.empresaId;
 
@@ -55,8 +60,32 @@ export class TercerosService {
                 }
             }
 
-            const tercero = this.terceroRepository.create(createTerceroDto);
-            return await this.terceroRepository.save(tercero);
+            // Extraer contactos del DTO
+            const { contactos, ...terceroData } = createTerceroDto;
+
+            // Crear y guardar tercero
+            const tercero = this.terceroRepository.create(terceroData) as unknown as Tercero;
+            const terceroGuardado = await this.terceroRepository.save(tercero);
+
+            // Guardar contactos si existen
+            if (contactos && contactos.length > 0) {
+                for (const contacto of contactos) {
+                    const queryInsert = `
+                        INSERT INTO public.contactos_tercero (id_tercero, cargo, nombre, telefono, direccion, correo)
+                        VALUES ($1, $2, $3, $4, $5, $6)
+                    `;
+                    await this.terceroRepository.query(queryInsert, [
+                        terceroGuardado.codigo,
+                        contacto.cargo,
+                        contacto.nombre,
+                        contacto.telefono,
+                        contacto.direccion,
+                        contacto.correo
+                    ]);
+                }
+            }
+
+            return terceroGuardado;
         } catch (error) {
             throw new Error(`Error al crear tercero: ${error.message}`);
         }
@@ -195,6 +224,112 @@ export class TercerosService {
             return { message: 'Tercero eliminado exitosamente' };
         } catch (error) {
             throw new Error(`Error al eliminar tercero: ${error.message}`);
+        }
+    }
+
+    // =================== MÉTODOS PARA CONTACTOS ===================
+
+    // Obtener tipos de contacto
+    async getTiposContacto() {
+        const query = `SELECT codigo, nombre FROM public.contactos_tipo ORDER BY nombre`;
+        const tiposContacto = await this.contactoRepository.query(query);
+        console.log('=== TIPOS CONTACTO DEBUG ===', tiposContacto);
+        return tiposContacto;
+    }
+
+    // Listar contactos de un tercero
+    async findContactosByTercero(terceroCodigo: number) {
+        try {
+            const query = `
+                SELECT
+                    tc.id as "codigo",
+                    tc.tercero_codigo as "terceroCodigo",
+                    tc.tipo_contacto as "tipoContacto",
+                    ct.nombre as "tipoContactoNombre",
+                    tc.nombre as "nombre",
+                    tc.telefono as "telefono",
+                    tc.direccion as "direccion",
+                    tc.correo as "correo"
+                FROM terceros_contactos tc
+                LEFT JOIN contactos_tipo ct ON tc.tipo_contacto = ct.codigo
+                WHERE tc.tercero_codigo = $1
+                ORDER BY tc.nombre
+            `;
+            return await this.contactoRepository.query(query, [terceroCodigo]);
+        } catch (error) {
+            throw new Error(`Error al listar contactos: ${error.message}`);
+        }
+    }
+
+    // Crear contacto
+    async createContacto(createContactoDto: CreateContactoDto) {
+        try {
+            // Verificar que el tercero existe
+            const tercero = await this.terceroRepository.findOne({
+                where: { codigo: createContactoDto.terceroCodigo },
+            });
+
+            if (!tercero) {
+                throw new Error(`Tercero con código ${createContactoDto.terceroCodigo} no encontrado`);
+            }
+
+            const contacto = this.contactoRepository.create(createContactoDto);
+            return await this.contactoRepository.save(contacto);
+        } catch (error) {
+            throw new Error(`Error al crear contacto: ${error.message}`);
+        }
+    }
+
+    // Obtener contacto por código
+    async findOneContacto(codigo: number) {
+        try {
+            const contacto = await this.contactoRepository.findOne({
+                where: { codigo },
+            });
+
+            if (!contacto) {
+                throw new Error(`Contacto con código ${codigo} no encontrado`);
+            }
+
+            return contacto;
+        } catch (error) {
+            throw new Error(`Error al obtener contacto: ${error.message}`);
+        }
+    }
+
+    // Actualizar contacto
+    async updateContacto(codigo: number, updateContactoDto: UpdateContactoDto) {
+        try {
+            const contacto = await this.contactoRepository.findOne({
+                where: { codigo },
+            });
+
+            if (!contacto) {
+                throw new Error(`Contacto con código ${codigo} no encontrado`);
+            }
+
+            Object.assign(contacto, updateContactoDto);
+            return await this.contactoRepository.save(contacto);
+        } catch (error) {
+            throw new Error(`Error al actualizar contacto: ${error.message}`);
+        }
+    }
+
+    // Eliminar contacto
+    async removeContacto(codigo: number) {
+        try {
+            const contacto = await this.contactoRepository.findOne({
+                where: { codigo },
+            });
+
+            if (!contacto) {
+                throw new Error(`Contacto con código ${codigo} no encontrado`);
+            }
+
+            await this.contactoRepository.remove(contacto);
+            return { message: 'Contacto eliminado exitosamente' };
+        } catch (error) {
+            throw new Error(`Error al eliminar contacto: ${error.message}`);
         }
     }
 }
