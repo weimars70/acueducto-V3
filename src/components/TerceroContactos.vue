@@ -199,59 +199,74 @@ watch(() => props.terceroCodigo, (newValue) => {
   <div class="contactos-section">
     <div class="section-header">
       <q-icon name="contacts" size="20px" color="primary" />
-      <h3 class="section-title">Contactos del Proveedor</h3>
+      <h3 class="section-title">Contactos del Tercero</h3>
     </div>
 
     <!-- Formulario inline - UNA SOLA FILA -->
     <div class="form-inline">
-      <q-select
-        v-model="formData.tipoContacto"
-        :options="tiposContacto"
-        emit-value
-        map-options
-        outlined
-        dense
-        placeholder="Tipo Contacto"
-        class="inline-input"
-        style="width: 140px"
-      />
+      <div class="inline-field">
+        <label class="inline-label">Tipo</label>
+        <q-select
+          v-model="formData.tipoContacto"
+          :options="tiposContacto"
+          emit-value
+          map-options
+          outlined
+          dense
+          placeholder="Tipo Contacto"
+          class="inline-input"
+          style="width: 140px"
+        />
+      </div>
 
-      <q-input
-        v-model="formData.nombre"
-        placeholder="Nombre"
-        outlined
-        dense
-        class="inline-input"
-        style="width: 160px"
-      />
+      <div class="inline-field">
+        <label class="inline-label">Nombre <span class="required">*</span></label>
+        <q-input
+          v-model="formData.nombre"
+          placeholder="Ej: Juan Pérez"
+          outlined
+          dense
+          class="inline-input"
+          style="width: 160px"
+        />
+      </div>
 
-      <q-input
-        v-model="formData.telefono"
-        placeholder="Teléfono"
-        outlined
-        dense
-        class="inline-input"
-        style="width: 120px"
-      />
+      <div class="inline-field">
+        <label class="inline-label">Teléfono <span class="required">*</span></label>
+        <q-input
+          v-model="formData.telefono"
+          placeholder="300 123 4567"
+          outlined
+          dense
+          class="inline-input"
+          style="width: 120px"
+        />
+      </div>
 
-      <q-input
-        v-model="formData.direccion"
-        placeholder="Dirección"
-        outlined
-        dense
-        class="inline-input"
-        style="flex: 1; min-width: 150px"
-      />
+      <div class="inline-field">
+        <label class="inline-label">Dirección</label>
+        <q-input
+          v-model="formData.direccion"
+          placeholder="Dirección"
+          outlined
+          dense
+          class="inline-input"
+          style="flex: 1; min-width: 150px"
+        />
+      </div>
 
-      <q-input
-        v-model="formData.correo"
-        type="email"
-        placeholder="Correo"
-        outlined
-        dense
-        class="inline-input"
-        style="width: 160px"
-      />
+      <div class="inline-field">
+        <label class="inline-label">Correo</label>
+        <q-input
+          v-model="formData.correo"
+          type="email"
+          placeholder="correo@ejemplo.com"
+          outlined
+          dense
+          class="inline-input"
+          style="width: 160px"
+        />
+      </div>
 
       <q-btn
         unelevated
@@ -357,9 +372,29 @@ watch(() => props.terceroCodigo, (newValue) => {
 .form-inline {
   display: flex;
   gap: 6px;
-  align-items: center;
+  align-items: flex-end;
   margin-bottom: 8px;
   flex-wrap: wrap;
+}
+
+.inline-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.inline-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #4a5568;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.required {
+  color: #e53e3e;
+  font-weight: 700;
 }
 
 .inline-input {

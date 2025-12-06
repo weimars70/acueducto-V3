@@ -559,77 +559,92 @@ onMounted(() => {
             <!-- Formulario inline de contacto -->
             <div class="row q-col-gutter-xs q-mb-xs">
               <div class="col-12 col-md-2">
-                <q-select
-                  v-model="contactoForm.tipoContacto"
-                  :options="tiposContacto"
-                  emit-value
-                  map-options
-                  outlined
-                  dense
-                  placeholder="Tipo"
-                  class="modern-input"
-                >
-                  <template v-slot:prepend>
-                    <q-icon name="badge" color="grey-6" size="16px" />
-                  </template>
-                </q-select>
+                <div class="input-wrapper">
+                  <label class="input-label">Tipo de Contacto</label>
+                  <q-select
+                    v-model="contactoForm.tipoContacto"
+                    :options="tiposContacto"
+                    emit-value
+                    map-options
+                    outlined
+                    dense
+                    placeholder="Tipo"
+                    class="modern-input"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon name="badge" color="grey-6" size="16px" />
+                    </template>
+                  </q-select>
+                </div>
               </div>
 
               <div class="col-12 col-md-3">
-                <q-input
-                  v-model="contactoForm.nombre"
-                  placeholder="Nombre *"
-                  outlined
-                  dense
-                  class="modern-input"
-                >
-                  <template v-slot:prepend>
-                    <q-icon name="person" color="grey-6" size="16px" />
-                  </template>
-                </q-input>
+                <div class="input-wrapper">
+                  <label class="input-label">Nombre del Contacto <span class="required">*</span></label>
+                  <q-input
+                    v-model="contactoForm.nombre"
+                    placeholder="Ej: Juan Pérez"
+                    outlined
+                    dense
+                    class="modern-input"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon name="person" color="grey-6" size="16px" />
+                    </template>
+                  </q-input>
+                </div>
               </div>
 
               <div class="col-12 col-md-2">
-                <q-input
-                  v-model="contactoForm.telefono"
-                  placeholder="Teléfono *"
-                  outlined
-                  dense
-                  class="modern-input"
-                >
-                  <template v-slot:prepend>
-                    <q-icon name="phone" color="grey-6" size="16px" />
-                  </template>
-                </q-input>
+                <div class="input-wrapper">
+                  <label class="input-label">Teléfono <span class="required">*</span></label>
+                  <q-input
+                    v-model="contactoForm.telefono"
+                    placeholder="Ej: 300 123 4567"
+                    outlined
+                    dense
+                    class="modern-input"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon name="phone" color="grey-6" size="16px" />
+                    </template>
+                  </q-input>
+                </div>
               </div>
 
               <div class="col-12 col-md-2">
-                <q-input
-                  v-model="contactoForm.direccion"
-                  placeholder="Dirección"
-                  outlined
-                  dense
-                  class="modern-input"
-                >
-                  <template v-slot:prepend>
-                    <q-icon name="home" color="grey-6" size="16px" />
-                  </template>
-                </q-input>
+                <div class="input-wrapper">
+                  <label class="input-label">Dirección del Contacto</label>
+                  <q-input
+                    v-model="contactoForm.direccion"
+                    placeholder="Dirección"
+                    outlined
+                    dense
+                    class="modern-input"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon name="home" color="grey-6" size="16px" />
+                    </template>
+                  </q-input>
+                </div>
               </div>
 
               <div class="col-12 col-md-2">
-                <q-input
-                  v-model="contactoForm.correo"
-                  type="email"
-                  placeholder="Correo"
-                  outlined
-                  dense
-                  class="modern-input"
-                >
-                  <template v-slot:prepend>
-                    <q-icon name="email" color="grey-6" size="16px" />
-                  </template>
-                </q-input>
+                <div class="input-wrapper">
+                  <label class="input-label">Correo Electrónico</label>
+                  <q-input
+                    v-model="contactoForm.correo"
+                    type="email"
+                    placeholder="correo@ejemplo.com"
+                    outlined
+                    dense
+                    class="modern-input"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon name="email" color="grey-6" size="16px" />
+                    </template>
+                  </q-input>
+                </div>
               </div>
 
               <div class="col-12 col-md-1">
