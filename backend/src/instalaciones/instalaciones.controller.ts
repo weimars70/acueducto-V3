@@ -6,7 +6,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 @ApiTags('instalaciones')
 @Controller('instalaciones')
 export class InstalacionesController {
-  constructor(private readonly instalacionesService: InstalacionesService) {}
+  constructor(private readonly instalacionesService: InstalacionesService) { }
 
   @Get()
   @ApiOperation({ summary: 'Get installation by code' })
@@ -29,9 +29,9 @@ export class InstalacionesController {
     status: 200,
     description: 'Installations retrieved successfully',
   })
-  async getAllInstalaciones() {
+  async getAllInstalaciones(@Query('empresaId') empresaId?: number) {
     try {
-      return await this.instalacionesService.findAll();
+      return await this.instalacionesService.findAll(empresaId);
     } catch (error) {
       throw new Error(`Error retrieving installations: ${error.message}`);
     }

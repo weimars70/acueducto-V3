@@ -40,4 +40,10 @@ export class Consumption {
 
   @Column({ type: 'float', nullable: true })
   longitud: number;
+
+  @Column({ default: false })
+  facturada: boolean;
+
+  @Column({ name: 'consumo_facturar', type: 'numeric', nullable: true })
+  consumoFacturar: number;
 }

@@ -8,7 +8,7 @@ export class InstalacionesService {
   constructor(
     @InjectRepository(Installation)
     private readonly installationRepository: Repository<Installation>,
-  ) {}
+  ) { }
 
   async findOne(codigo: number) {
     try {
@@ -24,7 +24,7 @@ export class InstalacionesService {
         ` SELECT lectura_anterior, promedio FROM get_previous_reading($1)`,
         [codigo],
       );
-     
+
       return {
         ...installation,
         lectura_anterior: result[0]?.lectura_anterior || 0,
@@ -36,31 +36,15 @@ export class InstalacionesService {
     }
   }
 
-  async findAll() {
+  async findAll(empresaId?: number) {
     try {
-      const sql = `SELECT  * from view_instalaciones order by codigo `;
-      const installations = await this.installationRepository.query(sql);
-
-      // Obtener lecturas anteriores y promedios para todas las instalaciones
-      const readings = await Promise.all(
-        installations.map(async (installation) => {
-          const result = await this.installationRepository.query(
-            `
-            SELECT lectura_anterior, promedio 
-            FROM get_previous_reading($1)
-          `,
-            [installation.codigo],
-          );
-         
-          return {
-            ...installation,
-            lectura_anterior: result[0]?.lectura_anterior || 0,
-            promedio: result[0]?.promedio || 0,
-          };
-        }),
-      );
-
-      return readings;
+      // Use standard TypeORM find for efficiency, avoiding slow views and N+1 queries
+      return await this.installationRepository.find({
+        where: empresaId ? { empresaId } : {},
+        order: {
+          codigo: 'ASC',
+        },
+      });
     } catch (error) {
       throw new Error(`Error al obtener instalaciones: ${error.message}`);
     }

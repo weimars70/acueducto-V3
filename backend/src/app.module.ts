@@ -21,6 +21,7 @@ import { TipoRegimenModule } from './tipo-regimen/tipo-regimen.module';
 import { YearsModule } from './years/years.module';
 import { TercerosModule } from './terceros/terceros.module';
 import { ConceptosFacturaModule } from './conceptos-factura/conceptos-factura.module';
+import { DiferidosModule } from './diferidos/diferidos.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { ConceptosFacturaModule } from './conceptos-factura/conceptos-factura.mo
     YearsModule,
     TercerosModule,
     ConceptosFacturaModule,
+    DiferidosModule,
   ],
 })
 export class AppModule { }

@@ -44,6 +44,7 @@ const menuItems = [
 
 const maestrosExpanded = ref(false);
 const facturacionExpanded = ref(false);
+const diferidoExpanded = ref(false);
 const configuracionExpanded = ref(false);
 
 const maestrosItems = [
@@ -132,6 +133,15 @@ const facturacionItems = [
     icon: 'receipt',
     label: 'Conceptos Factura',
     route: '/conceptos-factura',
+    closable: true,
+  }
+];
+
+const diferidoItems = [
+  {
+    icon: 'schedule',
+    label: 'Concepto Diferido',
+    route: '/diferidos',
     closable: true,
   }
 ];
@@ -291,6 +301,34 @@ const handleSync = async () => {
       >
         <q-item
           v-for="item in facturacionItems"
+          :key="item.route"
+          clickable
+          v-ripple
+          :active="router.currentRoute.value.path === item.route"
+          active-class="text-primary"
+          @click="navigateTo(item)"
+          class="q-pl-lg"
+        >
+          <q-item-section avatar>
+            <q-icon :name="item.icon" />
+          </q-item-section>
+          <q-item-section>
+            {{ item.label }}
+          </q-item-section>
+        </q-item>
+      </q-expansion-item>
+
+      <q-separator spaced />
+
+      <!-- Diferido Section -->
+      <q-expansion-item
+        v-model="diferidoExpanded"
+        icon="schedule"
+        label="Diferido"
+        header-class="text-weight-bold"
+      >
+        <q-item
+          v-for="item in diferidoItems"
           :key="item.route"
           clickable
           v-ripple

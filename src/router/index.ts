@@ -283,6 +283,23 @@ const routes = [
         name: 'edit-concepto-factura',
         component: () => import('../pages/EditConceptoFacturaPage.vue'),
         props: true
+      },
+      // Diferidos Routes
+      {
+        path: '/diferidos',
+        name: 'diferidos',
+        component: () => import('../pages/DiferidosPage.vue')
+      },
+      {
+        path: '/diferidos/nuevo',
+        name: 'new-diferido',
+        component: () => import('../pages/NewDiferidoPage.vue')
+      },
+      {
+        path: '/diferidos/editar/:id',
+        name: 'edit-diferido',
+        component: () => import('../pages/EditDiferidoPage.vue'),
+        props: true
       }
     ]
   },
