@@ -629,7 +629,7 @@ onMounted(() => {
                 </div>
               </div>
 
-              <div class="col-12 col-md-2">
+              <div class="col-12 col-md">
                 <div class="input-wrapper">
                   <label class="input-label">Correo Electrónico</label>
                   <q-input
@@ -647,7 +647,7 @@ onMounted(() => {
                 </div>
               </div>
 
-              <div class="col-12 col-md-1">
+              <div class="col-12 col-md-auto self-end">
                 <q-btn
                   unelevated
                   color="positive"
@@ -657,7 +657,9 @@ onMounted(() => {
                   dense
                   class="full-width"
                   style="height: 32px;"
-                />
+                >
+                  <q-tooltip>Agregar contacto</q-tooltip>
+                </q-btn>
               </div>
             </div>
 

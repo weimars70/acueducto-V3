@@ -202,10 +202,11 @@ watch(() => props.terceroCodigo, (newValue) => {
       <h3 class="section-title">Contactos del Tercero</h3>
     </div>
 
-    <!-- Formulario inline - UNA SOLA FILA -->
-    <div class="form-inline">
-      <div class="inline-field">
-        <label class="inline-label">Tipo</label>
+    <!-- Formulario inline - Grid System -->
+    <div class="row q-col-gutter-xs q-mb-xs items-end">
+      <!-- Tipo: 2 cols -->
+      <div class="col-12 col-md-2">
+        <label class="input-label">Tipo</label>
         <q-select
           v-model="formData.tipoContacto"
           :options="tiposContacto"
@@ -214,84 +215,90 @@ watch(() => props.terceroCodigo, (newValue) => {
           outlined
           dense
           placeholder="Tipo Contacto"
-          class="inline-input"
-          style="width: 140px"
+          class="modern-input"
         />
       </div>
 
-      <div class="inline-field">
-        <label class="inline-label">Nombre <span class="required">*</span></label>
+      <!-- Nombre: 3 cols -->
+      <div class="col-12 col-md-3">
+        <label class="input-label">Nombre <span class="required">*</span></label>
         <q-input
           v-model="formData.nombre"
           placeholder="Ej: Juan Pérez"
           outlined
           dense
-          class="inline-input"
-          style="width: 160px"
+          class="modern-input"
         />
       </div>
 
-      <div class="inline-field">
-        <label class="inline-label">Teléfono <span class="required">*</span></label>
+      <!-- Teléfono: 2 cols -->
+      <div class="col-12 col-md-2">
+        <label class="input-label">Teléfono <span class="required">*</span></label>
         <q-input
           v-model="formData.telefono"
           placeholder="300 123 4567"
           outlined
           dense
-          class="inline-input"
-          style="width: 120px"
+          class="modern-input"
         />
       </div>
 
-      <div class="inline-field">
-        <label class="inline-label">Dirección</label>
+      <!-- Dirección: 2 cols -->
+      <div class="col-12 col-md-2">
+        <label class="input-label">Dirección</label>
         <q-input
           v-model="formData.direccion"
           placeholder="Dirección"
           outlined
           dense
-          class="inline-input"
-          style="flex: 1; min-width: 150px"
+          class="modern-input"
         />
       </div>
 
-      <div class="inline-field">
-        <label class="inline-label">Correo</label>
+      <!-- Correo: Grow to fill -->
+      <div class="col-12 col-md">
+        <label class="input-label">Correo</label>
         <q-input
           v-model="formData.correo"
           type="email"
           placeholder="correo@ejemplo.com"
           outlined
           dense
-          class="inline-input"
-          style="width: 160px"
+          class="modern-input"
         />
       </div>
 
-      <q-btn
-        unelevated
-        :label="editMode ? 'Actualizar' : 'Agregar'"
-        :color="editMode ? 'primary' : 'positive'"
-        @click="handleSubmit"
-        :loading="loading"
-        size="sm"
-        dense
-        :icon="editMode ? 'save' : 'add'"
-        class="action-btn-green"
-        style="width: 110px"
-      />
-
-      <q-btn
-        v-if="editMode"
-        outline
-        label="Cancelar"
-        color="grey-7"
-        @click="handleCancelEdit"
-        size="sm"
-        dense
-        icon="close"
-        style="width: 100px"
-      />
+      <!-- Botones: Auto width -->
+      <div class="col-12 col-md-auto flex items-end">
+        <div class="row q-col-gutter-xs full-width">
+          <div class="col-auto">
+            <q-btn
+              unelevated
+              :label="editMode ? 'Actualizar' : 'Agregar'"
+              :color="editMode ? 'primary' : 'positive'"
+              @click="handleSubmit"
+              :loading="loading"
+              dense
+              class="full-width"
+              style="height: 32px; min-height: 32px; min-width: 80px;"
+            >
+              <q-tooltip>{{ editMode ? 'Actualizar Contacto' : 'Agregar Contacto' }}</q-tooltip>
+            </q-btn>
+          </div>
+          <div v-if="editMode" class="col-auto">
+            <q-btn
+              outline
+              color="grey-7"
+              @click="handleCancelEdit"
+              dense
+              icon="close"
+              style="height: 32px; width: 32px; min-height: 32px;"
+            >
+               <q-tooltip>Cancelar</q-tooltip>
+            </q-btn>
+          </div>
+        </div>
+      </div>
     </div>
 
     <q-card flat class="contactos-card">
@@ -369,47 +376,29 @@ watch(() => props.terceroCodigo, (newValue) => {
   color: #1a202c;
 }
 
-.form-inline {
-  display: flex;
-  gap: 6px;
-  align-items: flex-end;
-  margin-bottom: 8px;
-  flex-wrap: wrap;
-}
-
-.inline-field {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.inline-label {
-  font-size: 10px;
-  font-weight: 600;
+.input-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
   color: #4a5568;
-  letter-spacing: 0.2px;
-  text-transform: uppercase;
   margin-bottom: 2px;
+  letter-spacing: 0.2px;
 }
 
-.required {
-  color: #e53e3e;
-  font-weight: 700;
-}
-
-.inline-input {
+.modern-input {
   :deep(.q-field__control) {
-    border-radius: 4px;
+    border-radius: 6px;
     height: 32px;
     min-height: 32px;
-    background: white;
+    background: #fafafa;
+    transition: all 0.3s ease;
 
     &:before {
-      border-color: #d1d5db;
+      border-color: #e2e8f0;
     }
 
     &:hover:before {
-      border-color: #9ca3af;
+      border-color: #cbd5e0;
     }
   }
 
@@ -417,7 +406,7 @@ watch(() => props.terceroCodigo, (newValue) => {
     background: white;
 
     &:before {
-      border-color: #1976d2 !important;
+      border-color: #3b82f6 !important;
       border-width: 1px !important;
     }
   }
@@ -425,12 +414,17 @@ watch(() => props.terceroCodigo, (newValue) => {
   :deep(.q-field__native),
   :deep(.q-field__input) {
     font-size: 12px;
-    color: #374151;
+    color: #2d3748;
+    font-weight: 500;
     padding: 0 8px;
   }
 
   :deep(.q-field__prepend) {
     padding-right: 4px;
+  }
+
+  :deep(.q-icon) {
+    font-size: 16px;
   }
 }
 
