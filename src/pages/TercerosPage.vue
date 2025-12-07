@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
 import { terceroService } from '../services/api/tercero.service';
-import type { Tercero } from '../types/tercero';
 
 const $q = useQuasar();
 const router = useRouter();
 const terceros = ref<any[]>([]);
 const loading = ref(true);
 const filter = ref('');
+const columnFilters = ref<Record<string, string>>({});
 const pagination = ref({
   sortBy: 'codigo',
   descending: false,
@@ -31,7 +31,20 @@ const columns = [
   { name: 'actions', label: 'Acciones', field: 'actions', align: 'center' as const }
 ];
 
+const filteredTerceros = computed(() => {
+  return terceros.value.filter(row => {
+    return Object.keys(columnFilters.value).every(key => {
+      if (!columnFilters.value[key]) return true;
+      const val = String(row[key] || '').toLowerCase();
+      // Special handling for boolean status fields if needed, but string check works for simple contains
+      // If row[key] is boolean, String(row[key]) is 'true' or 'false'.
+      return val.includes(columnFilters.value[key].toLowerCase());
+    });
+  });
+});
+
 const loadData = async () => {
+  // ... existing code ...
   try {
     loading.value = true;
     const response = await terceroService.getAll({
@@ -158,7 +171,7 @@ onMounted(() => {
       <!-- Table Card -->
       <q-card flat class="table-card">
         <q-table
-          :rows="terceros"
+          :rows="filteredTerceros"
           :columns="columns"
           :loading="loading"
           v-model:pagination="pagination"
@@ -168,6 +181,26 @@ onMounted(() => {
           :rows-per-page-options="[12, 24, 48]"
           class="modern-table"
         >
+          <template v-slot:header="props">
+            <q-tr :props="props">
+              <q-th v-for="col in props.cols" :key="col.name" :props="props">
+                {{ col.label }}
+              </q-th>
+            </q-tr>
+            <q-tr :props="props">
+              <q-th v-for="col in props.cols" :key="col.name">
+                <q-input
+                  v-if="col.name !== 'actions'"
+                  v-model="columnFilters[col.field]"
+                  dense
+                  outlined
+                  class="bg-white"
+                  placeholder="Filtrar..."
+                  style="min-width: 60px"
+                />
+              </q-th>
+            </q-tr>
+          </template>
           <!-- Cliente Badge -->
           <template v-slot:body-cell-cliente="props">
             <q-td :props="props">

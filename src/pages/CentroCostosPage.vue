@@ -14,7 +14,7 @@ const loading = ref(true);
 const filter = ref('');
 
 const columns = [
-  { name: 'id', label: 'ID', field: 'id', align: 'left' as const, sortable: true },
+  { name: 'codigo', label: 'Código', field: 'codigo', align: 'left' as const, sortable: true },
   { name: 'nombre', label: 'Nombre', field: 'nombre', align: 'left' as const, sortable: true },
   { name: 'actions', label: 'Acciones', field: 'actions', align: 'center' as const }
 ];
@@ -49,7 +49,7 @@ const handleNew = () => {
 };
 
 const handleEdit = (centroCostos: CentroCostos) => {
-  router.push(`/centro-costos/edit/${centroCostos.id}`);
+  router.push(`/centro-costos/edit/${centroCostos.codigo}`);
 };
 
 const handleDelete = async (centroCostos: CentroCostos) => {
@@ -60,7 +60,7 @@ const handleDelete = async (centroCostos: CentroCostos) => {
     persistent: true
   }).onOk(async () => {
     try {
-      await centroCostosService.delete(centroCostos.id);
+      await centroCostosService.delete(centroCostos.codigo);
       $q.notify({
         type: 'positive',
         message: 'Centro de costos eliminado exitosamente'
@@ -135,16 +135,16 @@ onMounted(() => {
         <q-table
           :rows="filteredData()"
           :columns="columns"
-          row-key="id"
+          row-key="codigo"
           :loading="loading"
           flat
           :rows-per-page-options="[0]"
           hide-pagination
           class="modern-table"
         >
-          <template v-slot:body-cell-id="props">
+          <template v-slot:body-cell-codigo="props">
             <q-td :props="props">
-              <span class="text-weight-bold text-primary">{{ props.row.id }}</span>
+              <span class="text-weight-bold text-primary">{{ props.row.codigo }}</span>
             </q-td>
           </template>
 

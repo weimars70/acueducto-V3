@@ -1,22 +1,16 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, PrimaryColumn } from 'typeorm';
 
 @Entity('centro_costos')
 export class CentroCostos {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn({ name: 'codigo' })
+  codigo: number;
 
-  @Column({ name: 'empresa_id' })
-  empresaId: number;
-
-  @Column({ length: 10, unique: false })
-  codigo: string;
-
-  @Column({ length: 100 })
+  @Column({ name: 'nombre' })
   nombre: string;
 
-  @Column({ type: 'text', nullable: true })
-  descripcion: string;
+  @PrimaryColumn({ name: 'empresa_id' })
+  empresaId: number;
 
-  @Column({ default: true })
-  activo: boolean;
+  @Column({ name: 'usuario', nullable: true })
+  usuario: string;
 }

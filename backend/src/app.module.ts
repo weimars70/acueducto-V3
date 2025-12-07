@@ -30,6 +30,8 @@ import { EstratosTipoModule } from './estratos-tipo/estratos-tipo.module';
 import { EstratosTarifasModule } from './estratos-tarifas/estratos-tarifas.module';
 import { ComprasModule } from './compras/compras.module';
 import { MovimientosInventarioModule } from './movimientos-inventario/movimientos-inventario.module';
+import { SectoresModule } from './sectores/sectores.module';
+import { ProfesionesModule } from './profesiones/profesiones.module';
 
 @Module({
   imports: [
@@ -67,6 +69,8 @@ import { MovimientosInventarioModule } from './movimientos-inventario/movimiento
     EstratosTarifasModule,
     ComprasModule,
     MovimientosInventarioModule,
+    SectoresModule,
+    ProfesionesModule,
   ],
 })
 export class AppModule { }

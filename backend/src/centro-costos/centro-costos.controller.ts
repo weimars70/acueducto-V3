@@ -6,8 +6,8 @@ import {
   Delete,
   Body,
   Param,
-  Query,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { CentroCostosService } from './centro-costos.service';
 import { CreateCentroCostosDto } from './dto/create-centro-costos.dto';
@@ -15,37 +15,36 @@ import { UpdateCentroCostosDto } from './dto/update-centro-costos.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('centro-costos')
+@UseGuards(JwtAuthGuard)
 export class CentroCostosController {
-  constructor(private readonly centroCostosService: CentroCostosService) {}
+  constructor(private readonly centroCostosService: CentroCostosService) { }
 
   @Get()
-  async findAll(@Query('empresaId') empresaId: string) {
-    return this.centroCostosService.findAll(parseInt(empresaId, 10));
+  async findAll(@Req() req) {
+    return this.centroCostosService.findAll(req.user.empresaId);
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return this.centroCostosService.findOne(parseInt(id, 10));
+  async findOne(@Param('id') id: string, @Req() req) {
+    return this.centroCostosService.findOne(parseInt(id, 10), req.user.empresaId);
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard)
-  async create(@Body() createCentroCostosDto: CreateCentroCostosDto) {
-    return this.centroCostosService.create(createCentroCostosDto);
+  async create(@Body() createCentroCostosDto: CreateCentroCostosDto, @Req() req) {
+    return this.centroCostosService.create(createCentroCostosDto, req.user.userId, req.user.empresaId);
   }
 
   @Put(':id')
-  @UseGuards(JwtAuthGuard)
   async update(
     @Param('id') id: string,
     @Body() updateCentroCostosDto: UpdateCentroCostosDto,
+    @Req() req,
   ) {
-    return this.centroCostosService.update(parseInt(id, 10), updateCentroCostosDto);
+    return this.centroCostosService.update(parseInt(id, 10), updateCentroCostosDto, req.user.userId, req.user.empresaId);
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  async remove(@Param('id') id: string) {
-    return this.centroCostosService.remove(parseInt(id, 10));
+  async remove(@Param('id') id: string, @Req() req) {
+    return this.centroCostosService.remove(parseInt(id, 10), req.user.empresaId);
   }
 }

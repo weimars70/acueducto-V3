@@ -12,9 +12,7 @@ const authStore = useAuthStore();
 const loading = ref(false);
 
 const formData = ref<CreateCentroCostosDto>({
-  nombre: '',
-  empresa_id: authStore.user?.empresaId || 1,
-  usuario: authStore.user?.email || ''
+  nombre: ''
 });
 
 const handleSubmit = async () => {

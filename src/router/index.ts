@@ -49,7 +49,31 @@ const routes = [
       },
       {
         path: '/sectores',
-        component: () => import('../pages/generic-capture/SectorsPage.vue')
+        component: () => import('../pages/SectoresPage.vue')
+      },
+      {
+        path: '/sectores/new',
+        component: () => import('../pages/NewSectorPage.vue')
+      },
+      {
+        path: '/sectores/edit/:id',
+        name: 'edit-sector',
+        component: () => import('../pages/EditSectorPage.vue'),
+        props: true
+      },
+      {
+        path: '/profesiones',
+        component: () => import('../pages/ProfesionesPage.vue')
+      },
+      {
+        path: '/profesiones/new',
+        component: () => import('../pages/NewProfesionPage.vue')
+      },
+      {
+        path: '/profesiones/edit/:id',
+        name: 'edit-profesion',
+        component: () => import('../pages/EditProfesionPage.vue'),
+        props: true
       },
       {
         path: '/tarifas',

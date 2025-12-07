@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { CentroCostos } from '../entities/centro-costos.entity';
 import { CreateCentroCostosDto } from './dto/create-centro-costos.dto';
 import { UpdateCentroCostosDto } from './dto/update-centro-costos.dto';
@@ -10,6 +10,7 @@ export class CentroCostosService {
   constructor(
     @InjectRepository(CentroCostos)
     private readonly centroCostosRepository: Repository<CentroCostos>,
+    private readonly dataSource: DataSource,
   ) { }
 
   async findAll(empresaId: number) {
@@ -23,14 +24,14 @@ export class CentroCostosService {
     }
   }
 
-  async findOne(id: number) {
+  async findOne(codigo: number, empresaId: number) {
     try {
       const centroCostos = await this.centroCostosRepository.findOne({
-        where: { id },
+        where: { codigo, empresaId },
       });
 
       if (!centroCostos) {
-        throw new Error(`Centro de costos con ID ${id} no encontrado`);
+        throw new NotFoundException(`Centro de costos con código ${codigo} no encontrado`);
       }
 
       return centroCostos;
@@ -39,13 +40,17 @@ export class CentroCostosService {
     }
   }
 
-  async create(createCentroCostosDto: CreateCentroCostosDto) {
+  async create(createCentroCostosDto: CreateCentroCostosDto, userId: number, empresaId: number) {
     try {
+      // Obtener nombre del usuario
+      const userData = await this.dataSource.query('SELECT name FROM public.users WHERE id = $1', [userId]);
+      const userName = userData[0]?.name || String(userId);
+
       // Verificar duplicados por nombre dentro de la misma empresa
       const existing = await this.centroCostosRepository.findOne({
         where: {
           nombre: createCentroCostosDto.nombre,
-          empresaId: createCentroCostosDto.empresaId,
+          empresaId: empresaId,
         },
       });
 
@@ -53,7 +58,11 @@ export class CentroCostosService {
         throw new Error('Ya existe un centro de costos con este nombre');
       }
 
-      const centroCostos = this.centroCostosRepository.create(createCentroCostosDto);
+      const centroCostos = this.centroCostosRepository.create({
+        ...createCentroCostosDto,
+        empresaId,
+        usuario: userName,
+      });
 
       return await this.centroCostosRepository.save(centroCostos);
     } catch (error) {
@@ -61,14 +70,18 @@ export class CentroCostosService {
     }
   }
 
-  async update(id: number, updateCentroCostosDto: UpdateCentroCostosDto) {
+  async update(codigo: number, updateCentroCostosDto: UpdateCentroCostosDto, userId: number, empresaId: number) {
     try {
+      // Obtener nombre del usuario
+      const userData = await this.dataSource.query('SELECT name FROM public.users WHERE id = $1', [userId]);
+      const userName = userData[0]?.name || String(userId);
+
       const centroCostos = await this.centroCostosRepository.findOne({
-        where: { id },
+        where: { codigo, empresaId },
       });
 
       if (!centroCostos) {
-        throw new Error(`Centro de costos con ID ${id} no encontrado`);
+        throw new NotFoundException(`Centro de costos con código ${codigo} no encontrado`);
       }
 
       // Verificar duplicados por nombre si se está actualizando
@@ -76,7 +89,7 @@ export class CentroCostosService {
         const existing = await this.centroCostosRepository.findOne({
           where: {
             nombre: updateCentroCostosDto.nombre,
-            empresaId: centroCostos.empresaId,
+            empresaId: empresaId,
           },
         });
 
@@ -87,6 +100,7 @@ export class CentroCostosService {
 
       // Actualizar solo los campos proporcionados
       Object.assign(centroCostos, updateCentroCostosDto);
+      centroCostos.usuario = userName;
 
       return await this.centroCostosRepository.save(centroCostos);
     } catch (error) {
@@ -94,14 +108,14 @@ export class CentroCostosService {
     }
   }
 
-  async remove(id: number) {
+  async remove(codigo: number, empresaId: number) {
     try {
       const centroCostos = await this.centroCostosRepository.findOne({
-        where: { id },
+        where: { codigo, empresaId },
       });
 
       if (!centroCostos) {
-        throw new Error(`Centro de costos con ID ${id} no encontrado`);
+        throw new NotFoundException(`Centro de costos con código ${codigo} no encontrado`);
       }
 
       await this.centroCostosRepository.remove(centroCostos);

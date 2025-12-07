@@ -29,6 +29,7 @@ export class ItemsService {
     }
 
     async findAll(empresaId: number): Promise<Item[]> {
+        console.log('empresaId', empresaId);
         return await this.itemRepository.find({
             where: { empresaId },
             order: { nombre: 'ASC' },

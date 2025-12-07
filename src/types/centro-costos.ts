@@ -1,5 +1,5 @@
 export interface CentroCostos {
-  id: number;
+  codigo: number;
   nombre: string;
   empresaId: number;
   usuario?: string;
@@ -7,11 +7,8 @@ export interface CentroCostos {
 
 export interface CreateCentroCostosDto {
   nombre: string;
-  empresa_id: number;
-  usuario?: string;
 }
 
 export interface UpdateCentroCostosDto {
   nombre?: string;
-  usuario?: string;
 }

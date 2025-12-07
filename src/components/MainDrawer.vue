@@ -56,6 +56,7 @@ const inventarioItems = [
     closable: true,
   },
   {
+    icon: 'star',
     label: 'Items',
     route: '/items',
     closable: true,
@@ -111,6 +112,18 @@ const maestrosItems = [
     icon: 'speed',
     label: 'Marcas Medidor',
     route: '/marcas-medidor',
+    closable: true,
+  },
+  {
+    icon: 'location_city',
+    label: 'Sectores',
+    route: '/sectores',
+    closable: true,
+  },
+  {
+    icon: 'work',
+    label: 'Profesiones',
+    route: '/profesiones',
     closable: true,
   },
   {

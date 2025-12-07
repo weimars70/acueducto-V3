@@ -1,20 +1,11 @@
-import { IsString, IsBoolean, IsOptional, IsNumber } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class CreateCentroCostosDto {
-  @IsNumber()
-  empresaId: number;
-
   @IsString()
-  codigo: string;
-
-  @IsString()
+  @IsNotEmpty()
   nombre: string;
 
-  @IsOptional()
   @IsString()
-  descripcion?: string;
-
   @IsOptional()
-  @IsBoolean()
-  activo?: boolean;
+  usuario?: string;
 }
