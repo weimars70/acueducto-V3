@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
-
+##dsbiolfqicmdozvs
 Water utility (acueducto) management system with offline-first capabilities for meter reading and billing. Built as a hybrid mobile/web application using Vue 3, Quasar, and NestJS. Supports geolocation-based readings, offline data capture with background sync, and real-time updates via WebSockets.
 
 ## Development Commands

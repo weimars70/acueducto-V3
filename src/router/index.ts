@@ -158,6 +158,48 @@ const routes = [
         props: true
       },
       {
+        path: '/items-grupos',
+        component: () => import('../pages/ItemsGruposPage.vue')
+      },
+      {
+        path: '/items-grupos/new',
+        component: () => import('../pages/NewItemGrupoPage.vue')
+      },
+      {
+        path: '/items-grupos/edit/:id',
+        name: 'edit-items-grupos',
+        component: () => import('../pages/EditItemGrupoPage.vue'),
+        props: true
+      },
+      {
+        path: '/tipo-movimiento-item',
+        component: () => import('../pages/TipoMovimientoItemPage.vue')
+      },
+      {
+        path: '/tipo-movimiento-item/new',
+        component: () => import('../pages/NewTipoMovimientoItemPage.vue')
+      },
+      {
+        path: '/tipo-movimiento-item/edit/:id',
+        name: 'edit-tipo-movimiento-item',
+        component: () => import('../pages/EditTipoMovimientoItemPage.vue'),
+        props: true
+      },
+      {
+        path: '/items',
+        component: () => import('../pages/ItemsPage.vue')
+      },
+      {
+        path: '/items/new',
+        component: () => import('../pages/NewItemPage.vue')
+      },
+      {
+        path: '/items/edit/:id',
+        name: 'edit-items',
+        component: () => import('../pages/EditItemPage.vue'),
+        props: true
+      },
+      {
         path: '/tarifas-maestro',
         component: () => import('../pages/TarifasPage.vue')
       },
@@ -350,6 +392,9 @@ router.beforeEach((to, from, next) => {
         { icon: 'location_city', label: 'Ciudades', route: '/ciudades', closable: true },
         { icon: 'people_alt', label: 'Clientes', route: '/clientes', closable: true },
         { icon: 'receipt', label: 'Impuestos', route: '/impuestos', closable: true },
+        { icon: 'category', label: 'Items Grupos', route: '/items-grupos', closable: true },
+        { icon: 'swap_horiz', label: 'Tipo Movimiento Item', route: '/tipo-movimiento-item', closable: true },
+        { icon: 'inventory_2', label: 'Items', route: '/items', closable: true },
         { icon: 'speed', label: 'Marcas Medidor', route: '/marcas-medidor', closable: true },
         { icon: 'payments', label: 'Tarifas Maestro', route: '/tarifas-maestro', closable: true },
         { icon: 'badge', label: 'Tipo Identificación', route: '/tipo-ident', closable: true },

@@ -42,7 +42,29 @@ const menuItems = [
   }
 ];
 
+const inventarioItems = [
+  {
+    icon: 'category',
+    label: 'Items Grupos',
+    route: '/items-grupos',
+    closable: true,
+  },
+  {
+    icon: 'swap_horiz',
+    label: 'Tipo Movimiento Item',
+    route: '/tipo-movimiento-item',
+    closable: true,
+  },
+  {
+    icon: 'inventory_2',
+    label: 'Items',
+    route: '/items',
+    closable: true,
+  }
+];
+
 const maestrosExpanded = ref(false);
+const inventarioExpanded = ref(false);
 const facturacionExpanded = ref(false);
 const diferidoExpanded = ref(false);
 const configuracionExpanded = ref(false);
@@ -261,6 +283,34 @@ const handleSync = async () => {
           {{ item.label }}
         </q-item-section>
       </q-item>
+
+      <q-separator spaced />
+
+      <!-- Inventario Section -->
+      <q-expansion-item
+        v-model="inventarioExpanded"
+        icon="inventory_2"
+        label="Inventario"
+        header-class="text-weight-bold"
+      >
+        <q-item
+          v-for="item in inventarioItems"
+          :key="item.route"
+          clickable
+          v-ripple
+          :active="router.currentRoute.value.path === item.route"
+          active-class="text-primary"
+          @click="navigateTo(item)"
+          class="q-pl-lg"
+        >
+          <q-item-section avatar>
+            <q-icon :name="item.icon" />
+          </q-item-section>
+          <q-item-section>
+            {{ item.label }}
+          </q-item-section>
+        </q-item>
+      </q-expansion-item>
 
       <q-separator spaced />
 
