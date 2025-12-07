@@ -56,9 +56,14 @@ const inventarioItems = [
     closable: true,
   },
   {
-    icon: 'inventory_2',
     label: 'Items',
     route: '/items',
+    closable: true,
+  },
+  {
+    icon: 'list_alt',
+    label: 'Listado Inventario',
+    route: '/movimientos-inventario',
     closable: true,
   }
 ];

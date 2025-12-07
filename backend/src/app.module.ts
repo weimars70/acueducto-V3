@@ -29,6 +29,7 @@ import { EstratosModule } from './estratos/estratos.module';
 import { EstratosTipoModule } from './estratos-tipo/estratos-tipo.module';
 import { EstratosTarifasModule } from './estratos-tarifas/estratos-tarifas.module';
 import { ComprasModule } from './compras/compras.module';
+import { MovimientosInventarioModule } from './movimientos-inventario/movimientos-inventario.module';
 
 @Module({
   imports: [
@@ -65,6 +66,7 @@ import { ComprasModule } from './compras/compras.module';
     EstratosTipoModule,
     EstratosTarifasModule,
     ComprasModule,
+    MovimientosInventarioModule,
   ],
 })
 export class AppModule { }
