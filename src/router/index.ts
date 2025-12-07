@@ -351,6 +351,23 @@ const routes = [
         name: 'edit-estrato-tarifa',
         component: () => import('../pages/EditEstratoTarifaPage.vue'),
         props: true
+      },
+      // Compras Routes
+      {
+        path: '/compras',
+        name: 'compras',
+        component: () => import('../pages/ComprasPage.vue')
+      },
+      {
+        path: '/compras/new',
+        name: 'new-compra',
+        component: () => import('../pages/NewCompraPage.vue')
+      },
+      {
+        path: '/compras/edit/:id',
+        name: 'edit-compra',
+        component: () => import('../pages/EditCompraPage.vue'),
+        props: true
       }
     ]
   },
@@ -396,6 +413,7 @@ router.beforeEach((to, from, next) => {
         { icon: 'location_city', label: 'Sectores', route: '/sectores', closable: true },
         { icon: 'payments', label: 'Tarifas', route: '/tarifas', closable: true },
         { icon: 'group_work', label: 'Estratos', route: '/estratos', closable: true },
+        { icon: 'shopping_cart', label: 'Compras', route: '/compras', closable: true },
         { icon: 'account_balance', label: 'Bancos', route: '/bancos', closable: true },
         { icon: 'account_tree', label: 'Centro de Costos', route: '/centro-costos', closable: true },
         { icon: 'location_city', label: 'Ciudades', route: '/ciudades', closable: true },

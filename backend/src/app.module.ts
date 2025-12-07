@@ -25,6 +25,7 @@ import { DiferidosModule } from './diferidos/diferidos.module';
 import { EstratosModule } from './estratos/estratos.module';
 import { EstratosTipoModule } from './estratos-tipo/estratos-tipo.module';
 import { EstratosTarifasModule } from './estratos-tarifas/estratos-tarifas.module';
+import { ComprasModule } from './compras/compras.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { EstratosTarifasModule } from './estratos-tarifas/estratos-tarifas.modul
     EstratosModule,
     EstratosTipoModule,
     EstratosTarifasModule,
+    ComprasModule,
   ],
 })
 export class AppModule { }
