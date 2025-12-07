@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Put, Param, Delete, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Put, Param, Delete, UseGuards, Req } from '@nestjs/common';
 import { TipoPersonaService } from './tipo-persona.service';
 import { CreateTipoPersonaDto } from './dto/create-tipo-persona.dto';
 import { UpdateTipoPersonaDto } from './dto/update-tipo-persona.dto';
@@ -10,31 +10,40 @@ export class TipoPersonaController {
     constructor(private readonly tipoPersonaService: TipoPersonaService) { }
 
     @Post()
-    create(@Body() createTipoPersonaDto: CreateTipoPersonaDto) {
-        return this.tipoPersonaService.create(createTipoPersonaDto);
+    create(@Body() createTipoPersonaDto: CreateTipoPersonaDto, @Req() req) {
+        return this.tipoPersonaService.create(
+            createTipoPersonaDto,
+            req.user.empresaId,
+            req.user.userId
+        );
     }
 
     @Get()
-    findAll(
-        @Query('page') page: number = 1,
-        @Query('limit') limit: number = 10,
-        @Query('nombre') nombre?: string,
-    ) {
-        return this.tipoPersonaService.findAll(page, limit, { nombre });
+    findAll(@Req() req) {
+        return this.tipoPersonaService.findAll(req.user.empresaId);
     }
 
     @Get(':codigo')
-    findOne(@Param('codigo') codigo: string) {
-        return this.tipoPersonaService.findOne(+codigo);
+    findOne(@Param('codigo') codigo: string, @Req() req) {
+        return this.tipoPersonaService.findOne(+codigo, req.user.empresaId);
     }
 
     @Put(':codigo')
-    update(@Param('codigo') codigo: string, @Body() updateTipoPersonaDto: UpdateTipoPersonaDto) {
-        return this.tipoPersonaService.update(+codigo, updateTipoPersonaDto);
+    update(
+        @Param('codigo') codigo: string,
+        @Body() updateTipoPersonaDto: UpdateTipoPersonaDto,
+        @Req() req
+    ) {
+        return this.tipoPersonaService.update(
+            +codigo,
+            updateTipoPersonaDto,
+            req.user.empresaId,
+            req.user.userId
+        );
     }
 
     @Delete(':codigo')
-    remove(@Param('codigo') codigo: string) {
-        return this.tipoPersonaService.remove(+codigo);
+    remove(@Param('codigo') codigo: string, @Req() req) {
+        return this.tipoPersonaService.remove(+codigo, req.user.empresaId);
     }
 }
