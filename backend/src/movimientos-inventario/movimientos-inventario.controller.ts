@@ -1,6 +1,6 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { MovimientosInventarioService } from './movimientos-inventario.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('movimientos-inventario')
 @UseGuards(JwtAuthGuard)
@@ -9,6 +9,7 @@ export class MovimientosInventarioController {
 
     @Get()
     findAll(@Query('empresaId') empresaId: string) {
+        console.log('empresaId', empresaId);
         return this.service.findAll(+empresaId);
     }
 }

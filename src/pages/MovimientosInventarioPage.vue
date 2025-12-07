@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useQuasar, type QTableColumn } from 'quasar';
 import { movimientosInventarioService } from '../services/api/movimientos-inventario.service';
 import { useAuthStore } from '../stores/auth';
@@ -20,6 +20,19 @@ const columns: QTableColumn[] = [
   { name: 'estado', label: 'Estado', field: 'estado', sortable: true, align: 'center' },
   { name: 'observaciones', label: 'Observaciones', field: 'observaciones', align: 'left' },
 ];
+
+const visibleColumns = ref([ 'fecha_movimiento', 'nombre', 'n_tipo_movimiento', 'cantidad', 'estado' ]);
+const columnFilters = ref<Record<string, string>>({});
+
+const filteredMovimientos = computed(() => {
+  return movimientos.value.filter(row => {
+    return Object.keys(columnFilters.value).every(key => {
+      if (!columnFilters.value[key]) return true;
+      const val = String(row[key as keyof MovimientoInventario]).toLowerCase();
+      return val.includes(columnFilters.value[key].toLowerCase());
+    });
+  });
+});
 
 const loadMovimientos = async () => {
   try {
@@ -55,33 +68,76 @@ onMounted(() => {
 
     <q-card class="shadow-2 rounded-xl bg-white">
       <q-table
-        :rows="movimientos"
+        :rows="filteredMovimientos"
         :columns="columns"
         row-key="id_movimiento"
         :loading="loading"
         :filter="filter"
+        :visible-columns="visibleColumns"
         flat
         class="no-border"
         :pagination="{ rowsPerPage: 10 }"
       >
         <template v-slot:top>
-           <div class="row full-width items-center q-py-sm">
-              <div class="text-h6 text-weight-medium text-primary">Detalle</div>
+           <div class="row full-width items-center q-py-sm q-col-gutter-md">
+              <div class="col-12 col-sm-auto text-h6 text-weight-medium text-primary">Detalle</div>
               <q-space />
-              <q-input 
-                outlined 
-                dense 
-                debounce="300" 
-                v-model="filter" 
-                placeholder="Buscar..."
-                class="search-input bg-grey-1"
-                rounded
-              >
-                <template v-slot:prepend>
-                  <q-icon name="search" color="grey-5" />
-                </template>
-              </q-input>
+              
+              <div class="col-12 col-sm-auto">
+                <q-select
+                  v-model="visibleColumns"
+                  multiple
+                  outlined
+                  dense
+                  options-dense
+                  :display-value="$q.lang.table.columns"
+                  emit-value
+                  map-options
+                  :options="columns"
+                  option-value="name"
+                  options-cover
+                  style="min-width: 150px"
+                  bg-color="white"
+                  rounded
+                />
+              </div>
+
+              <div class="col-12 col-sm-auto">
+                <q-input 
+                  outlined 
+                  dense 
+                  debounce="300" 
+                  v-model="filter" 
+                  placeholder="Buscar..."
+                  class="search-input bg-grey-1"
+                  rounded
+                >
+                  <template v-slot:prepend>
+                    <q-icon name="search" color="grey-5" />
+                  </template>
+                </q-input>
+              </div>
            </div>
+        </template>
+
+        <template v-slot:header="props">
+          <q-tr :props="props">
+            <q-th v-for="col in props.cols" :key="col.name" :props="props">
+              {{ col.label }}
+            </q-th>
+          </q-tr>
+          <q-tr :props="props">
+            <q-th v-for="col in props.cols" :key="col.name">
+              <q-input
+                v-model="columnFilters[col.name]"
+                dense
+                outlined
+                class="bg-white"
+                placeholder="Filtrar..."
+                style="min-width: 60px"
+              />
+            </q-th>
+          </q-tr>
         </template>
         
         <template v-slot:body-cell-estado="props">
@@ -97,7 +153,7 @@ onMounted(() => {
 <style scoped>
 .rounded-xl { border-radius: 20px; }
 .rounded-borders { border-radius: 12px; }
-.search-input { width: 280px; }
+.search-input { min-width: 200px; }
 :deep(.q-table__card) { box-shadow: none; }
 :deep(.q-table th) { font-size: 0.75rem; letter-spacing: 0.05em; font-weight: bold; color: #616161; }
 </style>
