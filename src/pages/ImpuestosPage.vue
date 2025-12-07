@@ -5,10 +5,12 @@ import { useRouter } from 'vue-router';
 import { impuestoService } from '../services/api/impuesto.service';
 import { useAuthStore } from '../stores/auth';
 import type { Impuesto } from '../types/impuesto';
+import { useExport } from '../composables/useExport';
 
 const $q = useQuasar();
 const router = useRouter();
 const authStore = useAuthStore();
+const { exportToExcel, exportToPDF } = useExport();
 const impuestos = ref<Impuesto[]>([]);
 const loading = ref(true);
 const filter = ref('');
@@ -78,6 +80,34 @@ const handleDelete = async (impuesto: Impuesto) => {
   });
 };
 
+const handleExportExcel = () => {
+  try {
+    const exportColumns = [
+      { field: 'id', label: 'ID' },
+      { field: 'nombre', label: 'Nombre' },
+      { field: 'porcentaje', label: 'Porcentaje' }
+    ];
+    exportToExcel(filteredData(), exportColumns, 'impuestos');
+    $q.notify({ type: 'positive', message: 'Exportado a Excel exitosamente' });
+  } catch (error) {
+    $q.notify({ type: 'negative', message: 'Error al exportar a Excel' });
+  }
+};
+
+const handleExportPDF = () => {
+  try {
+    const exportColumns = [
+      { field: 'id', label: 'ID' },
+      { field: 'nombre', label: 'Nombre' },
+      { field: 'porcentaje', label: 'Porcentaje' }
+    ];
+    exportToPDF(filteredData(), exportColumns, 'impuestos', 'Listado de Impuestos');
+    $q.notify({ type: 'positive', message: 'Exportado a PDF exitosamente' });
+  } catch (error) {
+    $q.notify({ type: 'negative', message: 'Error al exportar a PDF' });
+  }
+};
+
 onMounted(() => {
   loadData();
 });
@@ -96,14 +126,11 @@ onMounted(() => {
               <p class="page-subtitle">Gestión de impuestos</p>
             </div>
           </div>
-          <q-btn
-            unelevated
-            color="primary"
-            icon="add"
-            label="Nuevo Impuesto"
-            class="action-btn"
-            @click="handleNew"
-          />
+          <div class="row q-gutter-sm">
+            <q-btn outline color="positive" icon="description" label="Excel" @click="handleExportExcel" no-caps class="export-btn"><q-tooltip>Exportar a Excel</q-tooltip></q-btn>
+            <q-btn outline color="negative" icon="picture_as_pdf" label="PDF" @click="handleExportPDF" no-caps class="export-btn"><q-tooltip>Exportar a PDF</q-tooltip></q-btn>
+            <q-btn unelevated color="primary" icon="add" label="Nuevo Impuesto" class="action-btn" @click="handleNew" />
+          </div>
         </div>
       </div>
 
@@ -331,4 +358,6 @@ onMounted(() => {
     max-width: 100%;
   }
 }
+.export-btn{min-width:90px;height:36px;font-weight:500;border-radius:8px;transition:all .3s ease}
+.export-btn:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.15)}
 </style>
