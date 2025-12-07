@@ -4,9 +4,11 @@ import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
 import { bancoService } from '../services/api/banco.service';
 import type { Banco } from '../types/banco';
+import { useExport } from '../composables/useExport';
 
 const $q = useQuasar();
 const router = useRouter();
+const { exportToExcel, exportToPDF } = useExport();
 const bancos = ref<Banco[]>([]);
 const loading = ref(true);
 const filter = ref('');
@@ -134,6 +136,40 @@ const prevPage = () => {
   }
 };
 
+const handleExportExcel = () => {
+  try {
+    const exportColumns = [
+      { field: 'codigo', label: 'Código' },
+      { field: 'nombre', label: 'Nombre' },
+      { field: 'numero_cuenta', label: 'Número de Cuenta' },
+      { field: 'titular', label: 'Titular' },
+      { field: 'entidad_financiera', label: 'Entidad Financiera' },
+      { field: 'moneda', label: 'Moneda' }
+    ];
+    exportToExcel(bancos.value, exportColumns, 'bancos');
+    $q.notify({ type: 'positive', message: 'Exportado a Excel exitosamente' });
+  } catch (error) {
+    $q.notify({ type: 'negative', message: 'Error al exportar a Excel' });
+  }
+};
+
+const handleExportPDF = () => {
+  try {
+    const exportColumns = [
+      { field: 'codigo', label: 'Código' },
+      { field: 'nombre', label: 'Nombre' },
+      { field: 'numero_cuenta', label: 'Número de Cuenta' },
+      { field: 'titular', label: 'Titular' },
+      { field: 'entidad_financiera', label: 'Entidad Financiera' },
+      { field: 'moneda', label: 'Moneda' }
+    ];
+    exportToPDF(bancos.value, exportColumns, 'bancos', 'Listado de Bancos');
+    $q.notify({ type: 'positive', message: 'Exportado a PDF exitosamente' });
+  } catch (error) {
+    $q.notify({ type: 'negative', message: 'Error al exportar a PDF' });
+  }
+};
+
 onMounted(() => {
   loadData();
 });
@@ -152,14 +188,15 @@ onMounted(() => {
               <p class="page-subtitle">Gestión de cuentas bancarias</p>
             </div>
           </div>
-          <q-btn
-            unelevated
-            color="primary"
-            icon="add"
-            label="Nuevo Banco"
-            class="action-btn"
-            @click="handleNew"
-          />
+          <div class="row q-gutter-sm">
+            <q-btn outline color="positive" icon="description" label="Excel" @click="handleExportExcel" no-caps class="export-btn">
+              <q-tooltip>Exportar a Excel</q-tooltip>
+            </q-btn>
+            <q-btn outline color="negative" icon="picture_as_pdf" label="PDF" @click="handleExportPDF" no-caps class="export-btn">
+              <q-tooltip>Exportar a PDF</q-tooltip>
+            </q-btn>
+            <q-btn unelevated color="primary" icon="add" label="Nuevo Banco" class="action-btn" @click="handleNew" />
+          </div>
         </div>
       </div>
 
@@ -676,5 +713,18 @@ onMounted(() => {
   .cards-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.export-btn {
+  min-width: 90px;
+  height: 36px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.export-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 </style>
