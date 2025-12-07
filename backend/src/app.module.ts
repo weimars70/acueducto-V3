@@ -25,6 +25,9 @@ import { DiferidosModule } from './diferidos/diferidos.module';
 import { ItemsGruposModule } from './items-grupos/items-grupos.module';
 import { ItemsModule } from './items/items.module';
 import { TipoMovimientoItemModule } from './tipo-movimiento-item/tipo-movimiento-item.module';
+import { EstratosModule } from './estratos/estratos.module';
+import { EstratosTipoModule } from './estratos-tipo/estratos-tipo.module';
+import { EstratosTarifasModule } from './estratos-tarifas/estratos-tarifas.module';
 
 @Module({
   imports: [
@@ -57,6 +60,9 @@ import { TipoMovimientoItemModule } from './tipo-movimiento-item/tipo-movimiento
     ItemsGruposModule,
     ItemsModule,
     TipoMovimientoItemModule,
+    EstratosModule,
+    EstratosTipoModule,
+    EstratosTarifasModule,
   ],
 })
 export class AppModule { }

@@ -56,8 +56,8 @@ const routes = [
         component: () => import('../pages/generic-capture/TarifasPage.vue')
       },
       {
-        path: '/estratos',
-        component: () => import('../pages/generic-capture/EstratosPage.vue')
+        path: '/tarifas',
+        component: () => import('../pages/generic-capture/TarifasPage.vue')
       },
       {
         path: '/bancos',
@@ -341,6 +341,57 @@ const routes = [
         path: '/diferidos/editar/:id',
         name: 'edit-diferido',
         component: () => import('../pages/EditDiferidoPage.vue'),
+        props: true
+      },
+      // Estratos Routes
+      {
+        path: '/estratos',
+        name: 'estratos',
+        component: () => import('../pages/EstratosPage.vue')
+      },
+      {
+        path: '/estratos/nuevo',
+        name: 'new-estrato',
+        component: () => import('../pages/NewEstratoPage.vue')
+      },
+      {
+        path: '/estratos/editar/:id',
+        name: 'edit-estrato',
+        component: () => import('../pages/EditEstratoPage.vue'),
+        props: true
+      },
+      // Estratos Tipo Routes
+      {
+        path: '/estratos-tipo',
+        name: 'estratos-tipo',
+        component: () => import('../pages/EstratosTipoPage.vue')
+      },
+      {
+        path: '/estratos-tipo/nuevo',
+        name: 'new-estrato-tipo',
+        component: () => import('../pages/NewEstratoTipoPage.vue')
+      },
+      {
+        path: '/estratos-tipo/editar/:codigo',
+        name: 'edit-estrato-tipo',
+        component: () => import('../pages/EditEstratoTipoPage.vue'),
+        props: true
+      },
+      // Estratos Tarifas Routes
+      {
+        path: '/estratos-tarifas',
+        type: 'estratos-tarifas',
+        component: () => import('../pages/EstratosTarifasPage.vue')
+      },
+      {
+        path: '/estratos-tarifas/nuevo',
+        name: 'new-estrato-tarifa',
+        component: () => import('../pages/NewEstratoTarifaPage.vue')
+      },
+      {
+        path: '/estratos-tarifas/editar/:codigo/:tipo',
+        name: 'edit-estrato-tarifa',
+        component: () => import('../pages/EditEstratoTarifaPage.vue'),
         props: true
       }
     ]

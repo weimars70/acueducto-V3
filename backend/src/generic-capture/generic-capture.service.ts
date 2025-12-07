@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { GenericCaptureDto } from './dto/generic-capture.dto';
 import { Sector } from '../entities/sector.entity';
 import { Tarifa } from '../entities/tarifa.entity';
-import { Estrato } from '../entities/estrato.entity';
+
 
 @Injectable()
 export class GenericCaptureService {
@@ -14,14 +14,11 @@ export class GenericCaptureService {
     @InjectRepository(Sector)
     private readonly sectoresRepository: Repository<Sector>,
     @InjectRepository(Tarifa)
-    private readonly tarifasRepository: Repository<Tarifa>,
-    @InjectRepository(Estrato)
-    private readonly estratosRepository: Repository<Estrato>
+    private readonly tarifasRepository: Repository<Tarifa>
   ) {
     this.repositories = {
       sectores: sectoresRepository,
-      tarifas: tarifasRepository,
-      estratos: estratosRepository
+      tarifas: tarifasRepository
     };
   }
 
@@ -73,7 +70,7 @@ export class GenericCaptureService {
     try {
       const repository = this.getRepository(tabla);
       const result = await repository.delete(codigo);
-      
+
       if (result.affected === 0) {
         throw new Error(`Registro no encontrado en ${tabla}`);
       }

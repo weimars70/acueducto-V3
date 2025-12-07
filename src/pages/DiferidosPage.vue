@@ -19,6 +19,7 @@ const columns = [
   { name: 'contrato', label: 'Contrato', field: (row: Diferido) => row.contrato ? `${row.contrato.nombre} (${row.contratoId})` : row.contratoId, sortable: true, align: 'left' },
   { name: 'concepto', label: 'Concepto', field: (row: Diferido) => row.concepto?.nombre || row.conceptoDiferidoId, sortable: true, align: 'left' },
   { name: 'monto', label: 'Monto Original', field: 'montoOriginal', sortable: true, align: 'right', format: (val: number) => `$ ${val.toLocaleString()}` },
+  { name: 'saldo', label: 'Saldo', field: 'saldo', sortable: true, align: 'right', format: (val: number) => `$ ${val ? Number(val).toLocaleString() : '0'}` },
   { name: 'valorCuota', label: 'Valor Cuota', field: 'valorCuota', sortable: true, align: 'right', format: (val: number) => `$ ${val ? val.toLocaleString() : '0'}` },
   { name: 'cuotas', label: 'Cuotas', field: 'cuotasPendientes', sortable: true, align: 'center' },
   { name: 'progreso', label: 'Progreso', field: 'progreso', align: 'left', style: 'width: 150px' },

@@ -16,6 +16,11 @@ export class Diferido {
     @Column({ name: 'monto_original', type: 'numeric', precision: 10, scale: 2 })
     montoOriginal: number;
 
+    @Column({ name: 'saldo', type: 'numeric', precision: 10, scale: 2, default: 0 })
+    saldo: number;
+
+    @Column({ name: 'numero_cuotas' })
+
     @Column({ name: 'numero_cuotas' })
     numeroCuotas: number;
 

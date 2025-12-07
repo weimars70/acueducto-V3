@@ -29,6 +29,7 @@ export class DiferidosService {
                     const totalConInteres = monto + (monto * (interes / 100));
                     return totalConInteres / cuotas;
                 })(),
+            saldo: createDto.montoOriginal,
             estado: 'PENDIENTE'
         });
         return await this.diferidoRepository.save(diferido);
