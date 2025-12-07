@@ -3,9 +3,11 @@ import { ref, onMounted, computed } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
 import { terceroService } from '../services/api/tercero.service';
+import { useExport } from '../composables/useExport';
 
 const $q = useQuasar();
 const router = useRouter();
+const { exportToExcel, exportToPDF } = useExport();
 const terceros = ref<any[]>([]);
 const loading = ref(true);
 const filter = ref('');
@@ -112,6 +114,40 @@ const handleDelete = async (tercero: any) => {
   });
 };
 
+const handleExportExcel = () => {
+  try {
+    const exportColumns = [
+      { field: 'codigo', label: 'Código' },
+      { field: 'nombre', label: 'Nombre' },
+      { field: 'identificacion', label: 'Identificación' },
+      { field: 'ciudad_nombre', label: 'Ciudad' },
+      { field: 'telefono', label: 'Teléfono' },
+      { field: 'email', label: 'Email' }
+    ];
+    exportToExcel(filteredTerceros.value, exportColumns, 'terceros');
+    $q.notify({ type: 'positive', message: 'Exportado a Excel exitosamente' });
+  } catch (error) {
+    $q.notify({ type: 'negative', message: 'Error al exportar a Excel' });
+  }
+};
+
+const handleExportPDF = () => {
+  try {
+    const exportColumns = [
+      { field: 'codigo', label: 'Código' },
+      { field: 'nombre', label: 'Nombre' },
+      { field: 'identificacion', label: 'Identificación' },
+      { field: 'ciudad_nombre', label: 'Ciudad' },
+      { field: 'telefono', label: 'Teléfono' },
+      { field: 'email', label: 'Email' }
+    ];
+    exportToPDF(filteredTerceros.value, exportColumns, 'terceros', 'Listado de Terceros');
+    $q.notify({ type: 'positive', message: 'Exportado a PDF exitosamente' });
+  } catch (error) {
+    $q.notify({ type: 'negative', message: 'Error al exportar a PDF' });
+  }
+};
+
 onMounted(() => {
   loadData();
 });
@@ -129,14 +165,38 @@ onMounted(() => {
             <p class="page-subtitle">Gestión de clientes y proveedores</p>
           </div>
         </div>
-        <q-btn
-          unelevated
-          color="primary"
-          label="Nuevo Tercero"
-          icon="add"
-          @click="handleNew"
-          class="new-btn"
-        />
+        <div class="row q-gutter-sm">
+          <q-btn
+            outline
+            color="positive"
+            icon="description"
+            label="Excel"
+            @click="handleExportExcel"
+            no-caps
+            class="export-btn"
+          >
+            <q-tooltip>Exportar a Excel</q-tooltip>
+          </q-btn>
+          <q-btn
+            outline
+            color="negative"
+            icon="picture_as_pdf"
+            label="PDF"
+            @click="handleExportPDF"
+            no-caps
+            class="export-btn"
+          >
+            <q-tooltip>Exportar a PDF</q-tooltip>
+          </q-btn>
+          <q-btn
+            unelevated
+            color="primary"
+            label="Nuevo Tercero"
+            icon="add"
+            @click="handleNew"
+            class="new-btn"
+          />
+        </div>
       </div>
 
       <!-- Filters Card -->
@@ -505,5 +565,18 @@ onMounted(() => {
   .page-title {
     font-size: 24px;
   }
+}
+
+.export-btn {
+  min-width: 90px;
+  height: 36px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.export-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 </style>

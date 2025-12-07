@@ -4,9 +4,11 @@ import { useQuasar, type QTableColumn } from 'quasar';
 import { movimientosInventarioService } from '../services/api/movimientos-inventario.service';
 import { useAuthStore } from '../stores/auth';
 import type { MovimientoInventario } from '../types/movimiento-inventario';
+import { useExport } from '../composables/useExport';
 
 const $q = useQuasar();
 const authStore = useAuthStore();
+const { exportToExcel, exportToPDF } = useExport();
 const loading = ref(false);
 const filter = ref('');
 const movimientos = ref<MovimientoInventario[]>([]);
@@ -47,6 +49,40 @@ const loadMovimientos = async () => {
   }
 };
 
+const handleExportExcel = () => {
+  try {
+    const exportColumns = [
+      { field: 'id_movimiento', label: 'ID' },
+      { field: 'fecha_movimiento', label: 'Fecha' },
+      { field: 'nombre', label: 'Item' },
+      { field: 'n_tipo_movimiento', label: 'Tipo Movimiento' },
+      { field: 'cantidad', label: 'Cantidad' },
+      { field: 'estado', label: 'Estado' }
+    ];
+    exportToExcel(filteredMovimientos.value, exportColumns, 'movimientos_inventario');
+    $q.notify({ type: 'positive', message: 'Exportado a Excel exitosamente' });
+  } catch (error) {
+    $q.notify({ type: 'negative', message: 'Error al exportar a Excel' });
+  }
+};
+
+const handleExportPDF = () => {
+  try {
+    const exportColumns = [
+      { field: 'id_movimiento', label: 'ID' },
+      { field: 'fecha_movimiento', label: 'Fecha' },
+      { field: 'nombre', label: 'Item' },
+      { field: 'n_tipo_movimiento', label: 'Tipo Movimiento' },
+      { field: 'cantidad', label: 'Cantidad' },
+      { field: 'estado', label: 'Estado' }
+    ];
+    exportToPDF(filteredMovimientos.value, exportColumns, 'movimientos_inventario', 'Listado de Movimientos de Inventario');
+    $q.notify({ type: 'positive', message: 'Exportado a PDF exitosamente' });
+  } catch (error) {
+    $q.notify({ type: 'negative', message: 'Error al exportar a PDF' });
+  }
+};
+
 onMounted(() => {
   loadMovimientos();
 });
@@ -63,6 +99,30 @@ onMounted(() => {
           <div class="text-h5 text-weight-bold text-grey-9">Movimientos de Inventario</div>
           <div class="text-caption text-grey-7">Listado completo de movimientos</div>
         </div>
+      </div>
+      <div class="row q-gutter-sm">
+        <q-btn
+          outline
+          color="positive"
+          icon="description"
+          label="Excel"
+          @click="handleExportExcel"
+          no-caps
+          class="export-btn"
+        >
+          <q-tooltip>Exportar a Excel</q-tooltip>
+        </q-btn>
+        <q-btn
+          outline
+          color="negative"
+          icon="picture_as_pdf"
+          label="PDF"
+          @click="handleExportPDF"
+          no-caps
+          class="export-btn"
+        >
+          <q-tooltip>Exportar a PDF</q-tooltip>
+        </q-btn>
       </div>
     </div>
 
@@ -156,4 +216,17 @@ onMounted(() => {
 .search-input { min-width: 200px; }
 :deep(.q-table__card) { box-shadow: none; }
 :deep(.q-table th) { font-size: 0.75rem; letter-spacing: 0.05em; font-weight: bold; color: #616161; }
+
+.export-btn {
+  min-width: 90px;
+  height: 36px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.export-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
 </style>

@@ -4,9 +4,11 @@ import { useRouter } from 'vue-router';
 import { useQuasar, type QTableColumn } from 'quasar';
 import { profesionesService } from '../services/api/profesiones.service';
 import type { Profesion } from '../types/profesion';
+import { useExport } from '../composables/useExport';
 
 const $q = useQuasar();
 const router = useRouter();
+const { exportToExcel, exportToPDF } = useExport();
 
 const profesiones = ref<Profesion[]>([]);
 const loading = ref(false);
@@ -65,6 +67,34 @@ const handleDelete = (row: Profesion) => {
   });
 };
 
+const handleExportExcel = () => {
+  try {
+    const exportColumns = [
+      { field: 'codigo', label: 'Código' },
+      { field: 'nombre', label: 'Nombre' },
+      { field: 'usuario', label: 'Usuario' }
+    ];
+    exportToExcel(filteredProfesiones.value, exportColumns, 'profesiones');
+    $q.notify({ type: 'positive', message: 'Exportado a Excel exitosamente' });
+  } catch (error) {
+    $q.notify({ type: 'negative', message: 'Error al exportar a Excel' });
+  }
+};
+
+const handleExportPDF = () => {
+  try {
+    const exportColumns = [
+      { field: 'codigo', label: 'Código' },
+      { field: 'nombre', label: 'Nombre' },
+      { field: 'usuario', label: 'Usuario' }
+    ];
+    exportToPDF(filteredProfesiones.value, exportColumns, 'profesiones', 'Listado de Profesiones');
+    $q.notify({ type: 'positive', message: 'Exportado a PDF exitosamente' });
+  } catch (error) {
+    $q.notify({ type: 'negative', message: 'Error al exportar a PDF' });
+  }
+};
+
 onMounted(() => {
   loadProfesiones();
 });
@@ -82,16 +112,40 @@ onMounted(() => {
           <div class="text-caption text-grey-7">Gestión de profesiones</div>
         </div>
       </div>
-      <q-btn
-        color="primary"
-        icon="add"
-        label="Nueva Profesión"
-        to="/profesiones/new"
-        unelevated
-        class="q-px-lg q-py-xs shadow-2"
-        rounded
-        no-caps
-      />
+      <div class="row q-gutter-sm">
+        <q-btn
+          outline
+          color="positive"
+          icon="description"
+          label="Excel"
+          @click="handleExportExcel"
+          no-caps
+          class="export-btn"
+        >
+          <q-tooltip>Exportar a Excel</q-tooltip>
+        </q-btn>
+        <q-btn
+          outline
+          color="negative"
+          icon="picture_as_pdf"
+          label="PDF"
+          @click="handleExportPDF"
+          no-caps
+          class="export-btn"
+        >
+          <q-tooltip>Exportar a PDF</q-tooltip>
+        </q-btn>
+        <q-btn
+          color="primary"
+          icon="add"
+          label="Nueva Profesión"
+          to="/profesiones/new"
+          unelevated
+          class="q-px-lg q-py-xs shadow-2"
+          rounded
+          no-caps
+        />
+      </div>
     </div>
 
     <q-card class="shadow-2 rounded-xl bg-white">
@@ -171,4 +225,17 @@ onMounted(() => {
 .hover-scale:hover { transform: scale(1.1); }
 :deep(.q-table__card) { box-shadow: none; }
 :deep(.q-table th) { font-size: 0.75rem; letter-spacing: 0.05em; }
+
+.export-btn {
+  min-width: 90px;
+  height: 36px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.export-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
 </style>

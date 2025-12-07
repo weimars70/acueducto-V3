@@ -5,10 +5,12 @@ import { useRouter } from 'vue-router';
 import { centroCostosService } from '../services/api/centro-costos.service';
 import { useAuthStore } from '../stores/auth';
 import type { CentroCostos } from '../types/centro-costos';
+import { useExport } from '../composables/useExport';
 
 const $q = useQuasar();
 const router = useRouter();
 const authStore = useAuthStore();
+const { exportToExcel, exportToPDF } = useExport();
 const centrosCostos = ref<CentroCostos[]>([]);
 const loading = ref(true);
 const filter = ref('');
@@ -76,6 +78,32 @@ const handleDelete = async (centroCostos: CentroCostos) => {
   });
 };
 
+const handleExportExcel = () => {
+  try {
+    const exportColumns = [
+      { field: 'codigo', label: 'Código' },
+      { field: 'nombre', label: 'Nombre' }
+    ];
+    exportToExcel(filteredData(), exportColumns, 'centros_costos');
+    $q.notify({ type: 'positive', message: 'Exportado a Excel exitosamente' });
+  } catch (error) {
+    $q.notify({ type: 'negative', message: 'Error al exportar a Excel' });
+  }
+};
+
+const handleExportPDF = () => {
+  try {
+    const exportColumns = [
+      { field: 'codigo', label: 'Código' },
+      { field: 'nombre', label: 'Nombre' }
+    ];
+    exportToPDF(filteredData(), exportColumns, 'centros_costos', 'Listado de Centros de Costos');
+    $q.notify({ type: 'positive', message: 'Exportado a PDF exitosamente' });
+  } catch (error) {
+    $q.notify({ type: 'negative', message: 'Error al exportar a PDF' });
+  }
+};
+
 onMounted(() => {
   loadData();
 });
@@ -94,14 +122,38 @@ onMounted(() => {
               <p class="page-subtitle">Gestión de centros de costos</p>
             </div>
           </div>
-          <q-btn
-            unelevated
-            color="primary"
-            icon="add"
-            label="Nuevo Centro"
-            class="action-btn"
-            @click="handleNew"
-          />
+          <div class="row q-gutter-sm">
+            <q-btn
+              outline
+              color="positive"
+              icon="description"
+              label="Excel"
+              @click="handleExportExcel"
+              no-caps
+              class="export-btn"
+            >
+              <q-tooltip>Exportar a Excel</q-tooltip>
+            </q-btn>
+            <q-btn
+              outline
+              color="negative"
+              icon="picture_as_pdf"
+              label="PDF"
+              @click="handleExportPDF"
+              no-caps
+              class="export-btn"
+            >
+              <q-tooltip>Exportar a PDF</q-tooltip>
+            </q-btn>
+            <q-btn
+              unelevated
+              color="primary"
+              icon="add"
+              label="Nuevo Centro"
+              class="action-btn"
+              @click="handleNew"
+            />
+          </div>
         </div>
       </div>
 
@@ -321,5 +373,18 @@ onMounted(() => {
   .search-input {
     max-width: 100%;
   }
+}
+
+.export-btn {
+  min-width: 90px;
+  height: 36px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.export-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 </style>
