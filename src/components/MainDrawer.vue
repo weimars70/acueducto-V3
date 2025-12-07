@@ -45,6 +45,7 @@ const menuItems = [
 const maestrosExpanded = ref(false);
 const facturacionExpanded = ref(false);
 const diferidoExpanded = ref(false);
+const estratosExpanded = ref(false);
 const configuracionExpanded = ref(false);
 
 const maestrosItems = [
@@ -142,6 +143,27 @@ const diferidoItems = [
     icon: 'schedule',
     label: 'Concepto Diferido',
     route: '/diferidos',
+    closable: true,
+  }
+];
+
+const estratosItems = [
+  {
+    icon: 'layers',
+    label: 'Estratos',
+    route: '/estratos',
+    closable: true,
+  },
+  {
+    icon: 'category',
+    label: 'Tipos de Estrato',
+    route: '/estratos-tipo',
+    closable: true,
+  },
+  {
+    icon: 'attach_money',
+    label: 'Tarifas',
+    route: '/estratos-tarifas',
     closable: true,
   }
 ];
@@ -329,6 +351,34 @@ const handleSync = async () => {
       >
         <q-item
           v-for="item in diferidoItems"
+          :key="item.route"
+          clickable
+          v-ripple
+          :active="router.currentRoute.value.path === item.route"
+          active-class="text-primary"
+          @click="navigateTo(item)"
+          class="q-pl-lg"
+        >
+          <q-item-section avatar>
+            <q-icon :name="item.icon" />
+          </q-item-section>
+          <q-item-section>
+            {{ item.label }}
+          </q-item-section>
+        </q-item>
+      </q-expansion-item>
+
+      <q-separator spaced />
+
+      <!-- Estratos Section -->
+      <q-expansion-item
+        v-model="estratosExpanded"
+        icon="layers"
+        label="Estratos"
+        header-class="text-weight-bold"
+      >
+        <q-item
+          v-for="item in estratosItems"
           :key="item.route"
           clickable
           v-ripple

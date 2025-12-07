@@ -22,6 +22,9 @@ import { YearsModule } from './years/years.module';
 import { TercerosModule } from './terceros/terceros.module';
 import { ConceptosFacturaModule } from './conceptos-factura/conceptos-factura.module';
 import { DiferidosModule } from './diferidos/diferidos.module';
+import { EstratosModule } from './estratos/estratos.module';
+import { EstratosTipoModule } from './estratos-tipo/estratos-tipo.module';
+import { EstratosTarifasModule } from './estratos-tarifas/estratos-tarifas.module';
 
 @Module({
   imports: [
@@ -51,6 +54,9 @@ import { DiferidosModule } from './diferidos/diferidos.module';
     TercerosModule,
     ConceptosFacturaModule,
     DiferidosModule,
+    EstratosModule,
+    EstratosTipoModule,
+    EstratosTarifasModule,
   ],
 })
 export class AppModule { }
