@@ -438,6 +438,21 @@ const routes = [
         name: 'edit-compra',
         component: () => import('../pages/EditCompraPage.vue'),
         props: true
+      },
+      // Tipo Persona Routes
+      {
+        path: '/tipo-persona',
+        component: () => import('../pages/TipoPersonaPage.vue')
+      },
+      {
+        path: '/tipo-persona/new',
+        component: () => import('../pages/NewTipoPersonaPage.vue')
+      },
+      {
+        path: '/tipo-persona/edit/:codigo',
+        name: 'edit-tipo-persona',
+        component: () => import('../pages/EditTipoPersonaPage.vue'),
+        props: true
       }
     ]
   },

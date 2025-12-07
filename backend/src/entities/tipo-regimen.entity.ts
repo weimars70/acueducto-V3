@@ -1,19 +1,19 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryColumn } from 'typeorm';
 
 @Entity('tipo_regimen')
 export class TipoRegimen {
-    @PrimaryGeneratedColumn()
+    @PrimaryColumn()
     codigo: number;
 
-    @Column({ name: 'empresa_id' })
+    @PrimaryColumn({ name: 'empresa_id' })
     empresaId: number;
 
-    @Column({ length: 100 })
+    @Column({ type: 'text' })
     nombre: string;
 
-    @Column({ type: 'text', nullable: true })
-    descripcion: string;
+    @Column({ type: 'text' })
+    code: string;
 
-    @Column({ default: true })
-    activo: boolean;
+    @Column({ type: 'text', nullable: true })
+    usuario: string;
 }

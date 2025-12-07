@@ -15,7 +15,7 @@ const formData = ref<CreateTipoRegimenDto>({
   codigo: 0,
   nombre: '',
   code: '',
-  empresa_id: authStore.user?.empresaId || 1,
+  empresaId: authStore.user?.empresaId || 1,
   usuario: authStore.user?.email || ''
 });
 

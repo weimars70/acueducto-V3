@@ -28,19 +28,9 @@ const columns = [
 const loadData = async () => {
   try {
     loading.value = true;
-    const response = await tipoPersonaService.getTipoPersonas({
-      page: pagination.value.page,
-      limit: pagination.value.rowsPerPage,
-      nombre: filter.value || undefined
-    });
-
-    if (response && response.data) {
-      tipoPersonas.value = response.data;
-      pagination.value.rowsNumber = response.total || 0;
-    } else {
-      tipoPersonas.value = [];
-      pagination.value.rowsNumber = 0;
-    }
+    const data = await tipoPersonaService.getAll();
+    tipoPersonas.value = data || [];
+    pagination.value.rowsNumber = data?.length || 0;
   } catch (error) {
     console.error('Error al cargar tipos de persona:', error);
     $q.notify({

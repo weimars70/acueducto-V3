@@ -2,7 +2,7 @@ export interface TipoRegimen {
     codigo: number;
     nombre: string;
     code: string;
-    empresa_id: number;
+    empresaId: number;
     usuario?: string;
 }
 
@@ -10,7 +10,7 @@ export interface CreateTipoRegimenDto {
     codigo: number;
     nombre: string;
     code: string;
-    empresa_id: number;
+    empresaId: number;
     usuario?: string;
 }
 

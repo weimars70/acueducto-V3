@@ -2,8 +2,8 @@ import { apiClient } from './client';
 import type { TipoPersona, CreateTipoPersonaDto, UpdateTipoPersonaDto } from '../../types/tipo-persona';
 
 export const tipoPersonaService = {
-    async getTipoPersonas(params?: { page?: number; limit?: number; nombre?: string }) {
-        const response = await apiClient.get<{ data: TipoPersona[]; total: number }>('/tipo-persona', { params });
+    async getAll() {
+        const response = await apiClient.get<TipoPersona[]>('/tipo-persona');
         return response.data;
     },
 
@@ -26,4 +26,3 @@ export const tipoPersonaService = {
         await apiClient.delete(`/tipo-persona/${codigo}`);
     }
 };
-

@@ -18,7 +18,7 @@ const formData = ref<UpdateTipoRegimenDto>({
   codigo: 0,
   nombre: '',
   code: '',
-  empresa_id: authStore.user?.empresaId || 1
+  empresaId: authStore.user?.empresaId || 1
 });
 
 const loadTipoRegimen = async () => {
@@ -29,7 +29,7 @@ const loadTipoRegimen = async () => {
       codigo: tipoRegimen.codigo,
       nombre: tipoRegimen.nombre,
       code: tipoRegimen.code,
-      empresa_id: tipoRegimen.empresa_id
+      empresaId: tipoRegimen.empresaId
     };
   } catch (error) {
     console.error('Error al cargar tipo de regimen:', error);

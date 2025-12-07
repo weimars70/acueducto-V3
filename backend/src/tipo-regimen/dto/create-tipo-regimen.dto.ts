@@ -15,7 +15,7 @@ export class CreateTipoRegimenDto {
 
     @IsNotEmpty()
     @IsNumber()
-    empresa_id: number;
+    empresaId: number;
 
     @IsOptional()
     @IsString()
