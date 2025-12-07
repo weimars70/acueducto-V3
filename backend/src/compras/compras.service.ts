@@ -11,7 +11,7 @@ export class ComprasService {
     @InjectRepository(Compra)
     private readonly compraRepository: Repository<Compra>,
     private readonly dataSource: DataSource,
-  ) {}
+  ) { }
 
   async findAll(page: number, limit: number, filters: Record<string, any>) {
     try {
@@ -145,35 +145,156 @@ export class ComprasService {
     }
   }
 
-  async create(createCompraDto: CreateCompraDto) {
+  async create(createCompraDto: CreateCompraDto, userId: number, empresaId: number) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      // Preparar datos para la función PostgreSQL
-      const jsonData = {
-        action: 'guardar',
-        data: createCompraDto,
-      };
+      const {
+        proveedor,
+        factura,
+        forma_pago = 1,
+        plazo = 0,
+        fecha,
+        subtotal = 0,
+        descuento = 0,
+        iva = 0,
+        total = 0,
+        items
+      } = createCompraDto;
 
-      // Llamar a la función de PostgreSQL
-      const result = await queryRunner.query(
-        `SELECT public.func_guardar_compra($1::jsonb) AS resultado`,
-        [JSON.stringify(jsonData)],
-      );
-
-      const respuesta = JSON.parse(result[0].resultado);
-
-      if (!respuesta.ok) {
-        throw new Error(respuesta.mensaje || 'Error al guardar la compra');
+      // 1. Validations
+      if (!proveedor) {
+        throw new Error('Debe indicar un proveedor');
       }
 
+      if (!items || items.length === 0) {
+        throw new Error('Debe agregar al menos un ítem');
+      }
+
+      // 2. Get Proveedor Details (replacing func_ident_tercero and func_nombre_tercero)
+      const proveedorData = await queryRunner.query(
+        'SELECT identificacion, nombre FROM public.terceros WHERE codigo = $1',
+        [proveedor]
+      );
+
+      const proveedorIdent = proveedorData[0]?.identificacion || '';
+      const proveedorNombre = proveedorData[0]?.nombre || '';
+
+      // 3. Insert Cabecera (Compras)
+      // Note: Added empresa_id and usuario_graduador (mapped from userId)
+      const insertCompraResult = await queryRunner.query(
+        `INSERT INTO public.compras (
+          proveedor, proveedor_ident, proveedor_nombre, factura, forma_pago, 
+          plazo, fecha_factura, subtotal, descuento, iva, total, 
+          empresa_id, usuario
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        RETURNING codigo`,
+        [
+          proveedor,
+          proveedorIdent,
+          proveedorNombre,
+          factura,
+          forma_pago,
+          plazo,
+          fecha,
+          subtotal,
+          descuento,
+          iva,
+          total,
+          empresaId,
+          userId
+        ]
+      );
+
+      const codigoCompra = insertCompraResult[0].codigo;
+
+      // 4. Loop Items
+      for (const item of items) {
+        // Get Item Details (replacing func_nombre_item and func_id_item)
+        // Assuming item.codigo is the ID or Code. 
+        // Based on func_guardar_compra: 
+        // func_nombre_item(v_item->>'codigo')
+        // func_id_item((v_item->>'codigo')) -> Insert into movimientos_inventario uses this.
+        // If item.codigo IS the id, we use it directly. If it's a string code, we fetch ID.
+        // Let's assume item.codigo is the PK for now based on typical DTOs, 
+        // OR fetch it if needed. usage: `SELECT nombre FROM items WHERE codigo = ...`
+
+        const itemData = await queryRunner.query(
+          'SELECT codigo, nombre FROM public.items WHERE codigo = $1 AND empresa_id = $2',
+          [item.codigo, empresaId]
+        );
+
+        // If items table uses 'id_item' as PK and 'codigo' as a display code:
+        const itemId = itemData[0]?.codigo || item.codigo; // Fallback
+        const itemNombre = itemData[0]?.nombre || '';
+
+        // Insert Detalle
+        await queryRunner.query(
+          `INSERT INTO public.compras_detalle (
+            codigo_compra, item, item_descripcion, iva, precio, 
+            descuento, cantidad, subtotal, 
+            empresa_id, usuario
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+          [
+            codigoCompra,
+            item.codigo,
+            itemNombre,
+            item.por_iva || 0,
+            item.pcompra || 0,
+            item.descuento || 0,
+            item.cantidad || 0,
+            item.subtotal || 0,
+            empresaId,
+            userId
+          ]
+        );
+
+        // Insert Movimiento Inventario
+        await queryRunner.query(
+          `INSERT INTO public.movimientos_inventario (
+            id_item, tipo_movimiento, cantidad, fecha_movimiento, 
+            observaciones, fecha_registro, empresa_id, usuario
+          ) VALUES ($1, 1, $2, $3, 'compras', CURRENT_DATE, $4, $5)`,
+          [
+            itemId,
+            item.cantidad || 0,
+            fecha,
+            empresaId,
+            userId
+          ]
+        );
+      }
+
+      // 5. Insert Movimiento Contable (Compras Movimientos)
+      // Logic: INSERT INTO compras_movimientos (codigo_compra, factura, credito, fecha)
+      await queryRunner.query(
+        `INSERT INTO public.compras_movimientos (
+          codigo_compra, factura, credito, fecha, empresa_id, usuario
+        ) VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          codigoCompra,
+          factura,
+          total,
+          fecha,
+          empresaId,
+          userId
+        ]
+      );
+
       await queryRunner.commitTransaction();
-      return respuesta;
+
+      return {
+        ok: true,
+        mensaje: 'Compra guardada correctamente',
+        codigo_compra: codigoCompra
+      };
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw new Error(`Error al crear compra: ${error.message}`);
+      console.error('Error in create compra transaction:', error);
+      // Simplify error message for frontend
+      throw new Error(error.message || 'Error al guardar la compra');
     } finally {
       await queryRunner.release();
     }

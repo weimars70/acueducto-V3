@@ -8,6 +8,7 @@ import {
   Param,
   Query,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { ComprasService } from './compras.service';
 import { CreateCompraDto } from './dto/create-compra.dto';
@@ -16,7 +17,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('compras')
 export class ComprasController {
-  constructor(private readonly comprasService: ComprasService) {}
+  constructor(private readonly comprasService: ComprasService) { }
 
   @Get('view')
   async findAll(
@@ -50,8 +51,11 @@ export class ComprasController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  async create(@Body() createCompraDto: CreateCompraDto) {
-    return this.comprasService.create(createCompraDto);
+  async create(@Body() createCompraDto: CreateCompraDto, @Req() req) {
+    // Assuming req.user contains the decoded JWT payload with sub (userId) and empresaId
+    const userId = req.user.userId;
+    const empresaId = req.user.empresaId;
+    return this.comprasService.create(createCompraDto, userId, empresaId);
   }
 
   @Put(':id')
