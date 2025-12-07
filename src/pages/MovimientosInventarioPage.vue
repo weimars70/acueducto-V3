@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useQuasar } from 'quasar';
+import { useQuasar, type QTableColumn } from 'quasar';
 import { movimientosInventarioService } from '../services/api/movimientos-inventario.service';
 import { useAuthStore } from '../stores/auth';
 import type { MovimientoInventario } from '../types/movimiento-inventario';
@@ -11,7 +11,7 @@ const loading = ref(false);
 const filter = ref('');
 const movimientos = ref<MovimientoInventario[]>([]);
 
-const columns = [
+const columns: QTableColumn[] = [
   { name: 'id_movimiento', label: 'ID', field: 'id_movimiento', sortable: true, align: 'left' },
   { name: 'fecha_movimiento', label: 'Fecha Movimiento', field: 'fecha_movimiento', sortable: true, align: 'left', format: (val: string) => new Date(val).toLocaleDateString() },
   { name: 'nombre', label: 'Item', field: 'nombre', sortable: true, align: 'left' },

@@ -28,6 +28,7 @@ import { TipoMovimientoItemModule } from './tipo-movimiento-item/tipo-movimiento
 import { EstratosModule } from './estratos/estratos.module';
 import { EstratosTipoModule } from './estratos-tipo/estratos-tipo.module';
 import { EstratosTarifasModule } from './estratos-tarifas/estratos-tarifas.module';
+import { MovimientosInventarioModule } from './movimientos-inventario/movimientos-inventario.module';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { EstratosTarifasModule } from './estratos-tarifas/estratos-tarifas.modul
     EstratosModule,
     EstratosTipoModule,
     EstratosTarifasModule,
+    MovimientosInventarioModule,
   ],
 })
 export class AppModule { }
