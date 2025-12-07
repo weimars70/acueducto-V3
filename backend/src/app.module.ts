@@ -28,6 +28,7 @@ import { TipoMovimientoItemModule } from './tipo-movimiento-item/tipo-movimiento
 import { EstratosModule } from './estratos/estratos.module';
 import { EstratosTipoModule } from './estratos-tipo/estratos-tipo.module';
 import { EstratosTarifasModule } from './estratos-tarifas/estratos-tarifas.module';
+import { ComprasModule } from './compras/compras.module';
 import { MovimientosInventarioModule } from './movimientos-inventario/movimientos-inventario.module';
 
 @Module({
@@ -64,6 +65,7 @@ import { MovimientosInventarioModule } from './movimientos-inventario/movimiento
     EstratosModule,
     EstratosTipoModule,
     EstratosTarifasModule,
+    ComprasModule,
     MovimientosInventarioModule,
   ],
 })

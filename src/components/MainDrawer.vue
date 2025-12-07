@@ -73,6 +73,7 @@ const inventarioExpanded = ref(false);
 const facturacionExpanded = ref(false);
 const diferidoExpanded = ref(false);
 const estratosExpanded = ref(false);
+const comprasExpanded = ref(false);
 const configuracionExpanded = ref(false);
 
 const maestrosItems = [
@@ -170,6 +171,15 @@ const diferidoItems = [
     icon: 'schedule',
     label: 'Concepto Diferido',
     route: '/diferidos',
+    closable: true,
+  }
+];
+
+const comprasItems = [
+  {
+    icon: 'shopping_cart',
+    label: 'Compras',
+    route: '/compras',
     closable: true,
   }
 ];
@@ -406,6 +416,34 @@ const handleSync = async () => {
       >
         <q-item
           v-for="item in diferidoItems"
+          :key="item.route"
+          clickable
+          v-ripple
+          :active="router.currentRoute.value.path === item.route"
+          active-class="text-primary"
+          @click="navigateTo(item)"
+          class="q-pl-lg"
+        >
+          <q-item-section avatar>
+            <q-icon :name="item.icon" />
+          </q-item-section>
+          <q-item-section>
+            {{ item.label }}
+          </q-item-section>
+        </q-item>
+      </q-expansion-item>
+
+      <q-separator spaced />
+
+      <!-- Compras Section -->
+      <q-expansion-item
+        v-model="comprasExpanded"
+        icon="shopping_cart"
+        label="Compras"
+        header-class="text-weight-bold"
+      >
+        <q-item
+          v-for="item in comprasItems"
           :key="item.route"
           clickable
           v-ripple
