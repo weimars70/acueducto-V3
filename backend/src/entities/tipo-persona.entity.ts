@@ -11,9 +11,9 @@ export class TipoPersona {
     @Column({ length: 100 })
     nombre: string;
 
-    @Column({ type: 'text', nullable: true })
-    descripcion: string;
-
     @Column({ default: true })
     activo: boolean;
+
+    @Column({ type: 'text', nullable: true })
+    usuario: string;
 }
