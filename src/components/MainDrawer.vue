@@ -97,18 +97,6 @@ const maestrosItems = [
     closable: true,
   },
   {
-    icon: 'people_alt',
-    label: 'Clientes',
-    route: '/clientes',
-    closable: true,
-  },
-  {
-    icon: 'receipt',
-    label: 'Impuestos',
-    route: '/impuestos',
-    closable: true,
-  },
-  {
     icon: 'speed',
     label: 'Marcas Medidor',
     route: '/marcas-medidor',
