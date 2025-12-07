@@ -14,14 +14,14 @@ export class EstratoTarifa {
     @Column({ type: 'numeric', precision: 12, scale: 2, default: 0 })
     cargo: number;
 
-    @Column({ name: 'm3_0_20', type: 'numeric', precision: 12, scale: 2, default: 0 })
-    m3_0_20: number;
+    @Column({ name: 'basico', type: 'numeric', precision: 12, scale: 2, default: 0 })
+    basico: number;
 
-    @Column({ name: 'm3_21_40', type: 'numeric', precision: 12, scale: 2, default: 0 })
-    m3_21_40: number;
+    @Column({ name: 'complementario', type: 'numeric', precision: 12, scale: 2, default: 0 })
+    complementario: number;
 
-    @Column({ name: 'm3_41_x', type: 'numeric', precision: 12, scale: 2, default: 0 })
-    m3_41_x: number;
+    @Column({ name: 'suntuario', type: 'numeric', precision: 12, scale: 2, default: 0 })
+    suntuario: number;
 
     @Column({ type: 'numeric', precision: 12, scale: 2, default: 1 })
     interes: number;

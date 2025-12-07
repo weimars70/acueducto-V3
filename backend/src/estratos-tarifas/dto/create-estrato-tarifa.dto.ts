@@ -19,15 +19,15 @@ export class CreateEstratoTarifaDto {
 
     @IsOptional()
     @IsNumber()
-    m3_0_20?: number;
+    basico?: number;
 
     @IsOptional()
     @IsNumber()
-    m3_21_40?: number;
+    complementario?: number;
 
     @IsOptional()
     @IsNumber()
-    m3_41_x?: number;
+    suntuario?: number;
 
     @IsOptional()
     @IsNumber()

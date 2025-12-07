@@ -22,9 +22,9 @@ const columns = [
   { name: 'estrato', label: 'Estrato', field: 'codigo', format: (val: number) => estratosMap.value[val] || val, sortable: true, align: 'left' },
   { name: 'tipo', label: 'Tipo', field: 'tipo', format: (val: number) => tiposMap.value[val] || val, sortable: true, align: 'left' },
   { name: 'cargo', label: 'Cargo Fijo', field: 'cargo', format: (val: number) => `$ ${Number(val).toLocaleString()}`, sortable: true, align: 'right' },
-  { name: 'm3_0_20', label: '0-20 m³', field: 'm3_0_20', align: 'right' },
-  { name: 'm3_21_40', label: '21-40 m³', field: 'm3_21_40', align: 'right' },
-  { name: 'm3_41_x', label: '> 41 m³', field: 'm3_41_x', align: 'right' },
+  { name: 'basico', label: 'Básico', field: 'basico', align: 'right' },
+  { name: 'complementario', label: 'Complementario', field: 'complementario', align: 'right' },
+  { name: 'suntuario', label: 'Suntuario', field: 'suntuario', align: 'right' },
   { name: 'actions', label: 'Acciones', field: 'actions', align: 'right' }
 ];
 

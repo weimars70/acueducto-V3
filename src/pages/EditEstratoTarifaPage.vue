@@ -21,9 +21,9 @@ const formData = ref({
   tipo: 0,
   estrato: '',
   cargo: 0,
-  m3_0_20: 0,
-  m3_21_40: 0,
-  m3_41_x: 0,
+  basico: 0,
+  complementario: 0,
+  suntuario: 0,
   interes: 1,
   subsidioCargoFijo: 0,
   subsidioConsumo: 0,
@@ -113,16 +113,16 @@ onMounted(() => {
                         <q-input outlined dense type="number" v-model.number="formData.cargo" prefix="$" class="modern-input bg-grey-1" />
                     </div>
                     <div class="col-12 col-md-3">
-                        <label class="text-weight-medium text-grey-9 q-mb-xs block">0-20 m³</label>
-                        <q-input outlined dense type="number" v-model.number="formData.m3_0_20" prefix="$" class="modern-input bg-grey-1" />
+                        <label class="text-weight-medium text-grey-9 q-mb-xs block">Básico</label>
+                        <q-input outlined dense type="number" v-model.number="formData.basico" prefix="$" class="modern-input bg-grey-1" />
                     </div>
                     <div class="col-12 col-md-3">
-                        <label class="text-weight-medium text-grey-9 q-mb-xs block">21-40 m³</label>
-                        <q-input outlined dense type="number" v-model.number="formData.m3_21_40" prefix="$" class="modern-input bg-grey-1" />
+                        <label class="text-weight-medium text-grey-9 q-mb-xs block">Complementario</label>
+                        <q-input outlined dense type="number" v-model.number="formData.complementario" prefix="$" class="modern-input bg-grey-1" />
                     </div>
                      <div class="col-12 col-md-3">
-                        <label class="text-weight-medium text-grey-9 q-mb-xs block">> 41 m³</label>
-                        <q-input outlined dense type="number" v-model.number="formData.m3_41_x" prefix="$" class="modern-input bg-grey-1" />
+                        <label class="text-weight-medium text-grey-9 q-mb-xs block">Suntuario</label>
+                        <q-input outlined dense type="number" v-model.number="formData.suntuario" prefix="$" class="modern-input bg-grey-1" />
                     </div>
                 </div>
 

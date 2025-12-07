@@ -22,6 +22,9 @@ import { YearsModule } from './years/years.module';
 import { TercerosModule } from './terceros/terceros.module';
 import { ConceptosFacturaModule } from './conceptos-factura/conceptos-factura.module';
 import { DiferidosModule } from './diferidos/diferidos.module';
+import { ItemsGruposModule } from './items-grupos/items-grupos.module';
+import { ItemsModule } from './items/items.module';
+import { TipoMovimientoItemModule } from './tipo-movimiento-item/tipo-movimiento-item.module';
 import { EstratosModule } from './estratos/estratos.module';
 import { EstratosTipoModule } from './estratos-tipo/estratos-tipo.module';
 import { EstratosTarifasModule } from './estratos-tarifas/estratos-tarifas.module';
@@ -55,6 +58,9 @@ import { ComprasModule } from './compras/compras.module';
     TercerosModule,
     ConceptosFacturaModule,
     DiferidosModule,
+    ItemsGruposModule,
+    ItemsModule,
+    TipoMovimientoItemModule,
     EstratosModule,
     EstratosTipoModule,
     EstratosTarifasModule,

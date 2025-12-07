@@ -3,9 +3,9 @@ export interface EstratoTarifa {
     tipo: number;
     estrato: string;
     cargo: number;
-    m3_0_20: number;
-    m3_21_40: number;
-    m3_41_x: number;
+    basico: number;
+    complementario: number;
+    suntuario: number;
     interes: number;
     subsidioCargoFijo: number;
     subsidioConsumo: number;
@@ -21,9 +21,9 @@ export interface CreateEstratoTarifaDto {
     tipo: number;
     estrato?: string;
     cargo?: number;
-    m3_0_20?: number;
-    m3_21_40?: number;
-    m3_41_x?: number;
+    basico?: number;
+    complementario?: number;
+    suntuario?: number;
     interes?: number;
     subsidioCargoFijo?: number;
     subsidioConsumo?: number;
