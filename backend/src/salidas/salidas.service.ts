@@ -66,10 +66,9 @@ export class SalidasService {
     async getItems(empresaId: number) {
         try {
             const query = `
-                SELECT codigo, nombre, precio_sin_iva, por_iva, precio_total, precio_venta
+                SELECT id,codigo, nombre, precio_sin_iva, por_iva, precio_total, precio_venta
                 FROM public.items
-                 WHERE activo = true
-                  AND empresa_id = $1
+                WHERE empresa_id = $1
                 ORDER BY nombre
                 LIMIT 100
             `;
@@ -87,7 +86,7 @@ export class SalidasService {
             }
 
             const query = `
-                SELECT codigo, nombre, precio_sin_iva, por_iva, precio_total, precio_venta
+                SELECT id, codigo, nombre, precio_sin_iva, por_iva, precio_total, precio_venta
                 FROM public.items
                 WHERE empresa_id = $1
                   AND (
@@ -178,12 +177,14 @@ export class SalidasService {
             for (const item of items) {
                 // Obtener nombre del item
                 const itemData = await queryRunner.query(
-                    'SELECT codigo, nombre FROM items WHERE codigo = $1',
-                    [item.codigo]
+                const itemData = await queryRunner.query(
+                    'SELECT id, codigo, nombre FROM items WHERE id = $1',
+                    [item.id]
                 );
 
                 const itemNombre = itemData[0]?.nombre || '';
-                const itemId = itemData[0]?.codigo || item.codigo;
+                const itemId = itemData[0]?.id || item.id;
+                const itemCodigo = itemData[0]?.codigo || item.codigo;
 
                 // Insertar detalle
                 await queryRunner.query(
@@ -193,7 +194,7 @@ export class SalidasService {
                     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
                     [
                         codigoSalida,
-                        item.codigo,
+                        itemCodigo,
                         itemNombre,
                         item.por_iva || 0,
                         item.psalida || 0,

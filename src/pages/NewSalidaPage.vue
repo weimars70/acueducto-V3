@@ -25,7 +25,7 @@ const form = ref({
 
 // Formulario de items
 const itemForm = ref({
-  item: null as string | null,
+  item: null as number | null,
   cantidad: 1,
   psalida: 0,
   por_iva: 0,
@@ -113,7 +113,7 @@ const filterItems = async (val: string, update: (callback: () => void) => void) 
 
 const onItemChange = () => {
   if (itemForm.value.item) {
-    const selectedItem = itemsFiltered.value.find(i => i.codigo === itemForm.value.item);
+    const selectedItem = itemsFiltered.value.find(i => i.id === itemForm.value.item);
     if (selectedItem) {
       itemForm.value.psalida = selectedItem.precio_venta || selectedItem.precio_sin_iva;
       itemForm.value.por_iva = selectedItem.por_iva;
@@ -146,12 +146,13 @@ const agregarItem = () => {
     return;
   }
 
-  const selectedItem = itemsFiltered.value.find(i => i.codigo === itemForm.value.item);
+  const selectedItem = itemsFiltered.value.find(i => i.id === itemForm.value.item);
   if (!selectedItem) return;
 
   const subtotal = (itemForm.value.psalida * (1 - itemForm.value.descuento / 100)) * itemForm.value.cantidad;
 
   itemsTabla.value.push({
+    id: selectedItem.id,
     codigo: selectedItem.codigo,
     nombre: selectedItem.nombre,
     cantidad: itemForm.value.cantidad,
@@ -390,7 +391,7 @@ onMounted(() => {
               <q-select
                 v-model="itemForm.item"
                 :options="itemsFiltered"
-                option-value="codigo"
+                option-value="id"
                 :option-label="opt => `${opt.codigo} - ${opt.nombre}`"
                 emit-value
                 map-options

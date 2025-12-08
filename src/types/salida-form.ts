@@ -5,6 +5,7 @@ export interface Cliente {
 }
 
 export interface ItemSalida {
+    id: number;
     codigo: string;
     nombre: string;
     cantidad: number;
@@ -15,6 +16,7 @@ export interface ItemSalida {
 }
 
 export interface ItemCatalogo {
+    id: number;
     codigo: string;
     nombre: string;
     precio_sin_iva: number;
