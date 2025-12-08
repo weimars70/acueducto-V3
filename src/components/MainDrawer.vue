@@ -66,6 +66,12 @@ const inventarioItems = [
     label: 'Listado Inventario',
     route: '/movimientos-inventario',
     closable: true,
+  },
+  {
+    icon: 'exit_to_app',
+    label: 'Salidas',
+    route: '/salidas',
+    closable: true,
   }
 ];
 
