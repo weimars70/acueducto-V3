@@ -35,8 +35,9 @@ export class SalidasController {
     }
 
     @Get('items')
-    async getItems() {
-        return this.salidasService.getItems();
+    async getItems(@Req() req) {
+        const empresaId = req.user.empresaId;
+        return this.salidasService.getItems(empresaId);
     }
 
     @Get('items/search')

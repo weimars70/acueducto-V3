@@ -4,7 +4,12 @@
       "Bash(npm run start:dev:*)",
       "Bash(npm run build:*)",
       "Bash(npx nest g resource:*)",
-      "Bash(npx nest:*)"
+      "Bash(npx nest:*)",
+      "Bash(dir:*)",
+      "Bash(del \\.C:UsersWeimarDocumentsproyectosacueducto-V3NUL)",
+      "Bash(cmd /c \"del \\\\?\\C:\\Users\\Weimar\\Documents\\proyectos\\acueducto-V3\\NUL\")",
+      "Bash(git add:*)",
+      "Bash(cmd /c \"rd /s /q NUL\")"
     ],
     "deny": [],
     "ask": []
