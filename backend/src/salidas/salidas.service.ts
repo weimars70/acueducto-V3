@@ -132,8 +132,8 @@ export class SalidasService {
 
             // 2. Obtener datos del cliente
             const clienteData = await queryRunner.query(
-                'SELECT identificacion, nombre FROM terceros WHERE codigo = $1',
-                [cliente]
+                'SELECT identificacion, nombre FROM terceros WHERE codigo = $1 and empresa_id = $2',
+                [cliente, empresaId]
             );
 
             const clienteIdent = clienteData[0]?.identificacion || '';
@@ -141,7 +141,8 @@ export class SalidasService {
 
             // 3. Generar código de factura (siguiente número)
             const maxCodigoResult = await queryRunner.query(
-                'SELECT COALESCE(MAX(codigo), 0) as max_codigo FROM salidas'
+                'SELECT COALESCE(MAX(codigo), 0) as max_codigo FROM salidas where empresa_id = $1',
+                [empresaId]
             );
             const factura = String(maxCodigoResult[0].max_codigo);
 
@@ -175,15 +176,14 @@ export class SalidasService {
 
             // 5. Loop Items - Insertar detalle y movimientos
             for (const item of items) {
-                // Obtener nombre del item
+                // Obtener datos del item por código
                 const itemData = await queryRunner.query(
-                const itemData = await queryRunner.query(
-                    'SELECT id, codigo, nombre FROM items WHERE id = $1',
-                    [item.id]
+                    'SELECT id, codigo, nombre FROM items WHERE codigo = $1 AND empresa_id = $2',
+                    [item.codigo, empresaId]
                 );
 
-                const itemNombre = itemData[0]?.nombre || '';
-                const itemId = itemData[0]?.id || item.id;
+                const itemNombre = itemData[0]?.nombre || item.nombre;
+                const itemId = itemData[0]?.id;
                 const itemCodigo = itemData[0]?.codigo || item.codigo;
 
                 // Insertar detalle
@@ -218,6 +218,18 @@ export class SalidasService {
                         fecha,
                         empresaId,
                         userId
+                    ]
+                );
+
+                // Actualizar inventario actual en items (restar cantidad de salida)
+                await queryRunner.query(
+                    `UPDATE public.items
+                    SET inventario_actual = inventario_actual - $1
+                    WHERE id = $2 AND empresa_id = $3`,
+                    [
+                        item.cantidad || 0,
+                        itemId,
+                        empresaId
                     ]
                 );
             }

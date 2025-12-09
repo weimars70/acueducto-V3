@@ -254,7 +254,7 @@ export class ComprasService {
         // Insert Movimiento Inventario
         await queryRunner.query(
           `INSERT INTO public.movimientos_inventario (
-            id_item, tipo_movimiento, cantidad, fecha_movimiento, 
+            id_item, tipo_movimiento, cantidad, fecha_movimiento,
             observaciones, fecha_registro, empresa_id, usuario
           ) VALUES ($1, 1, $2, $3, 'compras', CURRENT_DATE, $4, $5)`,
           [
@@ -263,6 +263,18 @@ export class ComprasService {
             fecha,
             empresaId,
             userId
+          ]
+        );
+
+        // Actualizar inventario actual en items (sumar cantidad de compra)
+        await queryRunner.query(
+          `UPDATE public.items
+          SET inventario_actual = inventario_actual + $1
+          WHERE id = $2 AND empresa_id = $3`,
+          [
+            item.cantidad || 0,
+            itemId,
+            empresaId
           ]
         );
       }

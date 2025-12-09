@@ -235,6 +235,17 @@ const routes = [
         path: '/salidas/new',
         component: () => import('../pages/NewSalidaPage.vue')
       },
+      // Ajustes Inventario Routes
+      {
+        path: '/ajustes-inventario',
+        name: 'ajustes-inventario',
+        component: () => import('../pages/AjustesInventarioPage.vue')
+      },
+      {
+        path: '/ajustes-inventario/nuevo',
+        name: 'new-ajuste-inventario',
+        component: () => import('../pages/NewAjusteInventarioPage.vue')
+      },
       {
         path: '/tarifas-maestro',
         component: () => import('../pages/TarifasPage.vue')
@@ -517,6 +528,7 @@ router.beforeEach((to, from, next) => {
         { icon: 'inventory_2', label: 'Items', route: '/items', closable: true },
         { icon: 'list_alt', label: 'Listado Inventario', route: '/movimientos-inventario', closable: true },
         { icon: 'exit_to_app', label: 'Salidas', route: '/salidas', closable: true },
+        { icon: 'tune', label: 'Ajustes Inventario', route: '/ajustes-inventario', closable: true },
         { icon: 'speed', label: 'Marcas Medidor', route: '/marcas-medidor', closable: true },
         { icon: 'payments', label: 'Tarifas Maestro', route: '/tarifas-maestro', closable: true },
         { icon: 'badge', label: 'Tipo Identificación', route: '/tipo-ident', closable: true },

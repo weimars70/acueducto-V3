@@ -33,6 +33,7 @@ import { MovimientosInventarioModule } from './movimientos-inventario/movimiento
 import { SectoresModule } from './sectores/sectores.module';
 import { ProfesionesModule } from './profesiones/profesiones.module';
 import { SalidasModule } from './salidas/salidas.module';
+import { AjustesInventarioModule } from './ajustes-inventario/ajustes-inventario.module';
 
 @Module({
   imports: [
@@ -73,6 +74,7 @@ import { SalidasModule } from './salidas/salidas.module';
     SectoresModule,
     ProfesionesModule,
     SalidasModule,
+    AjustesInventarioModule,
   ],
 })
 export class AppModule { }

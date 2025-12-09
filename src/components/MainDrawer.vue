@@ -72,6 +72,12 @@ const inventarioItems = [
     label: 'Salidas',
     route: '/salidas',
     closable: true,
+  },
+  {
+    icon: 'tune',
+    label: 'Ajustes Inventario',
+    route: '/ajustes-inventario',
+    closable: true,
   }
 ];
 
