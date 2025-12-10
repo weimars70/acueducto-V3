@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { AjusteInventario } from '../entities/ajuste-inventario.entity';
 import { CreateAjusteInventarioDto } from './dto/create-ajuste-inventario.dto';
+import { CreateAjusteMultipleDto } from './dto/create-ajuste-multiple.dto';
+import { TiposAjusteInventarioService } from '../tipos-ajuste-inventario/tipos-ajuste-inventario.service';
 
 @Injectable()
 export class AjustesInventarioService {
@@ -10,6 +12,7 @@ export class AjustesInventarioService {
         @InjectRepository(AjusteInventario)
         private ajusteInventarioRepository: Repository<AjusteInventario>,
         private readonly dataSource: DataSource,
+        private readonly tiposAjusteService: TiposAjusteInventarioService,
     ) { }
 
     async findAll(empresaId: number, page: number = 1, limit: number = 20, filters: Record<string, any> = {}) {
@@ -230,6 +233,163 @@ export class AjustesInventarioService {
             return result[0];
         } catch (error) {
             throw new Error(`Error al obtener estadísticas: ${error.message}`);
+        }
+    }
+
+    async createMultiple(createMultipleDto: CreateAjusteMultipleDto, userId: string, empresaId: number) {
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
+        try {
+            const { codigoTipoAjuste, items, motivoGeneral } = createMultipleDto;
+
+            // 1. Obtener tipo de ajuste
+            const tipoAjuste = await this.tiposAjusteService.findOne(codigoTipoAjuste);
+
+            if (!tipoAjuste || !tipoAjuste.activo) {
+                throw new Error('Tipo de ajuste no válido o inactivo');
+            }
+
+            const ajustesRealizados = [];
+
+            // 2. Procesar cada item
+            for (const itemDto of items) {
+                const { idItem, cantidad, motivo } = itemDto;
+
+                // 2.1 Validaciones
+                if (!idItem) {
+                    throw new Error('Debe especificar un item válido');
+                }
+
+                if (tipoAjuste.valorUnidades) {
+                    // Para valor unidades, aceptar >= 0
+                    if (cantidad < 0) {
+                        throw new Error('La cantidad debe ser mayor o igual a cero');
+                    }
+                } else {
+                    // Para suma/resta, debe ser > 0
+                    if (cantidad <= 0) {
+                        throw new Error('La cantidad debe ser mayor a cero');
+                    }
+                }
+
+                // 2.2 Obtener datos del item
+                const itemData = await queryRunner.query(
+                    'SELECT id, codigo, nombre, inventario_actual FROM items WHERE id = $1 AND empresa_id = $2',
+                    [idItem, empresaId]
+                );
+
+                if (!itemData || itemData.length === 0) {
+                    throw new Error(`Item con ID ${idItem} no encontrado`);
+                }
+
+                const item = itemData[0];
+                const inventarioAnterior = parseFloat(item.inventario_actual) || 0;
+
+                // 2.3 Calcular nuevo inventario según el tipo
+                let inventarioNuevo = inventarioAnterior;
+                if (tipoAjuste.sumaUnidades) {
+                    inventarioNuevo = inventarioAnterior + cantidad;
+                } else if (tipoAjuste.restaUnidades) {
+                    inventarioNuevo = inventarioAnterior - cantidad;
+                    // Validar que no quede negativo
+                    if (inventarioNuevo < 0) {
+                        throw new Error(`El ajuste del item ${item.nombre} resultaría en inventario negativo`);
+                    }
+                } else if (tipoAjuste.valorUnidades) {
+                    inventarioNuevo = cantidad;
+                }
+
+                // 2.4 Actualizar inventario del item
+                await queryRunner.query(
+                    `UPDATE public.items
+                    SET inventario_actual = $1
+                    WHERE id = $2 AND empresa_id = $3`,
+                    [inventarioNuevo, idItem, empresaId]
+                );
+
+                // 2.5 Determinar tipo_ajuste legacy para compatibilidad
+                let tipoAjusteLegacy: string;
+                if (tipoAjuste.sumaUnidades) {
+                    tipoAjusteLegacy = '+';
+                } else if (tipoAjuste.restaUnidades) {
+                    tipoAjusteLegacy = '-';
+                } else {
+                    tipoAjusteLegacy = 'inicial';
+                }
+
+                // 2.6 Insertar registro de ajuste
+                const motivoFinal = motivo || motivoGeneral || '';
+                const insertResult = await queryRunner.query(
+                    `INSERT INTO ajustes_inventario (
+                        id_item, item_codigo, item_nombre, tipo_ajuste, codigo_tipo_ajuste,
+                        cantidad, inventario_anterior, inventario_nuevo,
+                        motivo, usuario, empresa_id
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                    RETURNING id`,
+                    [
+                        idItem,
+                        item.codigo,
+                        item.nombre,
+                        tipoAjusteLegacy,
+                        codigoTipoAjuste,
+                        cantidad,
+                        inventarioAnterior,
+                        inventarioNuevo,
+                        motivoFinal,
+                        userId,
+                        empresaId
+                    ]
+                );
+
+                // 2.7 Insertar movimiento de inventario
+                let tipoMovimiento: number;
+                if (tipoAjuste.valorUnidades) {
+                    tipoMovimiento = 5; // 5=inventario inicial
+                } else if (tipoAjuste.sumaUnidades) {
+                    tipoMovimiento = 3; // 3=ajuste entrada
+                } else {
+                    tipoMovimiento = 4; // 4=ajuste salida
+                }
+
+                await queryRunner.query(
+                    `INSERT INTO movimientos_inventario (
+                        id_item, tipo_movimiento, cantidad, fecha_movimiento,
+                        observaciones, fecha_registro, empresa_id, usuario
+                    ) VALUES ($1, $2, $3, CURRENT_DATE, $4, CURRENT_DATE, $5, $6)`,
+                    [
+                        idItem,
+                        tipoMovimiento,
+                        cantidad,
+                        `${tipoAjuste.nombre} - ${motivoFinal}`,
+                        empresaId,
+                        userId
+                    ]
+                );
+
+                ajustesRealizados.push({
+                    id: insertResult[0].id,
+                    itemNombre: item.nombre,
+                    inventarioAnterior,
+                    inventarioNuevo,
+                    cantidad
+                });
+            }
+
+            await queryRunner.commitTransaction();
+
+            return {
+                ok: true,
+                mensaje: `Se guardaron ${ajustesRealizados.length} ajuste(s) correctamente`,
+                ajustes: ajustesRealizados
+            };
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            console.error('Error al crear ajustes múltiples:', error);
+            throw new Error(error.message || 'Error al guardar los ajustes');
+        } finally {
+            await queryRunner.release();
         }
     }
 }

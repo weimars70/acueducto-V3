@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { TipoAjusteInventario } from './tipo-ajuste-inventario.entity';
 
 @Entity('ajustes_inventario')
 export class AjusteInventario {
@@ -15,7 +16,14 @@ export class AjusteInventario {
     itemNombre: string;
 
     @Column({ name: 'tipo_ajuste', type: 'varchar', length: 10 })
-    tipoAjuste: string; // '+' para entrada, '-' para salida
+    tipoAjuste: string; // '+' para entrada, '-' para salida (legacy)
+
+    @Column({ name: 'codigo_tipo_ajuste', type: 'int4', nullable: true })
+    codigoTipoAjuste: number;
+
+    @ManyToOne(() => TipoAjusteInventario)
+    @JoinColumn({ name: 'codigo_tipo_ajuste' })
+    tipoAjusteRel: TipoAjusteInventario;
 
     @Column({ type: 'numeric', precision: 12, scale: 2 })
     cantidad: number;

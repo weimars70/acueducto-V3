@@ -247,6 +247,16 @@ const routes = [
         component: () => import('../pages/NewAjusteInventarioPage.vue')
       },
       {
+        path: '/ajustes-inventario/nuevo-multiple',
+        name: 'new-ajuste-inventario-multiple',
+        component: () => import('../pages/NewAjusteInventarioMultiplePage.vue')
+      },
+      {
+        path: '/tipos-ajuste-inventario',
+        name: 'tipos-ajuste-inventario',
+        component: () => import('../pages/TiposAjusteInventarioPage.vue')
+      },
+      {
         path: '/tarifas-maestro',
         component: () => import('../pages/TarifasPage.vue')
       },

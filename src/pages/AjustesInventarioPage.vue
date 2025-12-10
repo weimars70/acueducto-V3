@@ -13,14 +13,44 @@
                 </div>
               </div>
               <div class="col-auto">
-                <q-btn
+                <q-btn-dropdown
                   label="Nuevo Ajuste"
                   icon="add"
                   color="primary"
                   unelevated
-                  @click="$router.push('/ajustes-inventario/nuevo')"
                   style="border-radius: 12px; padding: 10px 24px; height: 48px; font-weight: 600; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); transition: all 0.3s ease;"
-                />
+                >
+                  <q-list>
+                    <q-item clickable v-close-popup @click="$router.push('/ajustes-inventario/nuevo')">
+                      <q-item-section avatar>
+                        <q-icon name="edit_note" color="primary" />
+                      </q-item-section>
+                      <q-item-section>
+                        <q-item-label>Ajuste Simple</q-item-label>
+                        <q-item-label caption>Un item a la vez</q-item-label>
+                      </q-item-section>
+                    </q-item>
+                    <q-item clickable v-close-popup @click="$router.push('/ajustes-inventario/nuevo-multiple')">
+                      <q-item-section avatar>
+                        <q-icon name="playlist_add" color="secondary" />
+                      </q-item-section>
+                      <q-item-section>
+                        <q-item-label>Ajuste Múltiple</q-item-label>
+                        <q-item-label caption>Varios items a la vez</q-item-label>
+                      </q-item-section>
+                    </q-item>
+                    <q-separator />
+                    <q-item clickable v-close-popup @click="$router.push('/tipos-ajuste-inventario')">
+                      <q-item-section avatar>
+                        <q-icon name="settings" color="orange" />
+                      </q-item-section>
+                      <q-item-section>
+                        <q-item-label>Tipos de Ajuste</q-item-label>
+                        <q-item-label caption>Configurar tipos</q-item-label>
+                      </q-item-section>
+                    </q-item>
+                  </q-list>
+                </q-btn-dropdown>
               </div>
             </div>
 

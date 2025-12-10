@@ -34,6 +34,7 @@ import { SectoresModule } from './sectores/sectores.module';
 import { ProfesionesModule } from './profesiones/profesiones.module';
 import { SalidasModule } from './salidas/salidas.module';
 import { AjustesInventarioModule } from './ajustes-inventario/ajustes-inventario.module';
+import { TiposAjusteInventarioModule } from './tipos-ajuste-inventario/tipos-ajuste-inventario.module';
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { AjustesInventarioModule } from './ajustes-inventario/ajustes-inventario
     ProfesionesModule,
     SalidasModule,
     AjustesInventarioModule,
+    TiposAjusteInventarioModule,
   ],
 })
 export class AppModule { }

@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Query, UseGuards, Req } from '@nestjs/common';
 import { AjustesInventarioService } from './ajustes-inventario.service';
 import { CreateAjusteInventarioDto } from './dto/create-ajuste-inventario.dto';
+import { CreateAjusteMultipleDto } from './dto/create-ajuste-multiple.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('ajustes-inventario')
@@ -53,5 +54,15 @@ export class AjustesInventarioController {
         const userId = req.user?.userId || req.user?.email || 'sistema';
         const empresaId = req.user?.empresaId || req.user?.empresa_id;
         return this.ajustesInventarioService.create(createAjusteDto, userId, empresaId);
+    }
+
+    @Post('multiple')
+    async createMultiple(
+        @Body() createMultipleDto: CreateAjusteMultipleDto,
+        @Req() req: any,
+    ) {
+        const userId = req.user?.userId || req.user?.email || 'sistema';
+        const empresaId = req.user?.empresaId || req.user?.empresa_id;
+        return this.ajustesInventarioService.createMultiple(createMultipleDto, userId, empresaId);
     }
 }

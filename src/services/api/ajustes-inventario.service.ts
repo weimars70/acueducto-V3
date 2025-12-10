@@ -22,6 +22,18 @@ export interface CreateAjusteInventarioDto {
     motivo?: string;
 }
 
+export interface ItemAjusteDto {
+    idItem: number;
+    cantidad: number;
+    motivo?: string;
+}
+
+export interface CreateAjusteMultipleDto {
+    codigoTipoAjuste: number;
+    items: ItemAjusteDto[];
+    motivoGeneral?: string;
+}
+
 export interface ItemInventario {
     id: number;
     codigo: string;
@@ -62,6 +74,11 @@ export const ajustesInventarioService = {
 
     async create(ajuste: CreateAjusteInventarioDto): Promise<any> {
         const { data } = await apiClient.post('/ajustes-inventario', ajuste);
+        return data;
+    },
+
+    async createMultiple(ajuste: CreateAjusteMultipleDto): Promise<any> {
+        const { data } = await apiClient.post('/ajustes-inventario/multiple', ajuste);
         return data;
     }
 };
