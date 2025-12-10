@@ -98,14 +98,15 @@ export class ComprasService {
     }
   }
 
-  async getItems() {
+  async getItems(empresaId: number) {
     try {
       const query = `
         SELECT codigo, nombre, precio_sin_iva, por_iva, precio_total, precio_venta
         FROM public.items
+        WHERE empresa_id = $1
         ORDER BY nombre
       `;
-      const items = await this.dataSource.query(query);
+      const items = await this.dataSource.query(query, [empresaId]);
       return items;
     } catch (error) {
       throw new Error(`Error al obtener items: ${error.message}`);

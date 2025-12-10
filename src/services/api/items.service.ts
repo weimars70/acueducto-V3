@@ -4,9 +4,7 @@ import type { Item, CreateItemDto, UpdateItemDto } from '../../types/item';
 export const itemsService = {
     async getByEmpresa(empresaId: number): Promise<Item[]> {
         try {
-            const { data } = await apiClient.get<Item[]>(`/items`, {
-                params: { empresaId }
-            });
+            const { data } = await apiClient.get<Item[]>(`/items`);
             return data;
         } catch (error) {
             throw error;
@@ -15,9 +13,7 @@ export const itemsService = {
 
     async getById(id: number, empresaId: number): Promise<Item> {
         try {
-            const { data } = await apiClient.get<Item>(`/items/${id}`, {
-                params: { empresaId }
-            });
+            const { data } = await apiClient.get<Item>(`/items/${id}`);
             return data;
         } catch (error) {
             throw error;

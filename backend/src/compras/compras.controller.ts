@@ -40,8 +40,10 @@ export class ComprasController {
   }
 
   @Get('items')
-  async getItems() {
-    return this.comprasService.getItems();
+  @UseGuards(JwtAuthGuard)
+  async getItems(@Req() req) {
+    const empresaId = req.user.empresaId;
+    return this.comprasService.getItems(empresaId);
   }
 
   @Get(':id')

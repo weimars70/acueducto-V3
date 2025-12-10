@@ -178,13 +178,27 @@ export class SalidasService {
             for (const item of items) {
                 // Obtener datos del item por código
                 const itemData = await queryRunner.query(
-                    'SELECT id, codigo, nombre FROM items WHERE codigo = $1 AND empresa_id = $2',
+                    'SELECT id, codigo, nombre, inventario_actual FROM items WHERE codigo = $1 AND empresa_id = $2',
                     [item.codigo, empresaId]
                 );
+
+                if (!itemData || itemData.length === 0) {
+                    throw new Error(`Item con código ${item.codigo} no encontrado`);
+                }
 
                 const itemNombre = itemData[0]?.nombre || item.nombre;
                 const itemId = itemData[0]?.id;
                 const itemCodigo = itemData[0]?.codigo || item.codigo;
+                const inventarioActual = itemData[0]?.inventario_actual || 0;
+
+                // Validar inventario suficiente
+                if (inventarioActual < (item.cantidad || 0)) {
+                    throw new Error(
+                        `Stock insuficiente para el item "${itemNombre}". ` +
+                        `Disponible: ${inventarioActual} unidades, ` +
+                        `Solicitado: ${item.cantidad || 0} unidades`
+                    );
+                }
 
                 // Insertar detalle
                 await queryRunner.query(

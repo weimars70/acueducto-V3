@@ -149,6 +149,22 @@ const agregarItem = () => {
   const selectedItem = itemsFiltered.value.find(i => i.id === itemForm.value.item);
   if (!selectedItem) return;
 
+  // Calcular cantidad ya agregada del mismo item en la tabla
+  const cantidadYaAgregada = itemsTabla.value
+    .filter(item => item.id === selectedItem.id)
+    .reduce((sum, item) => sum + item.cantidad, 0);
+
+  // Validar que hay suficiente inventario
+  const inventarioDisponible = (selectedItem.inventario_actual || 0) - cantidadYaAgregada;
+
+  if (itemForm.value.cantidad > inventarioDisponible) {
+    $q.notify({
+      type: 'negative',
+      message: `Stock insuficiente. Disponible: ${inventarioDisponible} unidades (Inventario actual: ${selectedItem.inventario_actual || 0}, Ya agregado: ${cantidadYaAgregada})`
+    });
+    return;
+  }
+
   const subtotal = (itemForm.value.psalida * (1 - itemForm.value.descuento / 100)) * itemForm.value.cantidad;
 
   itemsTabla.value.push({

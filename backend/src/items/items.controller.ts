@@ -9,6 +9,7 @@ import {
     Query,
     UseGuards,
     ParseIntPipe,
+    Req,
 } from '@nestjs/common';
 import { ItemsService } from './items.service';
 import { CreateItemDto } from './dto/create-item.dto';
@@ -26,12 +27,14 @@ export class ItemsController {
     }
 
     @Get()
-    findAll(@Query('empresaId', ParseIntPipe) empresaId: number) {
+    findAll(@Req() req) {
+        const empresaId = req.user.empresaId;
         return this.itemsService.findAll(empresaId);
     }
 
     @Get(':id')
-    findOne(@Param('id', ParseIntPipe) id: number, @Query('empresaId', ParseIntPipe) empresaId: number) {
+    findOne(@Param('id', ParseIntPipe) id: number, @Req() req) {
+        const empresaId = req.user.empresaId;
         return this.itemsService.findOne(id, empresaId);
     }
 
