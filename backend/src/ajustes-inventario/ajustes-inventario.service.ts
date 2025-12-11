@@ -19,32 +19,33 @@ export class AjustesInventarioService {
         try {
             let query = `
                 SELECT
-                    id,
-                    id_item,
-                    item_codigo,
-                    item_nombre,
-                    tipo_ajuste,
-                    cantidad,
-                    inventario_anterior,
-                    inventario_nuevo,
-                    motivo,
-                    fecha,
-                    usuario
-                FROM ajustes_inventario
-                WHERE empresa_id = $1
+                    ai.id,
+                    ai.id_item,
+                    ai.item_codigo,
+                    ai.item_nombre,
+                    ai.tipo_ajuste,
+                    ai.cantidad,
+                    ai.inventario_anterior,
+                    ai.inventario_nuevo,
+                    ai.motivo,
+                    ai.fecha,
+                    COALESCE(u.email, u.name) as usuario
+                FROM ajustes_inventario ai
+                LEFT JOIN usuarios u ON ai.usuario::integer = u.id
+                WHERE ai.empresa_id = $1
             `;
 
             const queryParams: any[] = [empresaId];
             let paramCount = 2;
 
             if (filters.itemNombre) {
-                query += ` AND item_nombre ILIKE $${paramCount}`;
+                query += ` AND ai.item_nombre ILIKE $${paramCount}`;
                 queryParams.push(`%${filters.itemNombre}%`);
                 paramCount++;
             }
 
             if (filters.tipoAjuste) {
-                query += ` AND tipo_ajuste = $${paramCount}`;
+                query += ` AND ai.tipo_ajuste = $${paramCount}`;
                 queryParams.push(filters.tipoAjuste);
                 paramCount++;
             }
@@ -55,7 +56,7 @@ export class AjustesInventarioService {
             const total = parseInt(totalResult[0].count);
 
             // Agregar ordenamiento y paginación
-            query += ` ORDER BY fecha DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+            query += ` ORDER BY ai.fecha DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
             queryParams.push(limit, (page - 1) * limit);
 
             const data = await this.dataSource.query(query, queryParams);

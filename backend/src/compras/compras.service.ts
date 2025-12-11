@@ -223,24 +223,28 @@ export class ComprasService {
         // OR fetch it if needed. usage: `SELECT nombre FROM items WHERE codigo = ...`
 
         const itemData = await queryRunner.query(
-          'SELECT codigo, nombre FROM public.items WHERE codigo = $1 AND empresa_id = $2',
+          'SELECT id, codigo, nombre FROM public.items WHERE codigo = $1 AND empresa_id = $2',
           [item.codigo, empresaId]
         );
 
-        // If items table uses 'id_item' as PK and 'codigo' as a display code:
-        const itemId = itemData[0]?.codigo || item.codigo; // Fallback
-        const itemNombre = itemData[0]?.nombre || '';
+        if (!itemData || itemData.length === 0) {
+          throw new Error(`Item con código ${item.codigo} no encontrado`);
+        }
+
+        const itemId = itemData[0].id;
+        const itemCodigo = itemData[0].codigo;
+        const itemNombre = itemData[0].nombre;
 
         // Insert Detalle
         await queryRunner.query(
           `INSERT INTO public.compras_detalle (
-            codigo_compra, item, item_descripcion, iva, precio, 
-            descuento, cantidad, subtotal, 
+            codigo_compra, item, item_descripcion, iva, precio,
+            descuento, cantidad, subtotal,
             empresa_id, usuario
           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
           [
             codigoCompra,
-            item.codigo,
+            itemCodigo,
             itemNombre,
             item.por_iva || 0,
             item.pcompra || 0,

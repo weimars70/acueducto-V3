@@ -98,9 +98,9 @@
                 <span>Agregar Item al Ajuste</span>
               </div>
 
-              <div class="row q-col-gutter-md">
+              <div class="row q-col-gutter-md items-end">
                 <!-- Selección de Item -->
-                <div class="col-12 col-md-6">
+                <div class="col-12 col-md-3">
                   <div style="font-weight: 600; color: #374151; margin-bottom: 8px; font-size: 14px;">
                     Item <span style="color: #ef4444;">*</span>
                   </div>
@@ -141,8 +141,8 @@
                 </div>
 
                 <!-- Cantidad -->
-                <div class="col-12 col-md-3">
-                  <div style="font-weight: 600; color: #374151; margin-bottom: 8px; font-size: 14px;">
+                <div class="col-6 col-md-auto compact-field">
+                  <div class="compact-label">
                     Cantidad <span style="color: #ef4444;">*</span>
                   </div>
                   <q-input
@@ -152,23 +152,24 @@
                     min="0.01"
                     step="0.01"
                     placeholder="0.00"
-                    style="border-radius: 12px;"
+                    class="compact-input"
+                    style="width: 100px;"
                   >
                     <template v-slot:prepend>
-                      <q-icon name="pin" color="primary" />
+                      <q-icon name="pin" color="primary" size="xs" />
                     </template>
                   </q-input>
                 </div>
 
                 <!-- Motivo individual -->
-                <div class="col-12 col-md-3">
+                <div class="col-12 col-md-2">
                   <div style="font-weight: 600; color: #374151; margin-bottom: 8px; font-size: 14px;">
                     Motivo (opcional)
                   </div>
                   <q-input
                     v-model="itemActual.motivo"
                     outlined
-                    placeholder="Motivo específico..."
+                    placeholder="Motivo..."
                     style="border-radius: 12px;"
                   >
                     <template v-slot:prepend>
@@ -176,43 +177,67 @@
                     </template>
                   </q-input>
                 </div>
-              </div>
 
-              <!-- Stock resultante preview -->
-              <div v-if="itemActual.item && itemActual.cantidad > 0" class="q-mt-md" style="background: white; border-radius: 8px; padding: 12px;">
-                <div class="row q-col-gutter-md text-center">
-                  <div class="col-4">
-                    <div style="font-size: 11px; color: #6b7280;">Stock Actual</div>
-                    <div style="font-size: 18px; font-weight: 700; color: #2c3e50;">
-                      {{ itemActual.item.inventario_actual }}
-                    </div>
+                <!-- Stock Actual -->
+                <div v-if="itemActual.item" class="col-auto compact-field">
+                  <div class="compact-label">
+                    Stock Actual
                   </div>
-                  <div class="col-4">
-                    <div style="font-size: 11px; color: #6b7280;">Cantidad {{ tipoAjusteInfo?.symbol }}</div>
-                    <div style="font-size: 18px; font-weight: 700;" :style="{ color: tipoAjusteInfo?.color }">
-                      {{ itemActual.cantidad }}
-                    </div>
-                  </div>
-                  <div class="col-4">
-                    <div style="font-size: 11px; color: #6b7280;">Stock Resultante</div>
-                    <div style="font-size: 18px; font-weight: 700;" :style="{ color: tipoAjusteInfo?.color }">
-                      {{ calcularStockResultante() }}
-                    </div>
-                  </div>
+                  <q-input
+                    :model-value="itemActual.item.inventario_actual"
+                    outlined
+                    readonly
+                    dense
+                    class="compact-input-readonly"
+                    style="width: 90px;"
+                    bg-color="grey-2"
+                  />
                 </div>
-              </div>
 
-              <!-- Botón agregar -->
-              <div class="q-mt-md">
-                <q-btn
-                  label="Agregar a la Lista"
-                  icon="add"
-                  color="primary"
-                  unelevated
-                  @click="agregarItem"
-                  :disable="!itemActual.item || !itemActual.cantidad || itemActual.cantidad <= 0"
-                  style="border-radius: 12px; height: 48px; font-weight: 600;"
-                />
+                <!-- Cantidad Ajuste -->
+                <div v-if="itemActual.item && itemActual.cantidad > 0" class="col-auto compact-field">
+                  <div class="compact-label">
+                    Cant. {{ tipoAjusteInfo?.symbol }}
+                  </div>
+                  <q-input
+                    :model-value="itemActual.cantidad"
+                    outlined
+                    readonly
+                    dense
+                    class="compact-input-readonly"
+                    style="width: 70px;"
+                    :bg-color="tipoAjusteInfo?.symbol === '+' ? 'green-1' : tipoAjusteInfo?.symbol === '-' ? 'red-1' : 'blue-1'"
+                  />
+                </div>
+
+                <!-- Stock Resultante -->
+                <div v-if="itemActual.item && itemActual.cantidad > 0" class="col-auto compact-field">
+                  <div class="compact-label">
+                    Resultante
+                  </div>
+                  <q-input
+                    :model-value="calcularStockResultante()"
+                    outlined
+                    readonly
+                    dense
+                    class="compact-input-readonly"
+                    style="width: 80px;"
+                    :bg-color="tipoAjusteInfo?.symbol === '+' ? 'green-1' : tipoAjusteInfo?.symbol === '-' ? 'red-1' : 'blue-1'"
+                  />
+                </div>
+
+                <!-- Botón agregar -->
+                <div class="col-12 col-md-auto" style="margin-left: auto;">
+                  <q-btn
+                    label="Agregar"
+                    icon="add"
+                    color="primary"
+                    unelevated
+                    @click="agregarItem"
+                    :disable="!itemActual.item || !itemActual.cantidad || itemActual.cantidad <= 0"
+                    style="border-radius: 12px; height: 48px; font-weight: 600; min-width: 140px;"
+                  />
+                </div>
               </div>
             </div>
 
@@ -285,31 +310,25 @@
             </div>
 
             <!-- Botones finales -->
-            <div class="row q-col-gutter-md q-mt-lg">
-              <div class="col-6">
-                <q-btn
-                  label="Cancelar"
-                  outline
-                  color="grey-7"
-                  @click="$router.back()"
-                  class="full-width"
-                  unelevated
-                  style="border-radius: 12px; height: 52px; font-weight: 600; border: 2px solid #9ca3af;"
-                />
-              </div>
-              <div class="col-6">
-                <q-btn
-                  label="Guardar Ajustes"
-                  icon="save"
-                  color="primary"
-                  :loading="loading"
-                  :disable="itemsAgregados.length === 0"
-                  @click="guardarAjustes"
-                  class="full-width"
-                  unelevated
-                  style="border-radius: 12px; height: 52px; font-weight: 600; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);"
-                />
-              </div>
+            <div class="form-actions">
+              <q-btn
+                label="Cancelar"
+                outline
+                color="grey-7"
+                icon="close"
+                @click="$router.back()"
+                class="action-btn cancel-btn"
+              />
+              <q-btn
+                label="Guardar Ajustes"
+                icon="save"
+                color="primary"
+                :loading="loading"
+                :disable="itemsAgregados.length === 0"
+                @click="guardarAjustes"
+                unelevated
+                class="action-btn save-btn"
+              />
             </div>
           </div>
         </div>
@@ -610,3 +629,91 @@ onMounted(() => {
   loadItems();
 });
 </script>
+
+<style scoped lang="scss">
+.form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 2px solid #e5e7eb;
+}
+
+.action-btn {
+  min-width: 140px;
+  height: 52px;
+  padding: 0 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.3px;
+  transition: all 0.3s ease;
+}
+
+.cancel-btn {
+  &:hover {
+    background: #fff4e6 !important;
+    border-color: #fb923c !important;
+    color: #ea580c !important;
+  }
+}
+
+.save-btn {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+
+  &:hover {
+    background: #28A745 !important;
+    border-color: #28A745 !important;
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4) !important;
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.compact-field {
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.compact-label {
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.compact-input {
+  border-radius: 8px;
+
+  :deep(.q-field__control) {
+    min-height: 40px;
+    height: 40px;
+  }
+
+  :deep(input) {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+  }
+}
+
+.compact-input-readonly {
+  border-radius: 8px;
+
+  :deep(.q-field__control) {
+    min-height: 36px;
+    height: 36px;
+  }
+
+  :deep(input) {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+  }
+}
+</style>

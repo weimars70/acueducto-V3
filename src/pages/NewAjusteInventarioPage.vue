@@ -150,29 +150,24 @@
               </div>
 
               <!-- Botones -->
-              <div class="row q-col-gutter-md q-mt-md">
-                <div class="col-6">
-                  <q-btn
-                    label="Cancelar"
-                    outline
-                    color="grey-7"
-                    @click="$router.back()"
-                    class="full-width"
-                    unelevated
-                    style="border-radius: 12px; height: 52px; font-weight: 600; border: 2px solid #9ca3af;"
-                  />
-                </div>
-                <div class="col-6">
-                  <q-btn
-                    label="Guardar Ajuste"
-                    type="submit"
-                    color="primary"
-                    :loading="loading"
-                    class="full-width"
-                    unelevated
-                    style="border-radius: 12px; height: 52px; font-weight: 600; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); transition: all 0.3s ease;"
-                  />
-                </div>
+              <div class="form-actions">
+                <q-btn
+                  label="Cancelar"
+                  outline
+                  color="grey-7"
+                  icon="close"
+                  @click="$router.back()"
+                  class="action-btn cancel-btn"
+                />
+                <q-btn
+                  label="Guardar Ajuste"
+                  type="submit"
+                  color="primary"
+                  icon="save"
+                  :loading="loading"
+                  unelevated
+                  class="action-btn save-btn"
+                />
               </div>
             </q-form>
           </div>
@@ -308,3 +303,48 @@ onMounted(() => {
   loadItems();
 });
 </script>
+
+<style scoped lang="scss">
+.form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 2px solid #e5e7eb;
+}
+
+.action-btn {
+  min-width: 140px;
+  height: 52px;
+  padding: 0 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.3px;
+  transition: all 0.3s ease;
+}
+
+.cancel-btn {
+  &:hover {
+    background: #fff4e6 !important;
+    border-color: #fb923c !important;
+    color: #ea580c !important;
+  }
+}
+
+.save-btn {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+
+  &:hover {
+    background: #28A745 !important;
+    border-color: #28A745 !important;
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4) !important;
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+</style>
