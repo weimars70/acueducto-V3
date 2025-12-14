@@ -35,6 +35,11 @@ import { ProfesionesModule } from './profesiones/profesiones.module';
 import { SalidasModule } from './salidas/salidas.module';
 import { AjustesInventarioModule } from './ajustes-inventario/ajustes-inventario.module';
 import { TiposAjusteInventarioModule } from './tipos-ajuste-inventario/tipos-ajuste-inventario.module';
+import { EmpleadosModule } from './empleados/empleados.module';
+import { PeriodosNominaModule } from './periodos-nomina/periodos-nomina.module';
+import { ConceptosNominaModule } from './conceptos-nomina/conceptos-nomina.module';
+import { NominasModule } from './nominas/nominas.module';
+import { ParametrosNominaModule } from './parametros-nomina/parametros-nomina.module';
 
 @Module({
   imports: [
@@ -77,6 +82,11 @@ import { TiposAjusteInventarioModule } from './tipos-ajuste-inventario/tipos-aju
     SalidasModule,
     AjustesInventarioModule,
     TiposAjusteInventarioModule,
+    EmpleadosModule,
+    PeriodosNominaModule,
+    ConceptosNominaModule,
+    NominasModule,
+    ParametrosNominaModule,
   ],
 })
 export class AppModule { }

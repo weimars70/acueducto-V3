@@ -482,7 +482,87 @@ const routes = [
         name: 'edit-tipo-persona',
         component: () => import('../pages/EditTipoPersonaPage.vue'),
         props: true
-      }
+      },
+      // Empleados Routes
+      {
+        path: '/empleados',
+        name: 'empleados',
+        component: () => import('../pages/EmpleadosPage.vue')
+      },
+      {
+        path: '/empleados/new',
+        name: 'new-empleado',
+        component: () => import('../pages/NewEmpleadoPage.vue')
+      },
+      {
+        path: '/empleados/edit/:id',
+        name: 'edit-empleado',
+        component: () => import('../pages/EditEmpleadoPage.vue'),
+        props: true
+      },
+      // Períodos Nómina Routes
+      {
+        path: '/periodos-nomina',
+        name: 'periodos-nomina',
+        component: () => import('../pages/PeriodosNominaPage.vue')
+      },
+      {
+        path: '/periodos-nomina/new',
+        name: 'new-periodo-nomina',
+        component: () => import('../pages/NewPeriodoNominaPage.vue')
+      },
+      {
+        path: '/periodos-nomina/edit/:id',
+        name: 'edit-periodo-nomina',
+        component: () => import('../pages/EditPeriodoNominaPage.vue'),
+        props: true
+      },
+      // Conceptos Nómina Routes
+      {
+        path: '/conceptos-nomina',
+        name: 'conceptos-nomina',
+        component: () => import('../pages/ConceptosNominaPage.vue')
+      },
+      {
+        path: '/conceptos-nomina/new',
+        name: 'new-concepto-nomina',
+        component: () => import('../pages/NewConceptoNominaPage.vue')
+      },
+      {
+        path: '/conceptos-nomina/edit/:id',
+        name: 'edit-concepto-nomina',
+        component: () => import('../pages/EditConceptoNominaPage.vue'),
+        props: true
+      },
+      // Parámetros de Nómina Routes
+      {
+        path: '/parametros-nomina',
+        name: 'parametros-nomina',
+        component: () => import('../pages/ParametrosNominaPage.vue')
+      },
+      {
+        path: '/parametros-nomina/edit/:id',
+        name: 'edit-parametro-nomina',
+        component: () => import('../pages/EditParametroNominaPage.vue'),
+        props: true
+      },
+      // Nóminas Routes
+      {
+        path: '/nominas',
+        name: 'nominas',
+        component: () => import('../pages/NominasPage.vue')
+      },
+      {
+        path: '/nominas/calcular',
+        name: 'calcular-nomina',
+        component: () => import('../pages/CalcularNominaPage.vue')
+      },
+      {
+        path: '/nominas/:id',
+        name: 'view-nomina',
+        component: () => import('../pages/ViewNominaPage.vue'),
+        props: true
+      },
     ]
   },
   {
@@ -546,7 +626,11 @@ router.beforeEach((to, from, next) => {
         { icon: 'person', label: 'Tipo Persona', route: '/tipo-persona', closable: true },
         { icon: 'business', label: 'Tipo Régimen', route: '/tipo-regimen', closable: true },
         { icon: 'calendar_today', label: 'Años', route: '/years', closable: true },
-        { icon: 'people', label: 'Usuarios', route: '/users', closable: true }
+        { icon: 'people', label: 'Usuarios', route: '/users', closable: true },
+        { icon: 'badge', label: 'Empleados', route: '/empleados', closable: true },
+        { icon: 'event', label: 'Períodos de Nómina', route: '/periodos-nomina', closable: true },
+        { icon: 'description', label: 'Conceptos de Nómina', route: '/conceptos-nomina', closable: true },
+        { icon: 'payments', label: 'Nóminas', route: '/nominas', closable: true }
       ];
 
       const menuItem = menuItems.find(item => item.route === to.path);

@@ -88,6 +88,7 @@ const diferidoExpanded = ref(false);
 const estratosExpanded = ref(false);
 const comprasExpanded = ref(false);
 const configuracionExpanded = ref(false);
+const nominaExpanded = ref(false);
 
 const maestrosItems = [
   {
@@ -223,6 +224,45 @@ const configuracionItems = [
     icon: 'people',
     label: 'Usuarios',
     route: '/users',
+    closable: true,
+  }
+];
+
+const nominaItems = [
+  {
+    icon: 'badge',
+    label: 'Empleados',
+    route: '/empleados',
+    closable: true,
+  },
+  {
+    icon: 'event',
+    label: 'Períodos de Nómina',
+    route: '/periodos-nomina',
+    closable: true,
+  },
+  {
+    icon: 'description',
+    label: 'Conceptos de Nómina',
+    route: '/conceptos-nomina',
+    closable: true,
+  },
+  {
+    icon: 'settings',
+    label: 'Parámetros de Nómina',
+    route: '/parametros-nomina',
+    closable: true,
+  },
+  {
+    icon: 'payments',
+    label: 'Nóminas',
+    route: '/nominas',
+    closable: true,
+  },
+  {
+    icon: 'calculate',
+    label: 'Calcular Nómina',
+    route: '/nominas/calcular',
     closable: true,
   }
 ];
@@ -511,6 +551,34 @@ const handleSync = async () => {
       >
         <q-item
           v-for="item in configuracionItems"
+          :key="item.route"
+          clickable
+          v-ripple
+          :active="router.currentRoute.value.path === item.route"
+          active-class="text-primary"
+          @click="navigateTo(item)"
+          class="q-pl-lg"
+        >
+          <q-item-section avatar>
+            <q-icon :name="item.icon" />
+          </q-item-section>
+          <q-item-section>
+            {{ item.label }}
+          </q-item-section>
+        </q-item>
+      </q-expansion-item>
+
+      <q-separator spaced />
+
+      <!-- Nómina Section -->
+      <q-expansion-item
+        v-model="nominaExpanded"
+        icon="payments"
+        label="Nómina"
+        header-class="text-weight-bold"
+      >
+        <q-item
+          v-for="item in nominaItems"
           :key="item.route"
           clickable
           v-ripple
