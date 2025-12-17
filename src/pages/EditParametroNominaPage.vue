@@ -250,23 +250,21 @@ onMounted(() => {
           <div class="form-actions">
             <q-btn
               outline
-              rounded
               label="Cancelar"
               color="grey-7"
-              size="lg"
-              class="action-btn"
+              icon="close"
+              class="action-btn cancel-btn"
               @click="handleCancel"
               :disable="loading"
             />
             <q-btn
-              rounded
+              unelevated
               type="submit"
               label="Guardar Cambios"
-              color="pink-7"
-              size="lg"
-              class="action-btn action-btn-primary"
-              :loading="loading"
+              color="primary"
               icon="save"
+              class="action-btn save-btn"
+              :loading="loading"
             />
           </div>
         </q-form>
@@ -416,16 +414,30 @@ onMounted(() => {
   height: 52px;
   font-weight: 600;
   font-size: 16px;
+  border-radius: 12px;
+  letter-spacing: 0.3px;
   transition: all 0.3s ease;
 }
 
-.action-btn-primary {
-  box-shadow: 0 4px 12px rgba(245, 87, 108, 0.3);
+.cancel-btn:hover {
+  background: #fff4e6 !important;
+  border-color: #fb923c !important;
+  color: #ea580c !important;
 }
 
-.action-btn-primary:hover {
+.save-btn {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.save-btn:hover {
+  background: #28A745 !important;
+  border-color: #28A745 !important;
+  box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4) !important;
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(245, 87, 108, 0.4);
+}
+
+.save-btn:active {
+  transform: translateY(0);
 }
 
 @media (max-width: 768px) {

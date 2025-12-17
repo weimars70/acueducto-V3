@@ -40,6 +40,14 @@ import { PeriodosNominaModule } from './periodos-nomina/periodos-nomina.module';
 import { ConceptosNominaModule } from './conceptos-nomina/conceptos-nomina.module';
 import { NominasModule } from './nominas/nominas.module';
 import { ParametrosNominaModule } from './parametros-nomina/parametros-nomina.module';
+import { NotasConceptosModule } from './notas-conceptos/notas-conceptos.module';
+import { NotasCreditoModule } from './notas-credito/notas-credito.module';
+import { NotasDebitoConceptosModule } from './notas-debito-conceptos/notas-debito-conceptos.module';
+import { NotasDebitoModule } from './notas-debito/notas-debito.module';
+import { PrefacturaModule } from './facturacion/prefactura/prefactura.module';
+import { SaldosAFavorModule } from './instalaciones/saldos-a-favor/saldos-a-favor.module';
+
+
 
 @Module({
   imports: [
@@ -87,6 +95,12 @@ import { ParametrosNominaModule } from './parametros-nomina/parametros-nomina.mo
     ConceptosNominaModule,
     NominasModule,
     ParametrosNominaModule,
+    NotasDebitoConceptosModule,
+    NotasDebitoModule,
+    NotasConceptosModule,
+    NotasCreditoModule,
+    PrefacturaModule,
+    SaldosAFavorModule,
   ],
 })
 export class AppModule { }

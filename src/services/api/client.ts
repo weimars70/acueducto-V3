@@ -12,8 +12,20 @@ export const apiClient = axios.create({
 
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
+
+  // 🔍 DEBUG: Verificar si el token existe
+  console.log('🔑 Interceptor Request:', {
+    url: config.url,
+    method: config.method,
+    hasToken: !!token,
+    tokenPreview: token ? token.substring(0, 20) + '...' : 'NO TOKEN'
+  });
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+    console.log('✅ Header Authorization agregado');
+  } else {
+    console.warn('❌ NO hay token en localStorage - request sin autenticar');
   }
 
   // Agregar empresaId a todas las peticiones
@@ -56,9 +68,13 @@ apiClient.interceptors.response.use(
       throw error;
     }
 
+    // 🔒 Manejar error 401 (token expirado o inválido)
     if (error.response?.status === 401) {
+      console.error('🔒 [client.ts] Token expirado o inválido - cerrando sesión');
+
       const authStore = useAuthStore();
-      authStore.logout();
+      authStore.logout(true); // true = redirigir al login
+
       error.isAuthError = true;
       error.message = 'Sesión expirada. Por favor inicie sesión nuevamente.';
     }

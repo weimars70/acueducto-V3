@@ -190,47 +190,47 @@ export class ParametrosNominaService {
       const { sourceYear, targetYear } = duplicateDto;
 
       // Verificar que no existan parámetros para el año destino
-      const existing = await this.parametroRepository.find({
-        where: {
-          anio: targetYear,
-          empresaId: empresaId,
-        },
-      });
+      const existingCount = await this.parametroRepository.query(
+        `SELECT COUNT(*) as count FROM parametros_nomina WHERE anio = $1 AND empresa_id = $2`,
+        [targetYear, empresaId]
+      );
 
-      if (existing.length > 0) {
+      if (parseInt(existingCount[0].count) > 0) {
         throw new Error(`Ya existen parámetros para el año ${targetYear}. Elimínelos primero si desea duplicar.`);
       }
 
-      // Obtener parámetros del año origen
-      const sourceParams = await this.parametroRepository.find({
-        where: {
-          anio: sourceYear,
-          empresaId: empresaId,
-        },
-      });
+      // Verificar que existan parámetros en el año origen
+      const sourceCount = await this.parametroRepository.query(
+        `SELECT COUNT(*) as count FROM parametros_nomina WHERE anio = $1 AND empresa_id = $2`,
+        [sourceYear, empresaId]
+      );
 
-      if (sourceParams.length === 0) {
+      if (parseInt(sourceCount[0].count) === 0) {
         throw new Error(`No existen parámetros para el año ${sourceYear}`);
       }
 
-      // Duplicar parámetros
-      const newParams = sourceParams.map(param => {
-        const newParam = new ParametroNomina();
-        newParam.codigo = param.codigo;
-        newParam.nombre = param.nombre;
-        newParam.descripcion = param.descripcion;
-        newParam.valor = param.valor;
-        newParam.anio = targetYear;
-        newParam.empresaId = empresaId;
-        newParam.usuarioCreacion = usuarioId;
-        return newParam;
-      });
+      // Duplicar parámetros usando INSERT ... SELECT
+      const sql = `INSERT INTO parametros_nomina
+         (codigo, nombre, descripcion, valor, anio, empresa_id, usuario_creacion)
+         SELECT codigo, nombre, descripcion, valor, $1, $2, $3
+         FROM parametros_nomina
+         WHERE empresa_id = $2 AND anio = $4
+         RETURNING id`;
 
-      await this.parametroRepository.save(newParams);
+      console.log('sql  ', sql);
+      console.log('targetYear  ', targetYear);
+      console.log('empresaId  ', empresaId);
+      console.log('usuarioId  ', usuarioId);
+      console.log('sourceYear  ', sourceYear);
+      const result = await this.parametroRepository.query(
+        sql,
+        [targetYear, empresaId, usuarioId, sourceYear]
+      );
+
 
       return {
-        message: `Se duplicaron ${newParams.length} parámetros del año ${sourceYear} al año ${targetYear}`,
-        count: newParams.length,
+        message: `Se duplicaron ${result.length} parámetros del año ${sourceYear} al año ${targetYear}`,
+        count: result.length,
       };
     } catch (error) {
       throw new Error(`Error al duplicar año: ${error.message}`);

@@ -14,8 +14,12 @@ export interface Instalacion {
 }
 
 export const instalacionesService = {
-    async getAll(empresaId?: number): Promise<Instalacion[]> {
-        const response = await apiClient.get('/instalaciones/all', { params: { empresaId } });
+    async getAll(empresaId?: number, search?: string): Promise<Instalacion[]> {
+        const params: any = {};
+        if (empresaId) params.empresaId = empresaId;
+        if (search) params.search = search;
+
+        const response = await apiClient.get('/instalaciones/all', { params });
         return response.data;
     },
 

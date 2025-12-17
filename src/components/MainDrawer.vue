@@ -89,6 +89,8 @@ const estratosExpanded = ref(false);
 const comprasExpanded = ref(false);
 const configuracionExpanded = ref(false);
 const nominaExpanded = ref(false);
+const notasExpanded = ref(false);
+const instalacionesExpanded = ref(false);
 
 const maestrosItems = [
   {
@@ -177,14 +179,47 @@ const facturacionItems = [
     label: 'Conceptos Factura',
     route: '/conceptos-factura',
     closable: true,
+  },
+  {
+    icon: 'receipt_long',
+    label: 'Prefactura',
+    route: '/prefactura',
+    closable: true,
   }
 ];
 
 const diferidoItems = [
   {
     icon: 'schedule',
-    label: 'Concepto Diferido',
+    label: 'Listado Diferidos',
     route: '/diferidos',
+    closable: true,
+  }
+];
+
+const notasItems = [
+  {
+    icon: 'note',
+    label: 'Conceptos Notas',
+    route: '/notas-conceptos',
+    closable: true,
+  },
+  {
+    icon: 'receipt_long',
+    label: 'Notas de Crédito',
+    route: '/notas-credito',
+    closable: true,
+  },
+  {
+    icon: 'note',
+    label: 'Conceptos Notas Débito',
+    route: '/notas-debito-conceptos',
+    closable: true,
+  },
+  {
+    icon: 'description',
+    label: 'Notas Débito',
+    route: '/notas-debito',
     closable: true,
   }
 ];
@@ -488,6 +523,34 @@ const handleSync = async () => {
 
       <q-separator spaced />
 
+      <!-- Notas Section -->
+      <q-expansion-item
+        v-model="notasExpanded"
+        icon="note"
+        label="Notas"
+        header-class="text-weight-bold"
+      >
+        <q-item
+          v-for="item in notasItems"
+          :key="item.route"
+          clickable
+          v-ripple
+          :active="router.currentRoute.value.path === item.route"
+          active-class="text-primary"
+          @click="navigateTo(item)"
+          class="q-pl-lg"
+        >
+          <q-item-section avatar>
+            <q-icon :name="item.icon" />
+          </q-item-section>
+          <q-item-section>
+            {{ item.label }}
+          </q-item-section>
+        </q-item>
+      </q-expansion-item>
+
+      <q-separator spaced />
+
       <!-- Compras Section -->
       <q-expansion-item
         v-model="comprasExpanded"
@@ -564,6 +627,32 @@ const handleSync = async () => {
           </q-item-section>
           <q-item-section>
             {{ item.label }}
+          </q-item-section>
+        </q-item>
+      </q-expansion-item>
+
+      <q-separator spaced />
+
+      <!-- Instalaciones Section -->
+      <q-expansion-item
+        v-model="instalacionesExpanded"
+        icon="home"
+        label="Instalaciones"
+        header-class="text-weight-bold"
+      >
+        <q-item
+          clickable
+          v-ripple
+          :active="router.currentRoute.value.path === '/instalaciones/saldos-a-favor'"
+          active-class="text-primary"
+          @click="navigateTo({ label: 'Saldos a Favor', route: '/instalaciones/saldos-a-favor', icon: 'account_balance_wallet', closable: true })"
+          class="q-pl-lg"
+        >
+          <q-item-section avatar>
+            <q-icon name="account_balance_wallet" />
+          </q-item-section>
+          <q-item-section>
+            Saldos a Favor
           </q-item-section>
         </q-item>
       </q-expansion-item>

@@ -8,10 +8,10 @@
       </div>
 
       <!-- Código de Instalación -->
-      <div class="col-12 col-sm-6 col-md-3 q-mb-xs">
-        <InstallationCodeField 
+      <div class="col-6 col-sm-6 col-md-3 q-mb-xs">
+        <InstallationCodeField
           ref="codigoRef"
-          @installation-found="onInstallationFound" 
+          @installation-found="onInstallationFound"
           v-if="mode !== 'edit'"
         />
         <ReadonlyField
@@ -54,7 +54,7 @@
       </div>
 
       <!-- Lecturas y Consumo -->
-      <div class="col-12 col-sm-6 col-md-3 q-mb-xs">
+      <div class="col-6 col-sm-6 col-md-3 q-mb-xs">
         <ReadonlyField
           v-model="formData.lectura_anterior"
           label="Lectura Anterior"
@@ -62,7 +62,7 @@
         />
       </div>
 
-      <div class="col-12 col-sm-6 col-md-3 q-mb-xs">
+      <div class="col-6 col-sm-6 col-md-3 q-mb-xs">
         <q-input
           ref="lecturaActualRef"
           v-model="formData.lectura_actual"
@@ -74,7 +74,7 @@
         />
       </div>
 
-      <div class="col-12 col-sm-6 col-md-3 q-mb-xs">
+      <div class="col-6 col-sm-6 col-md-3 q-mb-xs">
         <ReadonlyField
           v-model="formData.consumo"
           label="Consumo"
@@ -87,7 +87,7 @@
         />
       </div>
 
-      <div class="col-12 col-sm-6 col-md-3 q-mb-xs">
+      <div class="col-6 col-sm-6 col-md-3 q-mb-xs">
         <ReadonlyField
           v-model="formData.promedio"
           label="Promedio"
@@ -120,8 +120,8 @@
         />
       </div>
 
-      <!-- Cobros Adicionales - Shown only on mobile/tablet -->
-      <div class="col-12 show-on-mobile q-mb-xs">
+      <!-- Cobros Adicionales - Hidden on mobile -->
+      <div class="col-12 hide-on-mobile q-mb-xs">
         <q-btn
           label="Mostrar cobros adicionales"
           color="primary"
@@ -181,6 +181,22 @@
         />
       </div>
     </div>
+
+    <!-- Floating Voice Button -->
+    <q-btn
+      v-if="isVoiceSupported && mode !== 'edit'"
+      fab
+      :icon="isListening ? 'mic' : 'mic_none'"
+      :color="isListening ? 'red' : 'primary'"
+      class="voice-fab"
+      :class="{ 'mic-pulse': isListening }"
+      @click="toggleVoice"
+      size="lg"
+    >
+      <q-tooltip>
+        {{ isListening ? 'Detener comandos de voz' : 'Activar comandos de voz' }}
+      </q-tooltip>
+    </q-btn>
   </div>
 </template>
 
@@ -193,6 +209,7 @@ import ReadonlyField from './fields/ReadonlyField.vue';
 import DateFields from './fields/DateFields.vue';
 import { getCurrentDate, getCurrentMonth, getCurrentYear, months } from '../../utils/dates';
 import { useConsumptionForm } from '../../composables/useConsumptionForm';
+import { useVoiceInput } from '../../composables/useVoiceInput';
 
 const emit = defineEmits<{
   (e: 'mounted'): void
@@ -211,6 +228,7 @@ const reconexionRef = ref(null);
 const showAdditionalCharges = ref(false);
 
 const { formData, updateConsumo, saveConsumption } = useConsumptionForm(props.mode);
+const { status: voiceStatus, isSupported: isVoiceSupported, isListening, toggleListening } = useVoiceInput();
 
 // Inicializar valores por defecto solo en modo create
 if (props.mode !== 'edit') {
@@ -238,6 +256,65 @@ watch(() => formData.value.lectura_actual, (newValue) => {
   }
 });
 
+// Voice command handler
+const handleVoiceCommand = async (command: any) => {
+  console.log('Procesando comando:', command);
+
+  switch (command.type) {
+    case 'month':
+      formData.value.mes = command.value;
+      $q.notify({
+        type: 'positive',
+        message: `Mes: ${command.value}`,
+        position: 'top',
+        timeout: 1500
+      });
+      break;
+
+    case 'code':
+      // Trigger the installation code field to search for this code
+      if (codigoRef.value && (codigoRef.value as any).setCode) {
+        await (codigoRef.value as any).setCode(command.value);
+      }
+      $q.notify({
+        type: 'positive',
+        message: `Código: ${command.value}`,
+        position: 'top',
+        timeout: 1500
+      });
+      break;
+
+    case 'reading':
+      formData.value.lectura_actual = command.value;
+      $q.notify({
+        type: 'positive',
+        message: `Lectura: ${command.value}`,
+        position: 'top',
+        timeout: 1500
+      });
+      break;
+
+    case 'save':
+      $q.notify({
+        type: 'info',
+        message: 'Guardando...',
+        position: 'top',
+        timeout: 1000
+      });
+      await handleSave();
+      break;
+
+    case 'cancel':
+      onCancel();
+      break;
+  }
+};
+
+// Toggle voice recognition
+const toggleVoice = () => {
+  toggleListening(handleVoiceCommand);
+};
+
 const handleLecturaActualKeyup = (event: KeyboardEvent) => {
   if (event.key === 'Enter') {
     const consumo = parseFloat(formData.value.consumo);
@@ -260,7 +337,7 @@ const handleOtrosCobrosKeyup = (event: KeyboardEvent) => {
 };
 
 const onInstallationFound = async (installation: any) => {
-  console.log('installation:::', installation);
+  
   formData.value = {
     ...formData.value,
     codigo: installation.codigo.toString(),
@@ -391,6 +468,46 @@ defineExpose({
     background: #28A745 !important;
     border-color: #28A745 !important;
     box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4) !important;
+  }
+}
+
+.mic-pulse {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// Floating voice button
+.voice-fab {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  z-index: 1000;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+}
+
+// En mobile, posicionar más arriba para evitar conflictos con el navegador
+@media (max-width: 768px) {
+  .voice-fab {
+    bottom: 90px;
+    right: 16px;
   }
 }
 </style>

@@ -33,6 +33,8 @@ watch(isMobile, (newValue) => {
 });
 
 const loadData = async () => {
+   
+  console.log('🚀 Cargando datos...');
   try {
     loading.value = true;
     
@@ -42,7 +44,7 @@ const loadData = async () => {
       limit: pagination.value.rowsPerPage,
       ...currentFilters.value
     });
-    
+    console.log('✅ Datos encontrados:', response);
 
     if (response && response.data) {
       console.log('✅ Datos encontrados:', {

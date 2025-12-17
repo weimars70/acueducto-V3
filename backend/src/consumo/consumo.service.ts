@@ -44,8 +44,8 @@ export class ConsumoService implements OnModuleInit {
     }
   }
 
-  async findOne(id: number) {
-    console.log('id::::', id);
+  async findOne(id: number, empresaId: number) {
+
     try {
       if (isNaN(id) || !Number.isInteger(id)) {
         throw new Error('El ID debe ser un número entero válido');
@@ -54,6 +54,7 @@ export class ConsumoService implements OnModuleInit {
       const consumption = await this.consumoRepository
         .createQueryBuilder('consumo')
         .where('consumo.codigo = :id', { id })
+        .andWhere('consumo.empresa_id = :empresaId', { empresaId })
         .getOne();
 
       if (!consumption) {
@@ -66,11 +67,11 @@ export class ConsumoService implements OnModuleInit {
     }
   }
 
-  async getPreviousReading(instalacion: number, codigo: number) {
+  async getPreviousReading(instalacion: number, codigo: number, empresaId: number) {
     try {
       const result = await this.consumoRepository.query(
-        `SELECT * FROM get_previous_reading($1)`,
-        [instalacion],
+        `SELECT * FROM get_previous_reading($1,$2,$3)`,
+        [instalacion, codigo, empresaId],
       );
 
       if (!result || result.length === 0) {
@@ -86,7 +87,7 @@ export class ConsumoService implements OnModuleInit {
     }
   }
 
-  async getBasicInfo(id: number) {
+  async getBasicInfo(id: number, empresaId: number) {
     try {
       const result = await this.consumoRepository
         .createQueryBuilder('consumo')
@@ -100,6 +101,7 @@ export class ConsumoService implements OnModuleInit {
           'consumo.lectura as lectura_actual',
         ])
         .where('consumo.codigo = :id', { id })
+        .andWhere('consumo.empresa_id = :empresaId', { empresaId })
         .getRawOne();
 
       if (!result) {
@@ -113,6 +115,7 @@ export class ConsumoService implements OnModuleInit {
   }
 
   async findAll(page: number, limit: number, filters: Record<string, any>) {
+
     try {
       let query = `
         SELECT 
@@ -135,6 +138,13 @@ export class ConsumoService implements OnModuleInit {
 
       const queryParams: any[] = [];
       let paramCount = 1;
+
+      // FILTRO OBLIGATORIO POR EMPRESA
+      if (filters.empresaId) {
+        query += ` AND empresa_id = $${paramCount}`;
+        queryParams.push(filters.empresaId);
+        paramCount++;
+      }
 
       if (filters.nombre) {
         query += ` AND nombre ILIKE $${paramCount}`;
@@ -185,14 +195,16 @@ export class ConsumoService implements OnModuleInit {
     }
   }
 
-  async getLecturasMes(month: number, year: number) {
+  async getLecturasMes(month: number, year: number, empresaId: number) {
     try {
       const result = await this.consumoRepository.query(
         ` SELECT a.codigo as Instalacion,a.nombre,c.nombre as sector,B.lectura, CASE WHEN B.lectura IS NULL THEN 'NO' ELSE 'SI' END AS REGISTRADA
           FROM instalaciones a
           JOIN SECTOR C ON C.CODIGO=a.sector_codigo
-          LEFT JOIN CONSUMO B ON A.codigo=B.instalacion AND B.MES=$1 AND B.year=$2 order by a.codigo`,
-        [month, year],
+          LEFT JOIN CONSUMO B ON A.codigo=B.instalacion AND B.MES=$1 AND B.year=$2 AND B.empresa_id=$3
+          WHERE a.empresa_id = $3
+          order by a.codigo`,
+        [month, year, empresaId],
       );
       return result;
     } catch (error) {
@@ -200,12 +212,12 @@ export class ConsumoService implements OnModuleInit {
     }
   }
 
-  async getLastReadings(year: number, month: number) {
+  async getLastReadings(year: number, month: number, empresaId: number) {
     console.log('year::', year);
     try {
       const result = await this.consumoRepository.query(
-        `SELECT * FROM consumo where year=$1 and mes =$2`,
-        [year, month],
+        `SELECT * FROM consumo where year=$1 and mes =$2 and empresa_id=$3`,
+        [year, month, empresaId],
       );
 
       const latestReadings = new Map();
@@ -223,26 +235,27 @@ export class ConsumoService implements OnModuleInit {
     }
   }
 
-  async create(createConsumoDto: any) {
-    console.log('createConsumoDto recibido:', createConsumoDto);
+  async create(createConsumoDto: any, empresaId: number, usuarioEmail: string) {
+
     const sql = `SELECT COALESCE(count(*),0) AS registros
                  FROM public.consumo
-                 WHERE instalacion=$1 AND mes=$2 AND year=$3 AND medidor=$4`;
-      const params = [
-        createConsumoDto.instalacion,
-        createConsumoDto.mes,
-        createConsumoDto.year,
-        createConsumoDto.medidor,
-      ];
-      const result = await this.consumoRepository.query(sql, params);
-      console.log('Verificación duplicado result:', result);
-      const registros = parseInt(result?.[0]?.registros ?? '0', 10);
-      if (registros > 0) {
-        return 'Error consumo ya existe';
-      }
-      console.log('Sin duplicado, procediendo a crear consumo');
+                 WHERE instalacion=$1 AND mes=$2 AND year=$3 AND medidor=$4 AND empresa_id=$5`;
+    const params = [
+      createConsumoDto.instalacion,
+      createConsumoDto.mes,
+      createConsumoDto.year,
+      createConsumoDto.medidor,
+      empresaId,
+    ];
+    const result = await this.consumoRepository.query(sql, params);
+
+    const registros = parseInt(result?.[0]?.registros ?? '0', 10);
+    if (registros > 0) {
+      return 'Error consumo ya existe';
+    }
+
     try {
-      
+
       const consumptionData = {
         instalacion: createConsumoDto.instalacion,
         lectura: createConsumoDto.lectura,
@@ -253,29 +266,29 @@ export class ConsumoService implements OnModuleInit {
         medidor: createConsumoDto.medidor,
         otrosCobros: createConsumoDto.otrosCobros,
         reconexion: createConsumoDto.reconexion,
-        usuario: createConsumoDto.usuario,
+        usuario: usuarioEmail,
         latitud: createConsumoDto.latitud,
         longitud: createConsumoDto.longitud,
+        empresaId: empresaId,
       };
 
-      console.log('ConsumptionData a guardar:', consumptionData);
+
       const consumption = this.consumoRepository.create(consumptionData);
       const saved = await this.consumoRepository.save(consumption);
-      console.log('Consumo guardado:', saved);
+
       const geoOk = consumptionData.latitud != null && consumptionData.longitud != null;
       const status = geoOk ? 'guardado con geolocalizacion' : 'guardado sin geolocalizacion';
-      console.log('Create status (backend):', status);
+
       return status;
     } catch (error) {
-      console.error('Error al crear consumo:', error);
       throw new Error(`Error al crear consumo: ${error.message}`);
     }
   }
 
-  async update(id: number, updateConsumoDto: CreateConsumoDto) {
+  async update(id: number, updateConsumoDto: CreateConsumoDto, empresaId: number, usuarioEmail: string) {
     try {
       const consumption = await this.consumoRepository.findOne({
-        where: { codigo: id },
+        where: { codigo: id, empresaId: empresaId },
       });
 
       if (!consumption) {
@@ -292,7 +305,7 @@ export class ConsumoService implements OnModuleInit {
         medidor: updateConsumoDto.medidor,
         otrosCobros: updateConsumoDto.otrosCobros,
         reconexion: updateConsumoDto.reconexion,
-        usuario: updateConsumoDto.usuario,
+        usuario: usuarioEmail,
         latitud: updateConsumoDto.latitud,
         longitud: updateConsumoDto.longitud,
       };
@@ -302,6 +315,23 @@ export class ConsumoService implements OnModuleInit {
     } catch (error) {
       throw new Error(`Error al actualizar consumo: ${error.message}`);
     }
+  }
+
+  async updateImageUrl(
+    id: number,
+    imagenUrl: string,
+    empresaId: number
+  ): Promise<void> {
+    const consumo = await this.consumoRepository.findOne({
+      where: { codigo: id, empresaId }
+    });
+
+    if (!consumo) {
+      throw new Error(`Consumo #${id} no encontrado`);
+    }
+
+    consumo.imagenUrl = imagenUrl;
+    await this.consumoRepository.save(consumo);
   }
 
   getConsumptionEvents(): Observable<any> {

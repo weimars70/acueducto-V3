@@ -41,7 +41,7 @@ const formatDate = (date: string) => {
 <template>
   <div class="row q-col-gutter-sm">
     <!-- Año -->
-    <div class="col-12 col-sm-4">
+    <div class="col-6 col-sm-4">
       <q-select
         :model-value="modelValue.year"
         :options="years"
@@ -55,7 +55,7 @@ const formatDate = (date: string) => {
     </div>
 
     <!-- Mes -->
-    <div class="col-12 col-sm-4">
+    <div class="col-6 col-sm-4">
       <q-select
         :model-value="modelValue.mes"
         :options="months"
@@ -71,7 +71,7 @@ const formatDate = (date: string) => {
     </div>
 
     <!-- Fecha -->
-    <div class="col-12 col-sm-4">
+    <div class="col-6 col-sm-4">
       <q-input
         :model-value="modelValue.fecha"
         label="Fecha"

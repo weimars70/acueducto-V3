@@ -25,8 +25,7 @@ const columns = [
 const loadConceptos = async () => {
   try {
     loading.value = true;
-    const empresaId = authStore.user?.empresaId;
-    conceptos.value = await conceptoFacturaService.getAll(empresaId);
+    conceptos.value = await conceptoFacturaService.getAll();
   } catch (error) {
     console.error('Error loading conceptos:', error);
     $q.notify({

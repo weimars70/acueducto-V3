@@ -16,27 +16,37 @@ export const consumptionService = {
     try {
       const { page, limit, ...filters } = params;
       const queryParams = new URLSearchParams();
-      
+
       if (page !== undefined) {
         queryParams.append('page', page.toString());
       }
-      
+
       if (limit !== undefined) {
         queryParams.append('limit', limit.toString());
       }
-      
+
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== null && value !== undefined && value !== '') {
           queryParams.append(key, value.toString());
         }
       });
+      console.log('📋 Antes de hacer GET /consumo/view con queryParams:', queryParams.toString());
 
-      const { data } = await apiClient.get<PaginatedResponse<Consumption>>('/consumo/view', { 
+      const { data } = await apiClient.get<PaginatedResponse<Consumption>>('/consumo/view', {
         params: queryParams
       });
 
+      console.log('✅ Respuesta exitosa de /consumo/view:', data);
       return data;
-    } catch (error) {
+    } catch (error: any) {
+      console.error('🚀 Error al obtener consumos:', {
+        message: error?.message,
+        status: error?.response?.status,
+        statusText: error?.response?.statusText,
+        data: error?.response?.data,
+        isConnectionError: error?.isConnectionError,
+        isAuthError: error?.isAuthError
+      });
       if (error.isConnectionError) {
         return {
           data: await storageService.getConsumptions(params),
@@ -103,14 +113,14 @@ export const consumptionService = {
       throw error;
     }
   },
-  
+
   async update(id: number, consumption: Partial<Consumption>): Promise<Consumption> {
     try {
       if (!syncService.isOnline()) {
         throw new Error('No se puede actualizar sin conexión');
       }
       const { data } = await apiClient.put<Consumption>(`/consumo/${id}`, {
-     
+
         instalacion: parseInt(consumption.instalacion.toString()),
         lectura: parseFloat(consumption.lectura),
         fecha: consumption.fecha,
@@ -124,9 +134,9 @@ export const consumptionService = {
         latitud: consumption.latitud as number,
         longitud: consumption.longitud as number
       });
-      
+
       return data;
-      
+
     } catch (error) {
       throw error;
     }

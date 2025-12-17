@@ -41,9 +41,15 @@ export class Consumption {
   @Column({ type: 'float', nullable: true })
   longitud: number;
 
+  @Column({ name: 'imagen_url', nullable: true })
+  imagenUrl: string;
+
   @Column({ default: false })
   facturada: boolean;
 
   @Column({ name: 'consumo_facturar', type: 'numeric', nullable: true })
   consumoFacturar: number;
+
+  @Column({ name: 'empresa_id' })
+  empresaId: number;
 }

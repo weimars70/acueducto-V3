@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
 import { ConceptosFacturaService } from './conceptos-factura.service';
 import { CreateConceptoFacturaDto } from './dto/create-concepto-factura.dto';
 import { UpdateConceptoFacturaDto } from './dto/update-concepto-factura.dto';
@@ -10,27 +10,33 @@ export class ConceptosFacturaController {
     constructor(private readonly service: ConceptosFacturaService) { }
 
     @Post()
-    create(@Body() createDto: CreateConceptoFacturaDto) {
-        return this.service.create(createDto);
+    create(@Body() createDto: CreateConceptoFacturaDto, @Request() req: any) {
+        const empresaId = req.user.empresaId;
+        const usuarioEmail = req.user.email;
+        return this.service.create({ ...createDto, empresaId, usuario: usuarioEmail });
     }
 
     @Get()
-    findAll(@Query('empresaId') empresaId?: number) {
-        return this.service.findAll(empresaId ? +empresaId : undefined);
+    findAll(@Request() req: any) {
+        const empresaId = req.user.empresaId;
+        return this.service.findAll(empresaId);
     }
 
     @Get(':codigo')
-    findOne(@Param('codigo') codigo: string) {
-        return this.service.findOne(+codigo);
+    findOne(@Param('codigo') codigo: string, @Request() req: any) {
+        const empresaId = req.user.empresaId;
+        return this.service.findOne(+codigo, empresaId);
     }
 
     @Patch(':codigo')
-    update(@Param('codigo') codigo: string, @Body() updateDto: UpdateConceptoFacturaDto) {
-        return this.service.update(+codigo, updateDto);
+    update(@Param('codigo') codigo: string, @Body() updateDto: UpdateConceptoFacturaDto, @Request() req: any) {
+        const empresaId = req.user.empresaId;
+        return this.service.update(+codigo, updateDto, empresaId);
     }
 
     @Delete(':codigo')
-    remove(@Param('codigo') codigo: string) {
-        return this.service.remove(+codigo);
+    remove(@Param('codigo') codigo: string, @Request() req: any) {
+        const empresaId = req.user.empresaId;
+        return this.service.remove(+codigo, empresaId);
     }
 }

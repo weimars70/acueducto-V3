@@ -182,6 +182,22 @@ const routes = [
         props: true
       },
       {
+        path: '/prefactura',
+        name: 'prefactura',
+        component: () => import('../pages/PrefacturaPage.vue')
+      },
+      // Instalaciones Routes
+      {
+        path: '/instalaciones/saldos-a-favor',
+        name: 'saldos-a-favor',
+        component: () => import('../pages/SaldosAFavorPage.vue')
+      },
+      {
+        path: '/instalaciones/saldos-a-favor/nuevo',
+        name: 'new-saldo-a-favor',
+        component: () => import('../pages/NewSaldoAFavorPage.vue')
+      },
+      {
         path: '/items-grupos',
         component: () => import('../pages/ItemsGruposPage.vue')
       },
@@ -382,6 +398,68 @@ const routes = [
         name: 'edit-concepto-factura',
         component: () => import('../pages/EditConceptoFacturaPage.vue'),
         props: true
+      },
+      // Notas Conceptos Routes
+      {
+        path: '/notas-conceptos',
+        name: 'notas-conceptos',
+        component: () => import('../pages/NotasConceptosPage.vue')
+      },
+      {
+        path: '/notas-conceptos/nuevo',
+        name: 'new-nota-concepto',
+        component: () => import('../pages/NewNotaConceptoPage.vue')
+      },
+      {
+        path: '/notas-conceptos/editar/:id',
+        name: 'edit-nota-concepto',
+        component: () => import('../pages/EditNotaConceptoPage.vue'),
+        props: true
+      },
+      // Notas Crédito Routes
+      {
+        path: '/notas-credito',
+        name: 'notas-credito',
+        component: () => import('../pages/NotasCreditoPage.vue')
+      },
+      {
+        path: '/notas-credito/nuevo',
+        name: 'new-nota-credito',
+        component: () => import('../pages/NewNotaCreditoPage.vue')
+      },
+      {
+        path: '/notas-credito/editar/:codigo/:empresaId',
+        name: 'edit-nota-credito',
+        component: () => import('../pages/EditNotaCreditoPage.vue'),
+        props: true
+      },
+      // Notas Débito Conceptos Routes
+      {
+        path: '/notas-debito-conceptos',
+        name: 'notas-debito-conceptos',
+        component: () => import('../pages/NotasDebitoConceptosPage.vue')
+      },
+      {
+        path: '/notas-debito-conceptos/nuevo',
+        name: 'new-nota-debito-concepto',
+        component: () => import('../pages/NewNotaDebitoConceptoPage.vue')
+      },
+      {
+        path: '/notas-debito-conceptos/editar/:id',
+        name: 'edit-nota-debito-concepto',
+        component: () => import('../pages/EditNotaDebitoConceptoPage.vue'),
+        props: true
+      },
+      // Notas Débito Routes
+      {
+        path: '/notas-debito',
+        name: 'notas-debito',
+        component: () => import('../pages/NotasDebitoPage.vue')
+      },
+      {
+        path: '/notas-debito/nuevo',
+        name: 'new-nota-debito',
+        component: () => import('../pages/NewNotaDebitoPage.vue')
       },
       // Diferidos Routes
       {

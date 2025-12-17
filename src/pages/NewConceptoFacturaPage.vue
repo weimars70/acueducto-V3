@@ -12,11 +12,9 @@ const authStore = useAuthStore();
 
 const loading = ref(false);
 const formData = ref<CreateConceptoFacturaDto>({
-  empresaId: authStore.user?.empresaId || 0,
   nombre: '',
   activo: true,
-  usarDiferido: false,
-  usuario: authStore.user?.email || ''
+  usarDiferido: false
 });
 
 const handleSubmit = async () => {
@@ -98,9 +96,26 @@ const handleSubmit = async () => {
                 </div>
               </div>
 
-              <div class="row justify-between q-mt-xl items-center">
-                <q-btn flat label="Cancelar" color="grey-8" to="/conceptos-factura" no-caps class="text-weight-medium" />
-                <q-btn label="Guardar Concepto" type="submit" color="primary" Unelevated class="q-px-lg shadow-1" rounded :loading="loading" no-caps />
+              <div class="row justify-end q-mt-xl q-gutter-sm items-center">
+                <q-btn
+                  label="Cancelar"
+                  color="grey-8"
+                  outline
+                  icon="close"
+                  to="/conceptos-factura"
+                  no-caps
+                  class="cancel-btn"
+                />
+                <q-btn
+                  label="Guardar Concepto"
+                  type="submit"
+                  color="primary"
+                  unelevated
+                  icon="save"
+                  class="save-btn q-px-lg"
+                  :loading="loading"
+                  no-caps
+                />
               </div>
             </q-form>
           </q-card-section>
@@ -116,5 +131,22 @@ const handleSubmit = async () => {
 }
 .modern-input :deep(.q-field__control) {
     border-radius: 8px;
+}
+
+/* Button hover effects */
+.cancel-btn {
+  &:hover {
+    background: #fff4e6 !important;
+    border-color: #fb923c !important;
+    color: #ea580c !important;
+  }
+}
+
+.save-btn {
+  &:hover {
+    background: #28A745 !important;
+    border-color: #28A745 !important;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4) !important;
+  }
 }
 </style>

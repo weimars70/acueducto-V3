@@ -227,7 +227,7 @@ onMounted(async () => {
 <template>
   <q-page padding>
     <!-- Header Card -->
-    <q-card flat class="q-mb-md shadow-1" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+    <q-card flat class="q-mb-md shadow-1" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
       <q-card-section class="text-white">
         <div class="row items-center">
           <div class="col">
@@ -245,7 +245,7 @@ onMounted(async () => {
               icon="content_copy"
               label="Duplicar Año"
               color="white"
-              text-color="pink-9"
+              text-color="purple-9"
               size="md"
               class="q-px-lg q-mr-sm shadow-3"
               @click="openDuplicateDialog"
@@ -273,7 +273,7 @@ onMounted(async () => {
               clearable
             >
               <template v-slot:prepend>
-                <q-icon name="calendar_today" color="pink-7" />
+                <q-icon name="calendar_today" color="purple-7" />
               </template>
             </q-select>
           </div>
@@ -286,7 +286,7 @@ onMounted(async () => {
               style="border-radius: 12px;"
             >
               <template v-slot:prepend>
-                <q-icon name="search" color="pink-7" />
+                <q-icon name="search" color="purple-7" />
               </template>
               <template v-slot:append v-if="filter">
                 <q-icon name="close" @click="filter = ''" class="cursor-pointer" />
@@ -319,7 +319,7 @@ onMounted(async () => {
                 v-model="viewMode"
                 rounded
                 outline
-                toggle-color="pink-7"
+                toggle-color="purple-7"
                 color="grey-7"
                 :options="[
                   {label: 'Tabla', value: 'table', icon: 'view_list'},
@@ -356,7 +356,7 @@ onMounted(async () => {
         <template v-slot:body-cell-anio="props">
           <q-td :props="props">
             <q-chip
-              color="pink-6"
+              color="purple-6"
               text-color="white"
               size="sm"
               icon="calendar_today"
@@ -440,7 +440,7 @@ onMounted(async () => {
               </div>
               <div class="col-auto">
                 <q-chip
-                  color="pink-6"
+                  color="purple-6"
                   text-color="white"
                   size="sm"
                   icon="calendar_today"
@@ -460,7 +460,7 @@ onMounted(async () => {
               </div>
             </div>
 
-            <div class="text-h6 text-weight-bold text-pink-8 q-my-md text-center">
+            <div class="text-h6 text-weight-bold text-purple-8 q-my-md text-center">
               {{ formatCurrency(parametro.valor) }}
             </div>
 
@@ -494,7 +494,7 @@ onMounted(async () => {
     <!-- Dialog para duplicar año -->
     <q-dialog v-model="showDuplicateDialog" persistent>
       <q-card style="min-width: 400px; border-radius: 16px;">
-        <q-card-section class="bg-pink-7 text-white">
+        <q-card-section class="bg-purple-7 text-white">
           <div class="text-h6 text-weight-bold">
             <q-icon name="content_copy" size="24px" class="q-mr-sm" />
             Duplicar Parámetros de Año
@@ -516,7 +516,7 @@ onMounted(async () => {
             style="border-radius: 12px;"
           >
             <template v-slot:prepend>
-              <q-icon name="source" color="pink-7" />
+              <q-icon name="source" color="purple-7" />
             </template>
           </q-select>
 
@@ -532,7 +532,7 @@ onMounted(async () => {
             ]"
           >
             <template v-slot:prepend>
-              <q-icon name="flag" color="pink-7" />
+              <q-icon name="flag" color="purple-7" />
             </template>
           </q-input>
         </q-card-section>
@@ -549,7 +549,7 @@ onMounted(async () => {
           <q-btn
             rounded
             label="Duplicar"
-            color="pink-7"
+            color="purple-7"
             @click="handleDuplicateYear"
             class="q-px-lg"
             icon="content_copy"

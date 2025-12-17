@@ -74,8 +74,14 @@ const clear = () => {
   codigo.value = '';
 };
 
+const setCode = async (value: string) => {
+  codigo.value = value;
+  await handleSearch();
+};
+
 defineExpose({
   clear,
+  setCode,
   focus: () => {
     const input = document.querySelector('input[aria-label="Código"]');
     if (input) {
@@ -97,8 +103,8 @@ defineExpose({
     :loading="loading"
   >
     <template v-slot:append>
-      <q-icon 
-        name="search" 
+      <q-icon
+        name="search"
         class="cursor-pointer"
         @click="handleSearch"
       />

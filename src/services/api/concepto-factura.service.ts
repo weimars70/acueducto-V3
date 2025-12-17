@@ -2,9 +2,8 @@ import { apiClient } from './client';
 import type { ConceptoFactura, CreateConceptoFacturaDto, UpdateConceptoFacturaDto } from '../../types/concepto-factura';
 
 export const conceptoFacturaService = {
-    async getAll(empresaId?: number): Promise<ConceptoFactura[]> {
-        const params = empresaId ? { empresaId } : {};
-        const response = await apiClient.get<ConceptoFactura[]>('/conceptos-factura', { params });
+    async getAll(): Promise<ConceptoFactura[]> {
+        const response = await apiClient.get<ConceptoFactura[]>('/conceptos-factura');
         return response.data;
     },
 

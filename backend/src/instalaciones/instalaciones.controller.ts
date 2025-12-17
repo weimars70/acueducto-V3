@@ -29,9 +29,9 @@ export class InstalacionesController {
     status: 200,
     description: 'Installations retrieved successfully',
   })
-  async getAllInstalaciones(@Query('empresaId') empresaId?: number) {
+  async getAllInstalaciones(@Query('empresaId') empresaId?: number, @Query('search') search?: string) {
     try {
-      return await this.instalacionesService.findAll(empresaId);
+      return await this.instalacionesService.findAll(empresaId, search);
     } catch (error) {
       throw new Error(`Error retrieving installations: ${error.message}`);
     }

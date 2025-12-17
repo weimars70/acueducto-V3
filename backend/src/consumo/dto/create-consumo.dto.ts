@@ -51,4 +51,9 @@ export class CreateConsumoDto {
   @IsOptional()
   @IsNumber()
   longitud?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  imagenUrl?: string;
 }

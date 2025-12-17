@@ -30,7 +30,7 @@ BEGIN
 	_data := replace(_data::text, '"subtotal "', '"subtotal"')::jsonb;
     _data := replace(_data::text, '"obs "', '"obs"')::jsonb;
     
-    --raise exception '_data:::: %', _data;
+    
     v_cliente := (_data->'data'->>'cliente');
 
     select into v_factura COALESCE( max(codigo),0) from salidas;

@@ -17,35 +17,43 @@ export class ConceptosFacturaService {
         return await this.conceptoRepository.save(concepto);
     }
 
-    async findAll(empresaId?: number): Promise<ConceptoFactura[]> {
-        const query = this.conceptoRepository.createQueryBuilder('concepto')
-            .where('concepto.activo = :activo', { activo: true });
-
-        if (empresaId) {
-            query.andWhere('concepto.empresaId = :empresaId', { empresaId });
-        }
-
-        query.orderBy('concepto.nombre', 'ASC');
-
-        return await query.getMany();
+    async findAll(empresaId: number): Promise<ConceptoFactura[]> {
+        return await this.conceptoRepository.find({
+            where: {
+                empresaId
+            },
+            order: {
+                nombre: 'ASC'
+            }
+        });
     }
 
-    async findOne(codigo: number): Promise<ConceptoFactura> {
-        const concepto = await this.conceptoRepository.findOne({ where: { codigo } });
+    async findOne(codigo: number, empresaId: number): Promise<ConceptoFactura> {
+        const concepto = await this.conceptoRepository.findOne({
+            where: { codigo, empresaId }
+        });
         if (!concepto) {
             throw new NotFoundException(`Concepto factura con codigo ${codigo} no encontrado`);
         }
         return concepto;
     }
 
-    async update(codigo: number, updateDto: UpdateConceptoFacturaDto): Promise<ConceptoFactura> {
-        const concepto = await this.findOne(codigo);
-        const updated = Object.assign(concepto, updateDto);
-        return await this.conceptoRepository.save(updated);
+    async update(codigo: number, updateDto: UpdateConceptoFacturaDto, empresaId: number): Promise<ConceptoFactura> {
+        // Primero verificar que existe y pertenece a la empresa
+        await this.findOne(codigo, empresaId);
+
+        // Actualizar usando el método update nativo de TypeORM
+        await this.conceptoRepository.update(
+            { codigo, empresaId },
+            updateDto
+        );
+
+        // Retornar el registro actualizado
+        return await this.findOne(codigo, empresaId);
     }
 
-    async remove(codigo: number): Promise<void> {
-        const concepto = await this.findOne(codigo);
+    async remove(codigo: number, empresaId: number): Promise<void> {
+        const concepto = await this.findOne(codigo, empresaId);
         concepto.activo = false; // Soft delete
         await this.conceptoRepository.save(concepto);
     }

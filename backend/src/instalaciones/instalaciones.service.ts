@@ -36,15 +36,34 @@ export class InstalacionesService {
     }
   }
 
-  async findAll(empresaId?: number) {
+  async findAll(empresaId?: number, search?: string) {
     try {
-      // Use standard TypeORM find for efficiency, avoiding slow views and N+1 queries
-      return await this.installationRepository.find({
-        where: empresaId ? { empresaId } : {},
-        order: {
-          codigo: 'ASC',
-        },
-      });
+      let query = 'SELECT * FROM view_instalaciones WHERE 1=1';
+      const params: any[] = [];
+      let paramCount = 1;
+
+      if (empresaId) {
+        query += ` AND empresa_id = $${paramCount}`;
+        params.push(empresaId);
+        paramCount++;
+      }
+
+      if (search) {
+        const searchNumber = Number(search);
+        if (!isNaN(searchNumber)) {
+          query += ` AND (codigo = $${paramCount} OR nombre ILIKE $${paramCount + 1})`;
+          params.push(searchNumber, `%${search}%`);
+          paramCount += 2;
+        } else {
+          query += ` AND nombre ILIKE $${paramCount}`;
+          params.push(`%${search}%`);
+          paramCount++;
+        }
+      }
+
+      query += ' ORDER BY codigo ASC LIMIT 20';
+
+      return await this.installationRepository.query(query, params);
     } catch (error) {
       throw new Error(`Error al obtener instalaciones: ${error.message}`);
     }

@@ -522,12 +522,13 @@ onMounted(() => {
 
             <div class="total-actions">
               <q-btn
-                unelevated
-                color="negative"
-                icon="cancel"
+                outline
+                color="grey-7"
+                icon="close"
                 label="Cancelar"
                 @click="handleCancel"
                 :disable="loading"
+                class="action-btn cancel-btn"
               />
               <q-btn
                 unelevated
@@ -536,6 +537,7 @@ onMounted(() => {
                 label="Guardar Compra"
                 @click="handleSubmit"
                 :loading="loading"
+                class="action-btn save-btn"
               />
             </div>
           </div>
@@ -708,6 +710,40 @@ onMounted(() => {
   display: flex;
   gap: 12px;
   align-items: center;
+}
+
+.action-btn {
+  min-width: 140px;
+  height: 52px;
+  padding: 0 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.3px;
+  transition: all 0.3s ease;
+}
+
+.cancel-btn {
+  &:hover {
+    background: #fff4e6 !important;
+    border-color: #fb923c !important;
+    color: #ea580c !important;
+  }
+}
+
+.save-btn {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+
+  &:hover {
+    background: #28A745 !important;
+    border-color: #28A745 !important;
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4) !important;
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 1200px) {

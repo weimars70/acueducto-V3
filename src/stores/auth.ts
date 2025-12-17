@@ -47,13 +47,19 @@ export const useAuthStore = defineStore('auth', {
       });
     },
 
-    logout() {
+    logout(redirect = true) {
       this.user = null;
       this.token = null;
       localStorage.removeItem('token');
       localStorage.removeItem('user');
 
       console.log('Session cleared');
+
+      // Redirigir al login si se solicita (ej: token expirado)
+      if (redirect && typeof window !== 'undefined') {
+        console.log('🔄 Redirigiendo al login...');
+        window.location.href = '/login';
+      }
     },
 
     initializeAuth() {
@@ -71,10 +77,10 @@ export const useAuthStore = defineStore('auth', {
           });
         } catch (e) {
           console.error('Error parsing user data:', e);
-          this.logout();
+          this.logout(false); // No redirigir en inicialización
         }
       } else {
-        this.logout();
+        this.logout(false); // No redirigir en inicialización
       }
     }
   }

@@ -32,7 +32,7 @@ export class SyncService {
       Network.addListener('networkStatusChange', status => {
         const wasOffline = !this.networkStatus?.connected;
         this.networkStatus = status;
-        
+
         if (wasOffline && status.connected) {
           this.syncPendingData().catch(console.error);
         }
@@ -64,7 +64,7 @@ export class SyncService {
 
   async syncPendingData(): Promise<void> {
     if (!this.networkStatus?.connected || this.syncInProgress) {
-      console.log('Sincronización no posible: ' + 
+      console.log('Sincronización no posible: ' +
         (!this.networkStatus?.connected ? 'sin conexión' : 'sincronización en progreso'));
       return;
     }
@@ -72,7 +72,7 @@ export class SyncService {
     try {
       this.syncInProgress = true;
       console.log('Iniciando sincronización de datos pendientes...');
-      
+
       const pendingConsumptions = await storageService.getPendingSyncConsumptions();
       console.log(`Encontrados ${pendingConsumptions.length} consumos pendientes`);
 
@@ -81,7 +81,7 @@ export class SyncService {
           console.log('Sincronizando consumo:', consumption);
           const normalizedData = this.normalizeConsumptionData(consumption);
           await consumptionService.create(normalizedData);
-          
+
           if (consumption.id) {
             await storageService.markConsumptionAsSynced(consumption.id);
             console.log(`Consumo ID: ${consumption.id} sincronizado exitosamente`);
@@ -118,21 +118,20 @@ export class SyncService {
 
     try {
       this.syncInProgress = true;
-      console.log('Iniciando sincronización de vistas...');
+
 
       // Sincronizar instalaciones
       const installations = await installationService.getAll();
       //console.log('Iniciando sincronización de vistas...', installations);
       await storageService.saveInstallations(installations);
-      console.log('Instalaciones sincronizadas');
 
       // Obtener fecha actual
       const currentDate = new Date();
       const currentYear = currentDate.getFullYear();
-      let currentMonth = currentDate.getMonth() ;
-      console.log('currentMonth:::', currentMonth);
-      currentMonth = currentMonth +1;
-    
+      let currentMonth = currentDate.getMonth();
+
+      currentMonth = currentMonth + 1;
+
       // Obtener consumos del último mes
       const { data: recentConsumptions } = await apiClient.get('/consumo/last-readings', {
         params: {
@@ -142,7 +141,7 @@ export class SyncService {
       });
 
       //console.log('data retornada del back', recentConsumptions);
-      
+
       // Guardar consumos recientes
       await storageService.saveRecentConsumptions(recentConsumptions);
       console.log('Consumos recientes sincronizados');
