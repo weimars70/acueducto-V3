@@ -78,7 +78,7 @@ export function useConsumptionForm(mode: 'create' | 'edit' = 'create') {
     formData.value.consumo = (actual - anterior).toString();
   };
 
-  const saveConsumption = async () => {
+  const saveConsumption = async (capturedImage: string | null = null) => {
     if (!authStore.isAuthenticated) {
       $q.notify({
         type: 'negative',
@@ -117,7 +117,8 @@ export function useConsumptionForm(mode: 'create' | 'edit' = 'create') {
         reconexion: parseFloat(formData.value.reconexion),
         usuario: authStore.user?.name || '',
         latitud: coords.lat,
-        longitud: coords.lng
+        longitud: coords.lng,
+        imagenBase64: capturedImage // Agregar imagen capturada
       };
       console.log('Payload consumo:', consumptionData);
 

@@ -53,6 +53,55 @@
         />
       </div>
 
+      <!-- Foto del Medidor -->
+      <div class="col-12 q-mb-xs">
+        <div class="photo-section">
+          <div class="section-header q-mb-sm">
+            <q-icon name="photo_camera" size="20px" color="primary" />
+            <span class="section-title q-ml-sm">Foto del Medidor</span>
+          </div>
+
+          <div class="photo-capture-container">
+            <!-- Botón para capturar foto -->
+            <q-btn
+              v-if="!capturedImage"
+              :loading="isCapturing"
+              @click="takePhoto"
+              color="primary"
+              icon="camera_alt"
+              label="Tomar Foto"
+              style="width: 100%; height: 52px;"
+              class="modern-button"
+            />
+
+            <!-- Preview de imagen capturada -->
+            <div v-else class="image-preview-container">
+              <q-img
+                :src="getDataUrl(capturedImage)"
+                :ratio="16/9"
+                style="border-radius: 12px; max-height: 300px;"
+                fit="contain"
+              >
+                <div class="absolute-top-right" style="padding: 8px;">
+                  <q-btn
+                    round
+                    dense
+                    color="negative"
+                    icon="close"
+                    size="sm"
+                    @click="clearPhoto"
+                  />
+                </div>
+              </q-img>
+              <div class="text-caption text-center q-mt-sm text-grey-7">
+                <q-icon name="check_circle" color="positive" size="16px" />
+                Foto capturada
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Lecturas y Consumo -->
       <div class="col-6 col-sm-6 col-md-3 q-mb-xs">
         <ReadonlyField
@@ -210,6 +259,7 @@ import DateFields from './fields/DateFields.vue';
 import { getCurrentDate, getCurrentMonth, getCurrentYear, months } from '../../utils/dates';
 import { useConsumptionForm } from '../../composables/useConsumptionForm';
 import { useVoiceInput } from '../../composables/useVoiceInput';
+import { useCamera } from '../../composables/useCamera';
 
 const emit = defineEmits<{
   (e: 'mounted'): void
@@ -229,6 +279,7 @@ const showAdditionalCharges = ref(false);
 
 const { formData, updateConsumo, saveConsumption } = useConsumptionForm(props.mode);
 const { status: voiceStatus, isSupported: isVoiceSupported, isListening, toggleListening } = useVoiceInput();
+const { capturedImage, isCapturing, takePhoto, clearPhoto, getDataUrl } = useCamera();
 
 // Inicializar valores por defecto solo en modo create
 if (props.mode !== 'edit') {
@@ -360,10 +411,11 @@ const onCancel = () => {
 };
 
 const handleSave = async () => {
-  const success = await saveConsumption();
+  const success = await saveConsumption(capturedImage.value);
   if (success) {
     if (props.mode !== 'edit') {
       codigoRef.value?.clear();
+      clearPhoto(); // Limpiar foto después de guardar
       await nextTick();
       codigoRef.value?.focus();
     } else {
@@ -508,6 +560,46 @@ defineExpose({
   .voice-fab {
     bottom: 90px;
     right: 16px;
+  }
+}
+
+// Estilos para la sección de foto
+.photo-section {
+  padding: 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.photo-capture-container {
+  margin-top: 8px;
+}
+
+.image-preview-container {
+  position: relative;
+}
+
+.modern-button {
+  border-radius: 12px;
+  font-weight: 600;
+  text-transform: none;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
   }
 }
 </style>

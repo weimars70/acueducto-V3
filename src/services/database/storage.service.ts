@@ -77,7 +77,8 @@ export const storageService = {
       const normalizedConsumption = normalizeConsumptionData(consumption);
       await db.offlineConsumptions.add({
         ...normalizedConsumption,
-        syncStatus: 'pending'
+        syncStatus: 'pending',
+        imagenBase64: (consumption as any).imagenBase64 || null // Guardar base64 si existe
       });
     } catch (error) {
       console.error('Error al guardar consumo offline:', error);

@@ -4,6 +4,7 @@ import { storageService } from '../database/storage.service';
 import { consumptionService } from '../api/consumption.service';
 import { installationService } from '../api/installation.service';
 import { apiClient } from '../api/client';
+import { imageUploadService } from '../api/image-upload.service';
 
 export class SyncService {
   private networkStatus: { connected: boolean } | null = null;
@@ -58,7 +59,8 @@ export class SyncService {
       fecha: consumption.fecha || new Date().toISOString().split('T')[0]
     };
 
-    const { id, syncStatus, ...finalData } = normalizedData;
+    // Eliminar campos que no van al backend
+    const { id, syncStatus, imagenBase64, ...finalData } = normalizedData as any;
     return finalData;
   }
 
@@ -79,8 +81,28 @@ export class SyncService {
       for (const consumption of pendingConsumptions) {
         try {
           console.log('Sincronizando consumo:', consumption);
-          const normalizedData = this.normalizeConsumptionData(consumption);
-          await consumptionService.create(normalizedData);
+
+          // Extraer imagenBase64 antes de normalizar (no debe ir al backend en el create)
+          const { imagenBase64, ...consumptionWithoutImage } = consumption;
+
+          // Crear consumo sin imagen primero
+          const normalizedData = this.normalizeConsumptionData(consumptionWithoutImage);
+          const createdConsumption = await consumptionService.create(normalizedData);
+
+          // Si hay imagen, subirla después
+          if (imagenBase64 && createdConsumption?.codigo) {
+            try {
+              console.log('Subiendo imagen del consumo...');
+              await imageUploadService.uploadConsumptionImage(
+                createdConsumption.codigo,
+                imagenBase64
+              );
+              console.log('Imagen subida exitosamente');
+            } catch (imageError) {
+              console.error('Error al subir imagen (consumo ya guardado):', imageError);
+              // No fallar la sincronización completa si solo falla la imagen
+            }
+          }
 
           if (consumption.id) {
             await storageService.markConsumptionAsSynced(consumption.id);
