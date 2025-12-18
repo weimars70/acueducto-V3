@@ -31,23 +31,27 @@ async function bootstrap() {
         'http://localhost:3306',
         'http://localhost:8443',
         'http://108.181.193.178:5175',
-        'http://2.50.80.90:5175',
+        'http://2.58.80.90:5175',
         'http://108.181.193.178:443',
         'http://108.181.193.178',
         'http://108.181.193.178:3006',
-        'http://2.50.80.90:3030',
+        'http://2.58.80.90:3030',
 
         'capacitor://localhost',
         'capacitor://108.181.193.178',
-        'capacitor://2.50.80.90',
-        'capacitor://',   // 👈 agregar este
-        null,             // 👈 permitir requests sin origin
+        'capacitor://2.58.80.90',
         'https://zp1v56uxy8rdx5ypatb0ockcb9tr6a-oci3--5175--4d9fd228.local-credentialless.webcontainer-api.io/',
       ];
 
-      if (allowedOrigins.includes(origin)) {
+      // Verificación extendida
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.startsWith('capacitor://') || // Permitir cualquier origen Capacitor
+        origin.startsWith('http://localhost') // Permitir localhost (dev)
+      ) {
         callback(null, true);
       } else {
+        console.warn(`[CORS] 🚫 Bloqueado origen: ${origin}`);
         callback(new Error(`CORS bloqueado para origen: ${origin}`));
       }
     },
