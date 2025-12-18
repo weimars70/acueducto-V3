@@ -56,4 +56,9 @@ export class CreateConsumoDto {
   @IsOptional()
   @IsString()
   imagenUrl?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  imagenBase64?: string;
 }

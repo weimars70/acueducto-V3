@@ -5,6 +5,8 @@ import { Consumption } from '../entities/consumption.entity';
 import { CreateConsumoDto } from './dto/create-consumo.dto';
 import { Observable, fromEvent } from 'rxjs';
 import { EventEmitter } from 'events';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class ConsumoService implements OnModuleInit {
@@ -256,7 +258,7 @@ export class ConsumoService implements OnModuleInit {
 
     try {
 
-      const consumptionData = {
+      const consumptionData: any = {
         instalacion: createConsumoDto.instalacion,
         lectura: createConsumoDto.lectura,
         fecha: createConsumoDto.fecha,
@@ -271,6 +273,31 @@ export class ConsumoService implements OnModuleInit {
         longitud: createConsumoDto.longitud,
         empresaId: empresaId,
       };
+
+      if (createConsumoDto.imagenBase64) {
+        try {
+          const uploadsPath = process.env.UPLOADS_PATH || './uploads/consumo-images';
+          const relativeDir = `empresa_${empresaId}/${createConsumoDto.year}/${createConsumoDto.mes.toString().padStart(2, '0')}`;
+          const fullDir = path.join(uploadsPath, relativeDir);
+
+          if (!fs.existsSync(fullDir)) {
+            fs.mkdirSync(fullDir, { recursive: true });
+          }
+
+          const fileName = `${createConsumoDto.instalacion}.jpg`;
+          const filePath = path.join(fullDir, fileName);
+          const relativePath = path.join(relativeDir, fileName);
+
+          const base64Data = createConsumoDto.imagenBase64.replace(/^data:image\/\w+;base64,/, "");
+          const buffer = Buffer.from(base64Data, 'base64');
+
+          fs.writeFileSync(filePath, buffer);
+          consumptionData.imagenUrl = relativePath;
+        } catch (error) {
+          console.error('Error saving image:', error);
+          // Continue saving consumption even if image save fails
+        }
+      }
 
 
       const consumption = this.consumoRepository.create(consumptionData);
