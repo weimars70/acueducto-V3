@@ -31,7 +31,7 @@ async function bootstrap() {
         'http://108.181.193.178:443',
         'http://108.181.193.178',
         'http://108.181.193.178:3006',
-        'http://2.50.80.90:3006',
+        'http://2.50.80.90:3030',
 
         'capacitor://localhost',
         'capacitor://108.181.193.178',
@@ -68,7 +68,7 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
 
   // 🖥️ Puerto dinámico
-  const port = process.env.PORT || 3006;
+  const port = process.env.PORT || 3030;
   await app.listen(port);
   console.log(`🚀 API corriendo en http://localhost:${port}`);
 }
