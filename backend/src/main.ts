@@ -27,13 +27,17 @@ async function bootstrap() {
         'http://localhost:3306',
         'http://localhost:8443',
         'http://108.181.193.178:5174',
+        'http://2.50.80.90:5174',
         'http://108.181.193.178:443',
         'http://108.181.193.178',
         'http://108.181.193.178:3006',
+        'http://2.50.80.90:3006',
+
         'capacitor://localhost',
         'capacitor://108.181.193.178',
+        'capacitor://2.50.80.90',
         'capacitor://',   // 👈 agregar este
-        null ,             // 👈 permitir requests sin origin
+        null,             // 👈 permitir requests sin origin
         'https://zp1v56uxy8rdx5ypatb0ockcb9tr6a-oci3--5174--4d9fd228.local-credentialless.webcontainer-api.io/',
       ];
 
@@ -53,7 +57,7 @@ async function bootstrap() {
     credentials: true,
     optionsSuccessStatus: 200,
   });
-   const config = new DocumentBuilder()
+  const config = new DocumentBuilder()
     .setTitle('API de Facturación')
     .setDescription('Documentación de la API')
     .setVersion('1.0')
