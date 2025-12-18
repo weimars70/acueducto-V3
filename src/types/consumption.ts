@@ -20,6 +20,7 @@ export interface Consumption {
   promedio?: number;
   latitud?: number;
   longitud?: number;
+  imagen_url?: string;
 }
 
 // Función auxiliar para obtener el mes_codigo desde el texto del mes

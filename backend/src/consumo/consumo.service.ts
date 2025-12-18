@@ -121,20 +121,21 @@ export class ConsumoService implements OnModuleInit {
     try {
       let query = `
         SELECT 
-          codigo,
-          instalacion,
-          nombre,
-          lectura,
-          fecha,
-          mes,
-          year,
-          mes_codigo,
-          consumo,
-          medidor,
-          otros_cobros,
-          reconexion,
-          facturado
-        FROM public.view_consumo
+          v.codigo,
+          v.instalacion,
+          v.nombre,
+          v.lectura,
+          v.fecha,
+          v.mes,
+          v.year,
+          v.mes_codigo,
+          v.consumo,
+          v.medidor,
+          v.otros_cobros,
+          v.reconexion,
+          v.facturado,
+          v.imagen_url
+        FROM public.view_consumo v
         WHERE 1=1
       `;
 
@@ -143,31 +144,31 @@ export class ConsumoService implements OnModuleInit {
 
       // FILTRO OBLIGATORIO POR EMPRESA
       if (filters.empresaId) {
-        query += ` AND empresa_id = $${paramCount}`;
+        query += ` AND v.empresa_id = $${paramCount}`;
         queryParams.push(filters.empresaId);
         paramCount++;
       }
 
       if (filters.nombre) {
-        query += ` AND nombre ILIKE $${paramCount}`;
+        query += ` AND v.nombre ILIKE $${paramCount}`;
         queryParams.push(`%${filters.nombre}%`);
         paramCount++;
       }
 
       if (filters.year) {
-        query += ` AND year = $${paramCount}`;
+        query += ` AND v.year = $${paramCount}`;
         queryParams.push(filters.year);
         paramCount++;
       }
 
       if (filters.mes_codigo) {
-        query += ` AND mes_codigo = $${paramCount}`;
+        query += ` AND v.mes_codigo = $${paramCount}`;
         queryParams.push(filters.mes_codigo);
         paramCount++;
       }
 
       if (filters.instalacion) {
-        query += ` AND instalacion = $${paramCount}`;
+        query += ` AND v.instalacion = $${paramCount}`;
         queryParams.push(filters.instalacion);
         paramCount++;
       }
@@ -185,6 +186,11 @@ export class ConsumoService implements OnModuleInit {
       queryParams.push(limit, (page - 1) * limit);
 
       const data = await this.consumoRepository.query(query, queryParams);
+
+      if (data.length > 0) {
+        console.log('🔍 [ConsumoService] First row data:', data[0]);
+        console.log('🔍 [ConsumoService] imagen_url:', data[0].imagen_url);
+      }
 
       return {
         data,
