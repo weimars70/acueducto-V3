@@ -35,14 +35,6 @@ const handleEdit = (consumption: Consumption) => {
   });
 };
 
-// Debug log to check properties
-import { watchEffect } from 'vue';
-watchEffect(() => {
-  if (props.rows.length > 0) {
-    console.log('🔍 First row data:', props.rows[0]);
-    console.log('🔍 First row imagen_url:', props.rows[0].imagen_url);
-  }
-});
 </script>
 
 <template>

@@ -90,7 +90,7 @@ acueducto-V3/
    - Listens to PostgreSQL `NOTIFY` events
    - Broadcasts updates to connected clients
 
-3. **Frontend Dev Server** (Port 5174)
+3. **Frontend Dev Server** (Port 5175)
    - Vite development server
    - Hot module replacement
    - Proxies API requests to backend
@@ -447,7 +447,7 @@ npm run start:all
 ```bash
 npm run backend    # Backend API (port 3006)
 npm run realtime   # Real-time server (port 3007)
-npm run dev        # Frontend (port 5174)
+npm run dev        # Frontend (port 5175)
 ```
 
 ### Development Commands

@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "backend": "cd backend && npm run start:dev",
     "realtime": "node backend/src/realtime-server.mjs",
-    "start:all": "concurrently \"cd backend && npm run start:dev\" \"npm run realtime\" \"npm run dev\""
+    "start:all": "concurrently \"cd backend && npm run start:dev\" \"npm run realtime\" \"npm run dev\"",
+    "build:all": "concurrently \"npm run build\" \"cd backend && npm run build\"",
+    "start:prod": "pm2 start ecosystem.config.js"
   },
   "dependencies": {
     "@capacitor/android": "^6.0.0",

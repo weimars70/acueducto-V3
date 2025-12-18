@@ -83,14 +83,14 @@ npm run dev
 ```
 
 **URLs:**
-- Frontend: http://localhost:5174
+- Frontend: http://localhost:5175
 - Backend: http://localhost:3006
 - API Docs: http://localhost:3006/api
 
 ### Paso 4: Probar el Sistema
 
 1. **Login**
-   - Ir a: http://localhost:5174
+   - Ir a: http://localhost:5175
    - Iniciar sesión con tus credenciales
 
 2. **Verificar Empleados**

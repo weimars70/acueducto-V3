@@ -187,10 +187,6 @@ export class ConsumoService implements OnModuleInit {
 
       const data = await this.consumoRepository.query(query, queryParams);
 
-      if (data.length > 0) {
-        console.log('🔍 [ConsumoService] First row data:', data[0]);
-        console.log('🔍 [ConsumoService] imagen_url:', data[0].imagen_url);
-      }
 
       return {
         data,

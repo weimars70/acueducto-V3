@@ -10,7 +10,7 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: "http://localhost:5174",
+    origin: "http://localhost:5175",
     methods: ["GET", "POST"]
   }
 });
@@ -37,7 +37,7 @@ async function initializePostgres() {
     pgClient.on('notification', (msg) => {
       if (msg.channel === 'consumo_channel' && msg.payload) {
         console.log('🔔 Notificación recibida:', msg.payload);
-        
+
         try {
           const payload = JSON.parse(msg.payload);
           const messageToSend = {
@@ -74,7 +74,7 @@ async function initializePostgres() {
 // WebSocket connection handling
 io.on('connection', (socket) => {
   console.log('✅ Cliente conectado - ID:', socket.id);
-  
+
   socket.emit('connection', {
     type: 'connection',
     message: 'Conectado al servidor de WebSocket',
@@ -100,7 +100,7 @@ process.on('SIGINT', shutdown);
 
 async function shutdown() {
   console.log('🛑 Cerrando servidor...');
-  
+
   try {
     // Cerrar conexiones de Socket.IO
     await io.close();
