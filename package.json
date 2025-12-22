@@ -5,11 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc && vite build",
+    "build": "vite build",
     "preview": "vite preview",
     "backend": "cd backend && npm run start:dev",
     "realtime": "node backend/src/realtime-server.mjs",
-    "start:all": "concurrently \"cd backend && npm run start:dev\" \"npm run realtime\" \"npm run dev\""
+    "start:all": "concurrently \"cd backend && npm run start:dev\" \"npm run realtime\" \"npm run dev\"",
+    "build:all": "npm run build && cd backend && npm run build",
+    "start:prod": "pm2 start ecosystem.config.cjs"
   },
   "dependencies": {
     "@capacitor/android": "^6.0.0",

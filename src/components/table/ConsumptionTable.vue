@@ -6,7 +6,7 @@ import { useRouter } from 'vue-router';
 
 const router = useRouter();
 
-defineProps<{
+const props = defineProps<{
   rows: Consumption[];
   loading: boolean;
   pagination: TablePagination;
@@ -14,6 +14,7 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: 'request', props: { pagination: TablePagination }): void;
+  (e: 'view-image', row: Consumption): void;
 }>();
 
 const onPageChange = (newPage: number, pagination: TablePagination) => {
@@ -33,6 +34,7 @@ const handleEdit = (consumption: Consumption) => {
     }
   });
 };
+
 </script>
 
 <template>
@@ -53,8 +55,35 @@ const handleEdit = (consumption: Consumption) => {
       no-data-label="No hay datos disponibles"
       loading-label="Cargando..."
       selected-rows-label="Filas seleccionadas"
-      
     >
+      <!-- Slot para acciones -->
+      <template v-slot:body-cell-actions="props">
+        <q-td :props="props">
+          <q-btn
+            icon="edit"
+            flat
+            round
+            dense
+            color="primary"
+            class="q-mr-xs"
+            @click="handleEdit(props.row)"
+          >
+            <q-tooltip>Editar</q-tooltip>
+          </q-btn>
+          <q-btn
+            v-if="props.row.imagen_url"
+            icon="image"
+            flat
+            round
+            dense
+            color="primary"
+            @click="emit('view-image', props.row)"
+          >
+            <q-tooltip>Ver Imagen</q-tooltip>
+          </q-btn>
+        </q-td>
+      </template>
+
       <!-- Slot de paginación simplificado y corregido -->
       <template v-slot:pagination="scope">
         <div class="row items-center q-gutter-sm full-width">

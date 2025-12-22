@@ -96,5 +96,12 @@ export const consumptionService = {
       console.error('Error in getConsumptions:', errorMessage);
       throw error;
     }
+  },
+
+  async getImage(id: number): Promise<string> {
+    const response = await api.get(`/consumo/${id}/image`, {
+      responseType: 'blob'
+    });
+    return URL.createObjectURL(response.data);
   }
 };

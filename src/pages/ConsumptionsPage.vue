@@ -28,6 +28,12 @@ const pagination = ref({
   rowsNumber: 0 // Esto debe ser actualizado por el backend
 });
 
+const imageDialog = ref({
+  show: false,
+  url: '',
+  loading: false
+});
+
 watch(isMobile, (newValue) => {
   view.value = newValue ? 'grid' : 'list';
 });
@@ -130,6 +136,26 @@ const onRequest = async (props: any) => {
   await loadData();
 };
 
+const handleViewImage = async (row: Consumption) => {
+  imageDialog.value.show = true;
+  imageDialog.value.loading = true;
+  imageDialog.value.url = '';
+  
+  try {
+    const url = await consumptionService.getImage(row.codigo);
+    imageDialog.value.url = url;
+  } catch (error) {
+    console.error('Error loading image:', error);
+    $q.notify({
+      type: 'negative',
+      message: 'Error al cargar la imagen'
+    });
+    imageDialog.value.show = false;
+  } finally {
+    imageDialog.value.loading = false;
+  }
+};
+
 const setupSocketConnection = () => {
   socket.value = io('http://108.181.193.178:3007', {
     transports: ['websocket'],
@@ -217,6 +243,7 @@ onUnmounted(() => {
             :loading="loading"
             :pagination="pagination"
             @request="onRequest"
+            @view-image="handleViewImage"
           />
         </template>
         <template v-else>
@@ -238,6 +265,27 @@ onUnmounted(() => {
         </template>
       </div>
     </div>
+
+    <q-dialog v-model="imageDialog.show" maximized>
+      <q-card class="bg-black text-white">
+        <q-bar>
+          <q-space />
+          <q-btn dense flat icon="close" v-close-popup>
+            <q-tooltip>Cerrar</q-tooltip>
+          </q-btn>
+        </q-bar>
+
+        <q-card-section class="flex flex-center full-height scroll">
+          <q-spinner v-if="imageDialog.loading" color="white" size="3em" />
+          <img
+            v-else-if="imageDialog.url"
+            :src="imageDialog.url"
+            style="max-width: 100%; max-height: 90vh; object-fit: contain;"
+          />
+          <div v-else>No se pudo cargar la imagen</div>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 

@@ -21,7 +21,7 @@ npm run start:all
 # Or start services individually:
 npm run backend        # NestJS backend on port 3030
 npm run realtime       # Socket.IO realtime server on port 3007
-npm run dev            # Vue frontend on port 5174
+npm run dev            # Vue frontend on port 5175
 ```
 
 ### Backend (NestJS)

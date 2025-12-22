@@ -310,7 +310,7 @@ Nómina
 ### Frontend
 - **Framework**: Vue 3 + Quasar
 - **Estado**: Pinia
-- **Puerto**: 5174
+- **Puerto**: 5175
 - **UI**: Material Design
 
 ## Próximos Pasos Recomendados

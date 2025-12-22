@@ -5,6 +5,8 @@ import { Consumption } from '../entities/consumption.entity';
 import { CreateConsumoDto } from './dto/create-consumo.dto';
 import { Observable, fromEvent } from 'rxjs';
 import { EventEmitter } from 'events';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class ConsumoService implements OnModuleInit {
@@ -119,20 +121,21 @@ export class ConsumoService implements OnModuleInit {
     try {
       let query = `
         SELECT 
-          codigo,
-          instalacion,
-          nombre,
-          lectura,
-          fecha,
-          mes,
-          year,
-          mes_codigo,
-          consumo,
-          medidor,
-          otros_cobros,
-          reconexion,
-          facturado
-        FROM public.view_consumo
+          v.codigo,
+          v.instalacion,
+          v.nombre,
+          v.lectura,
+          v.fecha,
+          v.mes,
+          v.year,
+          v.mes_codigo,
+          v.consumo,
+          v.medidor,
+          v.otros_cobros,
+          v.reconexion,
+          v.facturado,
+          v.imagen_url
+        FROM public.view_consumo v
         WHERE 1=1
       `;
 
@@ -141,31 +144,31 @@ export class ConsumoService implements OnModuleInit {
 
       // FILTRO OBLIGATORIO POR EMPRESA
       if (filters.empresaId) {
-        query += ` AND empresa_id = $${paramCount}`;
+        query += ` AND v.empresa_id = $${paramCount}`;
         queryParams.push(filters.empresaId);
         paramCount++;
       }
 
       if (filters.nombre) {
-        query += ` AND nombre ILIKE $${paramCount}`;
+        query += ` AND v.nombre ILIKE $${paramCount}`;
         queryParams.push(`%${filters.nombre}%`);
         paramCount++;
       }
 
       if (filters.year) {
-        query += ` AND year = $${paramCount}`;
+        query += ` AND v.year = $${paramCount}`;
         queryParams.push(filters.year);
         paramCount++;
       }
 
       if (filters.mes_codigo) {
-        query += ` AND mes_codigo = $${paramCount}`;
+        query += ` AND v.mes_codigo = $${paramCount}`;
         queryParams.push(filters.mes_codigo);
         paramCount++;
       }
 
       if (filters.instalacion) {
-        query += ` AND instalacion = $${paramCount}`;
+        query += ` AND v.instalacion = $${paramCount}`;
         queryParams.push(filters.instalacion);
         paramCount++;
       }
@@ -183,6 +186,7 @@ export class ConsumoService implements OnModuleInit {
       queryParams.push(limit, (page - 1) * limit);
 
       const data = await this.consumoRepository.query(query, queryParams);
+
 
       return {
         data,
@@ -256,7 +260,7 @@ export class ConsumoService implements OnModuleInit {
 
     try {
 
-      const consumptionData = {
+      const consumptionData: any = {
         instalacion: createConsumoDto.instalacion,
         lectura: createConsumoDto.lectura,
         fecha: createConsumoDto.fecha,
@@ -271,6 +275,31 @@ export class ConsumoService implements OnModuleInit {
         longitud: createConsumoDto.longitud,
         empresaId: empresaId,
       };
+
+      if (createConsumoDto.imagenBase64) {
+        try {
+          const uploadsPath = process.env.UPLOADS_PATH || './uploads/consumo-images';
+          const relativeDir = `empresa_${empresaId}/${createConsumoDto.year}/${createConsumoDto.mes.toString().padStart(2, '0')}`;
+          const fullDir = path.join(uploadsPath, relativeDir);
+
+          if (!fs.existsSync(fullDir)) {
+            fs.mkdirSync(fullDir, { recursive: true });
+          }
+
+          const fileName = `${createConsumoDto.instalacion}.jpg`;
+          const filePath = path.join(fullDir, fileName);
+          const relativePath = path.join(relativeDir, fileName);
+
+          const base64Data = createConsumoDto.imagenBase64.replace(/^data:image\/\w+;base64,/, "");
+          const buffer = Buffer.from(base64Data, 'base64');
+
+          fs.writeFileSync(filePath, buffer);
+          consumptionData.imagenUrl = relativePath;
+        } catch (error) {
+          console.error('Error saving image:', error);
+          // Continue saving consumption even if image save fails
+        }
+      }
 
 
       const consumption = this.consumoRepository.create(consumptionData);

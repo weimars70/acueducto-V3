@@ -20,7 +20,7 @@ var vite_config_default = defineConfig({
   },
   server: {
     host: true,
-    port: 5174,
+    port: 5175,
     proxy: {
       "/api": {
         target: "https://localhost:3030",
@@ -30,7 +30,7 @@ var vite_config_default = defineConfig({
     }
   },
   preview: {
-    port: 5174,
+    port: 5175,
     host: true
   }
 });
