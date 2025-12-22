@@ -23,7 +23,7 @@ var vite_config_default = defineConfig({
     port: 5174,
     proxy: {
       "/api": {
-        target: "https://localhost:3006",
+        target: "https://localhost:3030",
         changeOrigin: true,
         rewrite: (path2) => path2.replace(/^\/api/, "")
       }

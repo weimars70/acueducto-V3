@@ -9,6 +9,8 @@ export interface Item {
     inventarioActual: number;
     empresaId: number;
     precioVenta: number;
+    invValorCompra: number;
+    invValorVenta: number;
 }
 
 export interface CreateItemDto {
@@ -22,6 +24,8 @@ export interface CreateItemDto {
     empresa_id: number;
     usuario?: string;
     precio_venta: number;
+    inv_valor_compra?: number;
+    inv_valor_venta?: number;
 }
 
 export interface UpdateItemDto {
@@ -34,4 +38,6 @@ export interface UpdateItemDto {
     inventario_actual?: number;
     precio_venta?: number;
     usuario?: string;
+    inv_valor_compra?: number;
+    inv_valor_venta?: number;
 }

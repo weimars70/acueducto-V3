@@ -19,7 +19,7 @@ cd backend && npm install
 npm run start:all
 
 # Or start services individually:
-npm run backend        # NestJS backend on port 3006
+npm run backend        # NestJS backend on port 3030
 npm run realtime       # Socket.IO realtime server on port 3007
 npm run dev            # Vue frontend on port 5174
 ```
@@ -145,7 +145,7 @@ Create `.env` in project root:
 
 ```bash
 # Backend API URL (used by frontend)
-VITE_API_URL=http://localhost:3006
+VITE_API_URL=http://localhost:3030
 
 # PostgreSQL connection
 POSTGRES_HOST=localhost
@@ -157,8 +157,8 @@ POSTGRES_DB=acueducto
 # Realtime server port
 REALTIME_PORT=3007
 
-# Backend API port (optional, defaults to 3006)
-PORT=3006
+# Backend API port (optional, defaults to 3030)
+PORT=3030
 ```
 
 **Production:** Update `VITE_API_URL` and `POSTGRES_HOST` to production IPs/domains

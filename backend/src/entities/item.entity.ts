@@ -34,4 +34,10 @@ export class Item {
 
     @Column({ name: 'precio_venta', type: 'numeric', precision: 12, scale: 2, default: 0 })
     precioVenta: number;
+
+    @Column({ name: 'inv_valor_compra', type: 'numeric', precision: 12, scale: 2, default: 0 })
+    invValorCompra: number;
+
+    @Column({ name: 'inv_valor_venta', type: 'numeric', precision: 12, scale: 2, default: 0 })
+    invValorVenta: number;
 }

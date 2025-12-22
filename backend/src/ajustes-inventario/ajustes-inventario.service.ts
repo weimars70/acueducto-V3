@@ -39,7 +39,7 @@ export class AjustesInventarioService {
             let paramCount = 2;
 
             if (filters.itemNombre) {
-                query += ` AND ai.item_nombre ILIKE $${paramCount}`;
+                query += ` AND (ai.item_nombre ILIKE $${paramCount} OR ai.item_codigo ILIKE $${paramCount})`;
                 queryParams.push(`%${filters.itemNombre}%`);
                 paramCount++;
             }

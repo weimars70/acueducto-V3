@@ -304,8 +304,8 @@ Nómina
 ### Backend
 - **Framework**: NestJS + TypeORM
 - **Base de datos**: PostgreSQL
-- **Puerto**: 3006
-- **Endpoint base**: `http://localhost:3006`
+- **Puerto**: 3030
+- **Endpoint base**: `http://localhost:3030`
 
 ### Frontend
 - **Framework**: Vue 3 + Quasar

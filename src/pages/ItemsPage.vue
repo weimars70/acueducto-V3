@@ -29,19 +29,35 @@ const columns = [
     sortable: true,
     format: (val: number) => `$ ${val.toLocaleString('es-CO')}`
   },
-  { 
-    name: 'precio_total', 
-    label: 'Precio Total', 
-    field: 'precioTotal', 
-    align: 'right' as const, 
+  {
+    name: 'precio_total',
+    label: 'Precio Total',
+    field: 'precioTotal',
+    align: 'right' as const,
     sortable: true,
     format: (val: number) => `$ ${val.toLocaleString('es-CO')}`
   },
-  { 
-    name: 'cantidad', 
-    label: 'Inventario', 
-    field: 'inventarioActual', 
-    align: 'center' as const, 
+  {
+    name: 'inv_valor_compra',
+    label: 'Valor Compra',
+    field: 'invValorCompra',
+    align: 'right' as const,
+    sortable: true,
+    format: (val: number) => `$ ${val.toLocaleString('es-CO')}`
+  },
+  {
+    name: 'inv_valor_venta',
+    label: 'Valor Venta',
+    field: 'invValorVenta',
+    align: 'right' as const,
+    sortable: true,
+    format: (val: number) => `$ ${val.toLocaleString('es-CO')}`
+  },
+  {
+    name: 'cantidad',
+    label: 'Inventario',
+    field: 'inventarioActual',
+    align: 'center' as const,
     sortable: true
   },
   { name: 'actions', label: 'Acciones', field: 'actions', align: 'center' as const }
@@ -113,6 +129,8 @@ const handleExportExcel = () => {
       { field: 'nombre', label: 'Nombre' },
       { field: 'precioSinIva', label: 'Precio Sin IVA' },
       { field: 'precioTotal', label: 'Precio Total' },
+      { field: 'invValorCompra', label: 'Valor Compra' },
+      { field: 'invValorVenta', label: 'Valor Venta' },
       { field: 'inventarioActual', label: 'Inventario' }
     ];
     exportToExcel(filteredData(), exportColumns, 'items');
@@ -129,6 +147,8 @@ const handleExportPDF = () => {
       { field: 'nombre', label: 'Nombre' },
       { field: 'precioSinIva', label: 'Precio Sin IVA' },
       { field: 'precioTotal', label: 'Precio Total' },
+      { field: 'invValorCompra', label: 'Valor Compra' },
+      { field: 'invValorVenta', label: 'Valor Venta' },
       { field: 'inventarioActual', label: 'Inventario' }
     ];
     exportToPDF(filteredData(), exportColumns, 'items', 'Listado de Items');

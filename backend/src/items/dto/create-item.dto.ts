@@ -9,4 +9,6 @@ export class CreateItemDto {
     empresa_id: number;
     usuario?: string;
     precio_venta: number;
+    inv_valor_compra?: number;
+    inv_valor_venta?: number;
 }

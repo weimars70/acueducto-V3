@@ -21,6 +21,8 @@ const form = ref({
   porIva: 0,
   precioTotal: 0,
   precioVenta: 0,
+  invValorCompra: 0,
+  invValorVenta: 0,
   inventarioActual: 0
 });
 
@@ -68,6 +70,8 @@ const loadData = async () => {
       porIva: Number(item.porIva),
       precioTotal: Number(item.precioTotal),
       precioVenta: Number(item.precioVenta),
+      invValorCompra: Number(item.invValorCompra || 0),
+      invValorVenta: Number(item.invValorVenta || 0),
       inventarioActual: Number(item.inventarioActual)
     };
   } catch (error) {
@@ -111,6 +115,8 @@ const handleSubmit = async () => {
       por_iva: Number(form.value.porIva),
       precio_total: Number(form.value.precioTotal),
       precio_venta: Number(form.value.precioVenta),
+      inv_valor_compra: Number(form.value.invValorCompra),
+      inv_valor_venta: Number(form.value.invValorVenta),
       inventario_actual: Number(form.value.inventarioActual),
       usuario: authStore.user?.email
     });
@@ -244,6 +250,24 @@ onMounted(() => {
               <q-input
                 v-model.number="form.precioVenta"
                 label="Precio Venta Publico"
+                type="number"
+                outlined
+                prefix="$"
+              />
+            </div>
+            <div class="col-12 col-md-3">
+              <q-input
+                v-model.number="form.invValorCompra"
+                label="Valor Compra"
+                type="number"
+                outlined
+                prefix="$"
+              />
+            </div>
+            <div class="col-12 col-md-3">
+              <q-input
+                v-model.number="form.invValorVenta"
+                label="Valor Venta"
                 type="number"
                 outlined
                 prefix="$"

@@ -79,7 +79,7 @@ acueducto-V3/
 
 ### Three-Process Architecture
 
-1. **Backend API Server** (Port 3006)
+1. **Backend API Server** (Port 3030)
    - NestJS REST API
    - JWT authentication
    - Swagger documentation at `/api`
@@ -423,7 +423,7 @@ npx cap open android       # Open in Android Studio
 **Required Environment Variables:**
 ```bash
 # Frontend
-VITE_API_URL=http://localhost:3006
+VITE_API_URL=http://localhost:3030
 
 # Backend
 POSTGRES_HOST=localhost
@@ -431,7 +431,7 @@ POSTGRES_USER=postgres
 POSTGRES_PASSWORD=your_password
 POSTGRES_PORT=5432
 POSTGRES_DB=acueducto
-PORT=3006
+PORT=3030
 REALTIME_PORT=3007
 JWT_SECRET=your_secret_key
 ```
@@ -445,7 +445,7 @@ npm run start:all
 
 **Individual Services:**
 ```bash
-npm run backend    # Backend API (port 3006)
+npm run backend    # Backend API (port 3030)
 npm run realtime   # Real-time server (port 3007)
 npm run dev        # Frontend (port 5174)
 ```

@@ -5,19 +5,47 @@
       <div class="row q-mb-md">
         <div class="col-12">
           <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);">
-            <div class="row items-center q-mb-md">
-              <div class="col">
+            <div class="row items-center q-col-gutter-md">
+              <!-- Título -->
+              <div class="col-12 col-md-auto">
                 <div style="display: flex; align-items: center; gap: 12px;">
                   <q-icon name="inventory" size="32px" color="primary" />
-                  <h5 style="margin: 0; font-weight: 600; color: #2c3e50;">Ajustes de Inventario</h5>
+                  <h5 style="margin: 0; font-weight: 600; color: #2c3e50; white-space: nowrap;">Ajustes de Inventario</h5>
                 </div>
               </div>
-              <div class="col-auto">
+
+              <!-- Estadísticas -->
+              <div class="col-12 col-md" v-if="estadisticas">
+                <div class="row q-col-gutter-sm">
+                  <div class="col-4 col-md">
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 12px; color: white; text-align: center;">
+                      <div style="font-size: 11px; opacity: 0.9; margin-bottom: 2px;">Total Ajustes</div>
+                      <div style="font-size: 20px; font-weight: 700;">{{ estadisticas.total_ajustes || 0 }}</div>
+                    </div>
+                  </div>
+                  <div class="col-4 col-md">
+                    <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 12px; padding: 12px; color: white; text-align: center;">
+                      <div style="font-size: 11px; opacity: 0.9; margin-bottom: 2px;">Entradas (+)</div>
+                      <div style="font-size: 20px; font-weight: 700;">{{ estadisticas.total_entradas || 0 }}</div>
+                    </div>
+                  </div>
+                  <div class="col-4 col-md">
+                    <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 12px; padding: 12px; color: white; text-align: center;">
+                      <div style="font-size: 11px; opacity: 0.9; margin-bottom: 2px;">Salidas (-)</div>
+                      <div style="font-size: 20px; font-weight: 700;">{{ estadisticas.total_salidas || 0 }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Botón Nuevo Ajuste -->
+              <div class="col-12 col-md-auto">
                 <q-btn-dropdown
                   label="Nuevo Ajuste"
                   icon="add"
                   color="primary"
                   unelevated
+                  class="full-width"
                   style="border-radius: 12px; padding: 10px 24px; height: 48px; font-weight: 600; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); transition: all 0.3s ease;"
                 >
                   <q-list>
@@ -53,28 +81,6 @@
                 </q-btn-dropdown>
               </div>
             </div>
-
-            <!-- Estadísticas -->
-            <div class="row q-col-gutter-md" v-if="estadisticas">
-              <div class="col-4">
-                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 16px; color: white;">
-                  <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px;">Total Ajustes</div>
-                  <div style="font-size: 24px; font-weight: 700;">{{ estadisticas.total_ajustes || 0 }}</div>
-                </div>
-              </div>
-              <div class="col-4">
-                <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 12px; padding: 16px; color: white;">
-                  <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px;">Entradas (+)</div>
-                  <div style="font-size: 24px; font-weight: 700;">{{ estadisticas.total_entradas || 0 }}</div>
-                </div>
-              </div>
-              <div class="col-4">
-                <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 12px; padding: 16px; color: white;">
-                  <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px;">Salidas (-)</div>
-                  <div style="font-size: 24px; font-weight: 700;">{{ estadisticas.total_salidas || 0 }}</div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -85,7 +91,8 @@
           <q-input
             v-model="filters.itemNombre"
             outlined
-            label="Buscar por item"
+            label="Buscar por código o nombre de item"
+            placeholder="Ingrese código o nombre..."
             dense
             clearable
             @keyup.enter="loadAjustes"
@@ -137,6 +144,15 @@
           @request="onRequest"
           binary-state-sort
         >
+          <template v-slot:body-cell-item_nombre="props">
+            <q-td :props="props">
+              <div>
+                <div style="font-weight: 600; color: #2c3e50;">{{ props.row.item_nombre }}</div>
+                <div style="font-size: 12px; color: #6b7280;">Código: {{ props.row.item_codigo }}</div>
+              </div>
+            </q-td>
+          </template>
+
           <template v-slot:body-cell-tipo_ajuste="props">
             <q-td :props="props">
               <q-badge

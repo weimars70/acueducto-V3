@@ -84,8 +84,8 @@ npm run dev
 
 **URLs:**
 - Frontend: http://localhost:5174
-- Backend: http://localhost:3006
-- API Docs: http://localhost:3006/api
+- Backend: http://localhost:3030
+- API Docs: http://localhost:3030/api
 
 ### Paso 4: Probar el Sistema
 
