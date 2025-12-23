@@ -8,7 +8,7 @@ const $q = useQuasar();
 const loading = ref(false);
 const optionsMeses = ref<any[]>([]);
 const form = ref({
-  mes: null as any,
+  mes: new Date().getMonth() + 1, // Mes actual (1-12)
   year: new Date().getFullYear()
 });
 

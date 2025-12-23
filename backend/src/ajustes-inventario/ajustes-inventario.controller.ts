@@ -15,13 +15,28 @@ export class AjustesInventarioController {
         @Query('limit') limit: string,
         @Query('itemNombre') itemNombre: string,
         @Query('tipoAjuste') tipoAjuste: string,
+        @Query('fechaDesde') fechaDesde: string,
+        @Query('fechaHasta') fechaHasta: string,
         @Req() req: any,
     ) {
+        console.log('\n=== CONTROLLER - Parámetros recibidos ===');
+        console.log('page:', page);
+        console.log('limit:', limit);
+        console.log('itemNombre:', itemNombre);
+        console.log('tipoAjuste:', tipoAjuste);
+        console.log('fechaDesde:', fechaDesde);
+        console.log('fechaHasta:', fechaHasta);
+        console.log('=========================================\n');
+
         const empresaId = req.user?.empresaId || req.user?.empresa_id;
         const filters: Record<string, any> = {};
 
         if (itemNombre) filters.itemNombre = itemNombre;
         if (tipoAjuste) filters.tipoAjuste = tipoAjuste;
+        if (fechaDesde) filters.fechaDesde = fechaDesde;
+        if (fechaHasta) filters.fechaHasta = fechaHasta;
+
+        console.log('Filtros construidos:', filters);
 
         return this.ajustesInventarioService.findAll(
             empresaId,

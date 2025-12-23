@@ -45,6 +45,7 @@ import { NotasCreditoModule } from './notas-credito/notas-credito.module';
 import { NotasDebitoConceptosModule } from './notas-debito-conceptos/notas-debito-conceptos.module';
 import { NotasDebitoModule } from './notas-debito/notas-debito.module';
 import { PrefacturaModule } from './facturacion/prefactura/prefactura.module';
+import { FacturasModule } from './facturacion/facturas/facturas.module';
 import { SaldosAFavorModule } from './instalaciones/saldos-a-favor/saldos-a-favor.module';
 
 
@@ -100,6 +101,7 @@ import { SaldosAFavorModule } from './instalaciones/saldos-a-favor/saldos-a-favo
     NotasConceptosModule,
     NotasCreditoModule,
     PrefacturaModule,
+    FacturasModule,
     SaldosAFavorModule,
   ],
 })

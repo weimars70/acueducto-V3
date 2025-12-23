@@ -186,6 +186,11 @@ const routes = [
         name: 'prefactura',
         component: () => import('../pages/PrefacturaPage.vue')
       },
+      {
+        path: '/facturas',
+        name: 'facturas',
+        component: () => import('../pages/FacturasPage.vue')
+      },
       // Instalaciones Routes
       {
         path: '/instalaciones/saldos-a-favor',

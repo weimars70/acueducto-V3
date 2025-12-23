@@ -46,6 +46,8 @@ export interface AjusteFilters {
     limit?: number;
     itemNombre?: string;
     tipoAjuste?: '+' | '-';
+    fechaDesde?: string;
+    fechaHasta?: string;
 }
 
 export interface Estadisticas {

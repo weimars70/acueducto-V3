@@ -87,7 +87,7 @@
 
       <!-- Filtros -->
       <div class="row q-col-gutter-md q-mb-md">
-        <div class="col-12 col-md-6">
+        <div class="col-12 col-md-4">
           <q-input
             v-model="filters.itemNombre"
             outlined
@@ -103,7 +103,7 @@
             </template>
           </q-input>
         </div>
-        <div class="col-12 col-md-3">
+        <div class="col-12 col-md-2">
           <q-select
             v-model="filters.tipoAjuste"
             outlined
@@ -119,16 +119,68 @@
             style="background: white; border-radius: 12px;"
           />
         </div>
-        <div class="col-12 col-md-3">
-          <q-btn
-            label="Buscar"
-            icon="search"
-            color="primary"
-            unelevated
-            @click="loadAjustes"
-            class="full-width"
-            style="border-radius: 12px; height: 40px;"
-          />
+        <div class="col-4 col-md-1">
+          <q-input
+            v-model="filters.fechaDesde"
+            outlined
+            label="Desde"
+            dense
+            clearable
+            type="date"
+            @update:model-value="loadAjustes"
+            style="background: white; border-radius: 12px;"
+          >
+            <template v-slot:prepend>
+              <q-icon name="event" size="xs" />
+            </template>
+          </q-input>
+        </div>
+        <div class="col-4 col-md-1">
+          <q-input
+            v-model="filters.fechaHasta"
+            outlined
+            label="Hasta"
+            dense
+            clearable
+            type="date"
+            @update:model-value="loadAjustes"
+            style="background: white; border-radius: 12px;"
+          >
+            <template v-slot:prepend>
+              <q-icon name="event" size="xs" />
+            </template>
+          </q-input>
+        </div>
+        <div class="col-4 col-md-auto">
+          <div class="row q-gutter-xs" style="height: 40px;">
+            <q-btn
+              icon="search"
+              color="primary"
+              unelevated
+              @click="loadAjustes"
+              style="border-radius: 10px; width: 40px; height: 40px;"
+            >
+              <q-tooltip>Buscar</q-tooltip>
+            </q-btn>
+            <q-btn
+              icon="download"
+              color="positive"
+              outline
+              @click="exportarExcel"
+              style="border-radius: 10px; width: 40px; height: 40px;"
+            >
+              <q-tooltip>Excel</q-tooltip>
+            </q-btn>
+            <q-btn
+              icon="picture_as_pdf"
+              color="negative"
+              outline
+              @click="exportarPDF"
+              style="border-radius: 10px; width: 40px; height: 40px;"
+            >
+              <q-tooltip>PDF</q-tooltip>
+            </q-btn>
+          </div>
         </div>
       </div>
 
@@ -201,6 +253,7 @@
 import { ref, onMounted } from 'vue';
 import { ajustesInventarioService, type AjusteInventario, type Estadisticas } from '../services/api/ajustes-inventario.service';
 import { useQuasar } from 'quasar';
+import * as XLSX from 'xlsx';
 
 const $q = useQuasar();
 
@@ -210,7 +263,9 @@ const estadisticas = ref<Estadisticas | null>(null);
 
 const filters = ref({
   itemNombre: '',
-  tipoAjuste: null as '+' | '-' | null
+  tipoAjuste: null as '+' | '-' | null,
+  fechaDesde: '',
+  fechaHasta: ''
 });
 
 const tipoAjusteOptions = [
@@ -277,11 +332,35 @@ const columns = [
 const loadAjustes = async () => {
   loading.value = true;
   try {
-    const response = await ajustesInventarioService.getAjustes({
+    console.log('=== FRONTEND - Valores del filtro ===');
+    console.log('filters.value:', JSON.stringify(filters.value, null, 2));
+
+    // Filtrar valores vacíos
+    const cleanFilters: any = {
       page: pagination.value.page,
-      limit: pagination.value.rowsPerPage,
-      ...filters.value
-    });
+      limit: pagination.value.rowsPerPage
+    };
+
+    if (filters.value.itemNombre?.trim()) {
+      cleanFilters.itemNombre = filters.value.itemNombre.trim();
+    }
+    if (filters.value.tipoAjuste) {
+      cleanFilters.tipoAjuste = filters.value.tipoAjuste;
+    }
+    if (filters.value.fechaDesde) {
+      cleanFilters.fechaDesde = filters.value.fechaDesde;
+      console.log('fechaDesde agregado:', filters.value.fechaDesde);
+    }
+    if (filters.value.fechaHasta) {
+      cleanFilters.fechaHasta = filters.value.fechaHasta;
+      console.log('fechaHasta agregado:', filters.value.fechaHasta);
+    }
+
+    console.log('Filtros a enviar:', JSON.stringify(cleanFilters, null, 2));
+
+    const response = await ajustesInventarioService.getAjustes(cleanFilters);
+
+    console.log('Respuesta recibida - Total:', response.total, 'Registros:', response.data.length);
 
     ajustes.value = response.data;
     pagination.value.rowsNumber = response.total;
@@ -319,6 +398,133 @@ const formatDate = (dateString: string) => {
     hour: '2-digit',
     minute: '2-digit'
   });
+};
+
+const exportarExcel = () => {
+  try {
+    // Preparar datos para exportar
+    const datosExportar = ajustes.value.map(ajuste => ({
+      'Fecha': formatDate(ajuste.fecha),
+      'Código Item': ajuste.item_codigo,
+      'Item': ajuste.item_nombre,
+      'Tipo': ajuste.tipo_ajuste === '+' ? 'Entrada (+)' : ajuste.tipo_ajuste === '-' ? 'Salida (-)' : 'Inventario Inicial',
+      'Cantidad': ajuste.cantidad,
+      'Inventario Anterior': ajuste.inventario_anterior,
+      'Inventario Nuevo': ajuste.inventario_nuevo,
+      'Motivo': ajuste.motivo || '',
+      'Usuario': ajuste.usuario
+    }));
+
+    // Crear libro de trabajo XLSX
+    const worksheet = XLSX.utils.json_to_sheet(datosExportar);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Ajustes de Inventario');
+
+    // Ajustar ancho de columnas
+    const maxWidth = datosExportar.reduce((w: any, r: any) => {
+      return Object.keys(r).map((key, i) => {
+        const value = r[key] ? r[key].toString() : '';
+        return Math.max(w[i] || 10, Math.min(value.length, 50));
+      });
+    }, []);
+    worksheet['!cols'] = maxWidth.map((w: number) => ({ wch: w + 2 }));
+
+    // Descargar archivo
+    XLSX.writeFile(workbook, `ajustes-inventario-${new Date().toISOString().split('T')[0]}.xlsx`);
+
+    $q.notify({
+      type: 'positive',
+      message: 'Archivo Excel exportado correctamente',
+      position: 'top'
+    });
+  } catch (error: any) {
+    $q.notify({
+      type: 'negative',
+      message: 'Error al exportar a Excel: ' + error.message,
+      position: 'top'
+    });
+  }
+};
+
+const exportarPDF = () => {
+  try {
+    // Crear contenido HTML para el PDF
+    const contenidoHTML = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Ajustes de Inventario</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1 { color: #2c3e50; text-align: center; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+            th { background-color: #3b82f6; color: white; padding: 8px; text-align: left; border: 1px solid #ddd; }
+            td { padding: 6px; border: 1px solid #ddd; }
+            tr:nth-child(even) { background-color: #f9fafb; }
+            .entrada { color: #10b981; font-weight: bold; }
+            .salida { color: #ef4444; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <h1>Ajustes de Inventario</h1>
+          <p><strong>Fecha de generación:</strong> ${new Date().toLocaleString('es-ES')}</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Código</th>
+                <th>Item</th>
+                <th>Tipo</th>
+                <th>Cantidad</th>
+                <th>Inv. Anterior</th>
+                <th>Inv. Nuevo</th>
+                <th>Motivo</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${ajustes.value.map(ajuste => `
+                <tr>
+                  <td>${formatDate(ajuste.fecha)}</td>
+                  <td>${ajuste.item_codigo}</td>
+                  <td>${ajuste.item_nombre}</td>
+                  <td class="${ajuste.tipo_ajuste === '+' ? 'entrada' : 'salida'}">${ajuste.tipo_ajuste === '+' ? 'Entrada (+)' : ajuste.tipo_ajuste === '-' ? 'Salida (-)' : 'Inicial'}</td>
+                  <td>${ajuste.cantidad}</td>
+                  <td>${ajuste.inventario_anterior}</td>
+                  <td>${ajuste.inventario_nuevo}</td>
+                  <td>${ajuste.motivo || ''}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+
+    // Abrir ventana nueva con el contenido para imprimir
+    const ventana = window.open('', '_blank');
+    if (ventana) {
+      ventana.document.write(contenidoHTML);
+      ventana.document.close();
+
+      // Esperar a que cargue y luego abrir el diálogo de impresión
+      ventana.onload = () => {
+        ventana.print();
+      };
+
+      $q.notify({
+        type: 'positive',
+        message: 'PDF generado. Use Ctrl+P para guardar como PDF',
+        position: 'top'
+      });
+    }
+  } catch (error: any) {
+    $q.notify({
+      type: 'negative',
+      message: 'Error al exportar a PDF: ' + error.message,
+      position: 'top'
+    });
+  }
 };
 
 onMounted(() => {

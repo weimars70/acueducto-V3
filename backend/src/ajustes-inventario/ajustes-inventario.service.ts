@@ -17,6 +17,11 @@ export class AjustesInventarioService {
 
     async findAll(empresaId: number, page: number = 1, limit: number = 20, filters: Record<string, any> = {}) {
         try {
+            console.log('=== FILTROS RECIBIDOS ===');
+            console.log('Filters:', JSON.stringify(filters, null, 2));
+            console.log('Empresa ID:', empresaId);
+            console.log('Page:', page, 'Limit:', limit);
+
             let query = `
                 SELECT
                     ai.id,
@@ -50,16 +55,43 @@ export class AjustesInventarioService {
                 paramCount++;
             }
 
+            if (filters.fechaDesde && filters.fechaDesde.trim()) {
+                const fechaDesdeValue = filters.fechaDesde.trim() + ' 00:00:00';
+                query += ` AND ai.fecha >= $${paramCount}::timestamp`;
+                queryParams.push(fechaDesdeValue);
+                console.log(`Filtro fechaDesde agregado: $${paramCount} = ${fechaDesdeValue}`);
+                paramCount++;
+            }
+
+            if (filters.fechaHasta && filters.fechaHasta.trim()) {
+                const fechaHastaValue = filters.fechaHasta.trim() + ' 23:59:59';
+                query += ` AND ai.fecha <= $${paramCount}::timestamp`;
+                queryParams.push(fechaHastaValue);
+                console.log(`Filtro fechaHasta agregado: $${paramCount} = ${fechaHastaValue}`);
+                paramCount++;
+            }
+
             // Obtener el total de registros
             const countQuery = `SELECT COUNT(*) FROM (${query}) as count_query`;
+            console.log('\n=== CONSULTA COUNT ===');
+            console.log(countQuery);
+            console.log('Parámetros:', queryParams);
+
             const totalResult = await this.dataSource.query(countQuery, queryParams);
             const total = parseInt(totalResult[0].count);
+            console.log('Total de registros encontrados:', total);
 
             // Agregar ordenamiento y paginación
             query += ` ORDER BY ai.fecha DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
             queryParams.push(limit, (page - 1) * limit);
 
+            console.log('\n=== CONSULTA FINAL ===');
+            console.log(query);
+            console.log('Parámetros:', queryParams);
+
             const data = await this.dataSource.query(query, queryParams);
+            console.log('Registros retornados:', data.length);
+            console.log('===========================\n');
 
             return {
                 data,

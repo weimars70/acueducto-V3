@@ -185,6 +185,12 @@ const facturacionItems = [
     label: 'Prefactura',
     route: '/prefactura',
     closable: true,
+  },
+  {
+    icon: 'list_alt',
+    label: 'Listado de Facturas',
+    route: '/facturas',
+    closable: true,
   }
 ];
 
