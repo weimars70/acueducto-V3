@@ -232,7 +232,10 @@
 
           <template v-slot:body-cell-factura_completa="props">
             <q-td :props="props">
-              <div style="font-weight: 600; color: #2c3e50;" v-html="highlightText(props.row.prefijo, 'factura') + '-' + highlightText(props.row.factura, 'factura')"></div>
+              <div>
+                <div style="font-weight: 600; color: #2c3e50;" v-html="highlightText(props.row.prefijo, 'factura')"></div>
+                <div style="font-size: 11px; color: #6b7280;" v-html="highlightText(props.row.factura, 'factura')"></div>
+              </div>
             </q-td>
           </template>
 
@@ -260,10 +263,10 @@
             </q-td>
           </template>
 
-          <template v-slot:body-cell-valor_total="props">
+          <template v-slot:body-cell-total_total="props">
             <q-td :props="props">
               <div style="font-weight: 600; color: #10b981;">
-                ${{ formatNumber(props.row.valor_total) }}
+                ${{ formatNumber(props.row.total_total) }}
               </div>
             </q-td>
           </template>
@@ -336,7 +339,7 @@ const columns = [
   { name: 'factura_completa', label: 'Factura', field: 'factura', align: 'left' as const, sortable: true },
   { name: 'cliente', label: 'Cliente', field: 'nombre', align: 'left' as const, sortable: true },
   { name: 'suscriptor_instalacion', label: 'Suscriptor / Instalación', field: 'suscriptor', align: 'left' as const },
-  { name: 'total_total', label: 'Total Total', field: 'total_total', align: 'right' as const, format: (val: number) => `$${formatNumber(val)}` },
+  { name: 'total_total', label: 'Total', field: 'total_total', align: 'right' as const },
   { name: 'saldo', label: 'Saldo', field: 'saldo', align: 'right' as const, sortable: true },
   { name: 'consumo', label: 'Consumo', field: 'consumo', align: 'center' as const, format: (val: number) => `${val} m³` },
   { name: 'estrato', label: 'Estrato', field: 'estrato', align: 'center' as const },
@@ -616,19 +619,21 @@ onMounted(() => {
 
 .acciones-container {
   display: flex;
-  gap: 4px;
+  gap: 0px;
   align-items: center;
   justify-content: center;
   opacity: 1;
 }
 
 .accion-btn {
-  min-width: 28px;
-  min-height: 28px;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 2px;
 }
 
 .accion-btn:hover {
-  transform: scale(1.15);
+  transform: scale(1.4);
   transition: transform 0.2s ease;
+  z-index: 10;
 }
 </style>
