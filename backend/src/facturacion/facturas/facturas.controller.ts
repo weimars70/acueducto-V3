@@ -38,10 +38,13 @@ export class FacturasController {
             sector_nombre
         };
 
+        const pageNum = page ? parseInt(page) : 1;
+        const limitNum = limit !== undefined && limit !== null ? parseInt(limit) : 20;
+
         return this.facturasService.findAll(
             empresaId,
-            parseInt(page) || 1,
-            parseInt(limit) || 20,
+            pageNum,
+            limitNum,
             mes ? parseInt(mes) : undefined,
             year ? parseInt(year) : undefined,
             filters

@@ -153,6 +153,74 @@
             </q-tr>
           </template>
 
+          <!-- Columna de acciones -->
+          <template v-slot:body-cell-acciones="props">
+            <q-td :props="props" class="acciones-cell">
+              <div class="acciones-container">
+                <q-btn
+                  flat
+                  dense
+                  round
+                  icon="payment"
+                  size="sm"
+                  color="green-7"
+                  @click.stop="pagarFactura(props.row)"
+                  class="accion-btn"
+                >
+                  <q-tooltip>Pagar</q-tooltip>
+                </q-btn>
+                <q-btn
+                  flat
+                  dense
+                  round
+                  icon="print"
+                  size="sm"
+                  color="blue-7"
+                  @click.stop="imprimirFactura(props.row)"
+                  class="accion-btn"
+                >
+                  <q-tooltip>Imprimir</q-tooltip>
+                </q-btn>
+                <q-btn
+                  flat
+                  dense
+                  round
+                  icon="cloud_upload"
+                  size="sm"
+                  color="purple-7"
+                  @click.stop="enviarDian(props.row)"
+                  class="accion-btn"
+                >
+                  <q-tooltip>Enviar DIAN</q-tooltip>
+                </q-btn>
+                <q-btn
+                  flat
+                  dense
+                  round
+                  icon="email"
+                  size="sm"
+                  color="orange-7"
+                  @click.stop="enviarEmail(props.row)"
+                  class="accion-btn"
+                >
+                  <q-tooltip>Enviar Email</q-tooltip>
+                </q-btn>
+                <q-btn
+                  flat
+                  dense
+                  round
+                  icon="chat"
+                  size="sm"
+                  color="teal-7"
+                  @click.stop="enviarWhatsapp(props.row)"
+                  class="accion-btn"
+                >
+                  <q-tooltip>Enviar WhatsApp</q-tooltip>
+                </q-btn>
+              </div>
+            </q-td>
+          </template>
+
           <!-- Columnas agrupadas -->
           <template v-slot:body-cell-periodo="props">
             <q-td :props="props">
@@ -164,7 +232,7 @@
 
           <template v-slot:body-cell-factura_completa="props">
             <q-td :props="props">
-              <div style="font-weight: 600; color: #2c3e50;" v-html="props.row.prefijo + '-' + highlightText(props.row.factura, 'factura')"></div>
+              <div style="font-weight: 600; color: #2c3e50;" v-html="highlightText(props.row.prefijo, 'factura') + '-' + highlightText(props.row.factura, 'factura')"></div>
             </q-td>
           </template>
 
@@ -172,7 +240,7 @@
             <q-td :props="props">
               <div>
                 <div style="font-weight: 600; color: #2c3e50;" v-html="highlightText(props.row.nombre, 'nombre')"></div>
-                <div style="font-size: 11px; color: #6b7280;" v-html="highlightText(props.row.ident, 'ident')"></div>
+                <div style="font-size: 11px; color: #6b7280;" v-html="highlightText(props.row.ident, 'nombre')"></div>
               </div>
             </q-td>
           </template>
@@ -180,8 +248,8 @@
           <template v-slot:body-cell-suscriptor_instalacion="props">
             <q-td :props="props">
               <div>
-                <div style="font-weight: 600; color: #2c3e50;">{{ props.row.suscriptor }}</div>
-                <div style="font-size: 11px; color: #6b7280;">Inst: {{ props.row.instalacion_codigo }}</div>
+                <div style="font-weight: 600; color: #2c3e50;" v-html="highlightText(props.row.suscriptor, 'instalacion')"></div>
+                <div style="font-size: 11px; color: #6b7280;">Inst: <span v-html="highlightText(props.row.instalacion_codigo, 'instalacion')"></span></div>
               </div>
             </q-td>
           </template>
@@ -263,6 +331,7 @@ const pagination = ref({
 });
 
 const columns = [
+  { name: 'acciones', label: 'Acciones', field: '', align: 'center' as const, style: 'width: 50px' },
   { name: 'periodo', label: 'Periodo', field: 'mes', align: 'center' as const },
   { name: 'factura_completa', label: 'Factura', field: 'factura', align: 'left' as const, sortable: true },
   { name: 'cliente', label: 'Cliente', field: 'nombre', align: 'left' as const, sortable: true },
@@ -373,6 +442,7 @@ const highlightText = (text: string | number, fieldName: string): string => {
   let searchTerm = '';
   if (fieldName === 'factura') searchTerm = filters.value.factura?.trim() || '';
   else if (fieldName === 'nombre') searchTerm = filters.value.nombre?.trim() || '';
+  else if (fieldName === 'instalacion') searchTerm = filters.value.instalacion_codigo?.trim() || '';
   else if (fieldName === 'ident') searchTerm = filters.value.ident?.trim() || '';
   else if (fieldName === 'year') searchTerm = filters.value.year ? String(filters.value.year) : '';
 
@@ -385,9 +455,64 @@ const highlightText = (text: string | number, fieldName: string): string => {
   return textStr.replace(regex, '<span style="color: #2563eb; font-weight: 600;">$1</span>');
 };
 
-const exportarExcel = () => {
+// Funciones de acciones
+const pagarFactura = (factura: Factura) => {
+  console.log('Pagar factura:', factura);
+  $q.notify({
+    type: 'info',
+    message: `Función pagar - Factura ${factura.prefijo}-${factura.factura}`,
+    position: 'top'
+  });
+};
+
+const imprimirFactura = (factura: Factura) => {
+  console.log('Imprimir factura:', factura);
+  $q.notify({
+    type: 'info',
+    message: `Función imprimir - Factura ${factura.prefijo}-${factura.factura}`,
+    position: 'top'
+  });
+};
+
+const enviarDian = (factura: Factura) => {
+  console.log('Enviar a DIAN:', factura);
+  $q.notify({
+    type: 'info',
+    message: `Función enviar DIAN - Factura ${factura.prefijo}-${factura.factura}`,
+    position: 'top'
+  });
+};
+
+const enviarEmail = (factura: Factura) => {
+  console.log('Enviar email:', factura);
+  $q.notify({
+    type: 'info',
+    message: `Función enviar email - Factura ${factura.prefijo}-${factura.factura}`,
+    position: 'top'
+  });
+};
+
+const enviarWhatsapp = (factura: Factura) => {
+  console.log('Enviar WhatsApp:', factura);
+  $q.notify({
+    type: 'info',
+    message: `Función enviar WhatsApp - Factura ${factura.prefijo}-${factura.factura}`,
+    position: 'top'
+  });
+};
+
+const exportarExcel = async () => {
   try {
-    const datosExportar = facturas.value.map(factura => ({
+    loading.value = true;
+
+    // Obtener TODOS los registros con los filtros aplicados
+    const response = await facturasService.getFacturas({
+      ...filters.value,
+      page: 1,
+      limit: 0 // 0 significa traer todos los registros
+    });
+
+    const datosExportar = response.data.map(factura => ({
       'Mes': factura.mes,
       'Año': factura.year,
       'Prefijo': factura.prefijo,
@@ -464,7 +589,7 @@ const exportarExcel = () => {
 
     $q.notify({
       type: 'positive',
-      message: 'Archivo Excel exportado correctamente',
+      message: `Archivo Excel exportado correctamente (${response.total} registros)`,
       position: 'top'
     });
   } catch (error: any) {
@@ -473,6 +598,8 @@ const exportarExcel = () => {
       message: 'Error al exportar a Excel: ' + error.message,
       position: 'top'
     });
+  } finally {
+    loading.value = false;
   }
 };
 
@@ -480,3 +607,29 @@ onMounted(() => {
   loadFacturas();
 });
 </script>
+
+<style scoped>
+/* Columna de acciones */
+.acciones-cell {
+  padding: 4px 8px !important;
+  width: 50px;
+}
+
+.acciones-container {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+}
+
+.accion-btn {
+  min-width: 28px;
+  min-height: 28px;
+}
+
+.accion-btn:hover {
+  transform: scale(1.15);
+  transition: transform 0.2s ease;
+}
+</style>

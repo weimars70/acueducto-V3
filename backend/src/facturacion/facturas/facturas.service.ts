@@ -73,14 +73,16 @@ export class FacturasService {
 
             // Aplicar filtros por columna
             if (filters) {
+                // Filtro de Factura: busca en factura O prefijo
                 if (filters.factura && filters.factura.trim()) {
-                    query += ` AND factura::text ILIKE $${paramCount}`;
+                    query += ` AND (factura::text ILIKE $${paramCount} OR prefijo ILIKE $${paramCount})`;
                     queryParams.push(`%${filters.factura.trim()}%`);
                     paramCount++;
                 }
 
+                // Filtro de Cliente: busca en nombre O identificación
                 if (filters.nombre && filters.nombre.trim()) {
-                    query += ` AND nombre ILIKE $${paramCount}`;
+                    query += ` AND (nombre ILIKE $${paramCount} OR ident ILIKE $${paramCount})`;
                     queryParams.push(`%${filters.nombre.trim()}%`);
                     paramCount++;
                 }
@@ -91,8 +93,9 @@ export class FacturasService {
                     paramCount++;
                 }
 
+                // Filtro de Suscriptor/Instalación: busca en instalacion_codigo O suscriptor
                 if (filters.instalacion_codigo && filters.instalacion_codigo.trim()) {
-                    query += ` AND instalacion_codigo::text ILIKE $${paramCount}`;
+                    query += ` AND (instalacion_codigo::text ILIKE $${paramCount} OR suscriptor ILIKE $${paramCount})`;
                     queryParams.push(`%${filters.instalacion_codigo.trim()}%`);
                     paramCount++;
                 }
@@ -121,9 +124,12 @@ export class FacturasService {
             const totalResult = await this.dataSource.query(countQuery, queryParams);
             const total = parseInt(totalResult[0].count);
 
-            // Agregar ordenamiento y paginación
-            query += ` ORDER BY factura DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
-            queryParams.push(limit, (page - 1) * limit);
+            // Agregar ordenamiento y paginación (si limit es 0, traer todos los registros)
+            query += ` ORDER BY factura DESC`;
+            if (limit > 0) {
+                query += ` LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+                queryParams.push(limit, (page - 1) * limit);
+            }
 
             console.log('\n=== CONSULTA FINAL ===');
             console.log('Query:', query);
