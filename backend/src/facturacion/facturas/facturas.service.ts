@@ -62,6 +62,7 @@ export class FacturasService {
                 direccion,
                 sector_nombre,
                 codigo_medidor, fecha,mes_nombre, nota_cuentas_vencidas
+                ,v_u_basico,v_u_complementario,v_u_suntuario, valor_sub_complementario, valor_sub_suntuario
                 FROM view_facturas
                 WHERE empresa_id = $1
                 AND mes = $2

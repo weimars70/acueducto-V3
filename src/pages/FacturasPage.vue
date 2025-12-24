@@ -543,6 +543,45 @@ const imprimirFactura = async (factura: Factura) => {
         }
     };
 
+    // Helper para texto alineado a la derecha
+    const drawRightAlignedText = (text: string, x: number, y: number, font: any, size: number, color: any = rgb(0, 0, 0)) => {
+        if (!text) return;
+        const width = font.widthOfTextAtSize(text, size);
+        firstPage.drawText(text, {
+            x: x - width,
+            y,
+            size,
+            font,
+            color,
+        });
+    };
+
+    // Helper para dibujar fila de factura con alineación correcta
+    const drawInvoiceRow = (y: number, label: string, info: string, val1: number, val2: number, val3: number, total: number, saldo: number) => {
+        // Columna 1: Label (Left 16)
+        firstPage.drawText(label, { x: 16, y, size: 8, font: helveticaBold });
+        
+        // Columna 2: Info (Left 170)
+        firstPage.drawText(info, { x: 170, y, size: 8, font: helveticaBold });
+        
+        // Columna 3: Val 1 (Right align at ~300)
+        drawRightAlignedText(`$ ${formatNumber(val1)}`, 275, y, helveticaBold, 8);
+
+        // Columna 4: Val 2 (Right align at ~440)
+        drawRightAlignedText(`$ ${formatNumber(val2)}`, 415, y, helveticaBold, 8);
+
+        // Columna 5: Val 3 (Right align at ~505)
+        drawRightAlignedText(`$ ${formatNumber(val3)}`, 480, y, helveticaBold, 8);
+
+        // Columna 6: Total (Right align at ~590)
+        drawRightAlignedText(`$ ${formatNumber(total)}`, 545, y, helveticaBold, 8);
+
+        // Columna 7: Saldo (Right align at ~650)
+        if (saldo > 0) {
+            drawRightAlignedText(`$ ${formatNumber(saldo)}`, 600, y, helveticaBold, 8);
+        }
+    };
+
     // 4. Escribir datos de la empresa (Ajustar coordenadas según plantilla)
     // Definir el cuadro donde se centrará el texto (X inicial y Ancho)
     const headerBoxX = 50; 
@@ -615,14 +654,52 @@ const imprimirFactura = async (factura: Factura) => {
         color: rgb(0, 0, 0),
     });
 
-     firstPage.drawText(` Sin recargo: ${formatDate(String(factura.sin_recargo))}       Con recargo: ${formatDate(String(factura.con_recargo))}       Lectura Actual: ${factura.lectura}       Lectura Anterior: ${factura.lec_ant}       Consumo M3: ${factura.consumo}`, {
+     firstPage.drawText(` Sin recargo: ${formatDate(String(factura.sin_recargo))}               Con recargo: ${formatDate(String(factura.con_recargo))}             Lectura Actual: ${factura.lectura}                Lectura Anterior: ${factura.lec_ant}                Consumo M3: ${factura.consumo}`, {
         x: 16,
         y: height - 205,
         size: 8,
         font: helveticaBold,
         color: rgb(0, 0, 0),
     });
-    
+
+   
+
+    if (Number(factura.cargo_fijo) > 0) {
+        drawInvoiceRow(
+            height - 240,
+            "Cargo Fijo ",
+            "1 Mes",
+            factura.cargo_fijo,
+            factura.cargo_fijo,
+            factura.valor_subsidio_cargo_fijo,
+            Number(factura.cargo_fijo) + Number(factura.valor_subsidio_cargo_fijo),0
+        );
+    }
+
+    if (Number(factura.valor_complementario) > 0) {
+        drawInvoiceRow(
+            height - 250,
+            "Consumo Complemetario",
+            `${factura.complementario} M3`,
+            factura.v_u_complementario ?? 0,
+            factura.valor_complementario,
+            factura.valor_sub_complementario,
+            Number(factura.valor_complementario) + Number(factura.valor_sub_complementario),0
+        );
+    }
+
+     if (Number(factura.valor_suntuario) > 0) {
+        drawInvoiceRow(
+            height - 260,
+            "Consumo Suntuario",
+            `${factura.suntuario} M3`,
+            factura.v_u_suntuario ?? 0,
+            factura.valor_suntuario,
+            factura.valor_sub_suntuario,
+            Number(factura.valor_suntuario) + Number(factura.valor_sub_suntuario),0
+        );
+    }
+
 
     // 5. Guardar y visualizar
     const pdfBytes = await pdfDoc.save();

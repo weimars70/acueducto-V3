@@ -1,6 +1,5 @@
 import axios from 'axios';
 import { API_URL } from '../../config/environment';
-import { useAuthStore } from '../../stores/auth';
 
 export const apiClient = axios.create({
   baseURL: API_URL,
@@ -70,10 +69,16 @@ apiClient.interceptors.response.use(
 
     // 🔒 Manejar error 401 (token expirado o inválido)
     if (error.response?.status === 401) {
-      console.error('🔒 [client.ts] Token expirado o inválido - cerrando sesión');
+      console.error('🔒 [client.ts] Token expirado o inválido (401) - cerrando sesión manualmente');
 
-      const authStore = useAuthStore();
-      authStore.logout(true); // true = redirigir al login
+      // Limpiar sesión manualmente para evitar dependencias circulares con authStore
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+
+      // Redirigir al login
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
 
       error.isAuthError = true;
       error.message = 'Sesión expirada. Por favor inicie sesión nuevamente.';

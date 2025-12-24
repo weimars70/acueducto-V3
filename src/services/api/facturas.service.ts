@@ -68,6 +68,9 @@ export interface Factura {
     sector_nombre: string;
     codigo_medidor: string;
     fecha: string;
+    v_u_basico?: number;
+    v_u_complementario?: number;
+    v_u_suntuario?: number;
 }
 
 export interface FacturasFilters {
