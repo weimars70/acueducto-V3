@@ -8,6 +8,7 @@ import {
   Param,
   Query,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -16,7 +17,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   @Get('view')
   @UseGuards(JwtAuthGuard)
@@ -44,6 +45,16 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   async getTiposCuentaByEmpresa(@Param('empresaId') empresaId: string) {
     return this.usersService.getTiposCuentaByEmpresa(parseInt(empresaId, 10));
+  }
+
+  @Get('empresa-info')
+  @UseGuards(JwtAuthGuard)
+  async getEmpresaInfo(@Req() req) {
+    const user = req.user;
+    if (user && user.empresaId) {
+      return this.usersService.getEmpresaInfo(user.empresaId);
+    }
+    throw new Error("Empresa ID not found in session");
   }
 
   @Get(':id')

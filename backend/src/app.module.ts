@@ -47,6 +47,7 @@ import { NotasDebitoModule } from './notas-debito/notas-debito.module';
 import { PrefacturaModule } from './facturacion/prefactura/prefactura.module';
 import { FacturasModule } from './facturacion/facturas/facturas.module';
 import { SaldosAFavorModule } from './instalaciones/saldos-a-favor/saldos-a-favor.module';
+import { RecibosCajaModule } from './recibos-caja/recibos-caja.module';
 
 
 
@@ -103,6 +104,7 @@ import { SaldosAFavorModule } from './instalaciones/saldos-a-favor/saldos-a-favo
     PrefacturaModule,
     FacturasModule,
     SaldosAFavorModule,
+    RecibosCajaModule,
   ],
 })
 export class AppModule { }

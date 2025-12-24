@@ -61,7 +61,7 @@ export class FacturasService {
                 ciudad_nombre,
                 direccion,
                 sector_nombre,
-                codigo_medidor, fecha
+                codigo_medidor, fecha,mes_nombre, nota_cuentas_vencidas
                 FROM view_facturas
                 WHERE empresa_id = $1
                 AND mes = $2
@@ -152,6 +152,18 @@ export class FacturasService {
             console.error('Mensaje:', error.message);
             console.error('Stack:', error.stack);
             throw new Error(`Error al obtener facturas: ${error.message}`);
+        }
+    }
+
+    async getEmpresaInfo(empresaId: number) {
+        try {
+            const empresaInfo = await this.dataSource.query(
+                `SELECT nombre, direccion, ident, telefono, descripcion FROM public.empresas where id = $1`,
+                [empresaId]
+            );
+            return empresaInfo[0];
+        } catch (error) {
+            throw new Error(`Error al obtener información de la empresa: ${error.message}`);
         }
     }
 }

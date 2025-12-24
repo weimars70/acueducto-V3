@@ -191,6 +191,16 @@ const routes = [
         name: 'facturas',
         component: () => import('../pages/FacturasPage.vue')
       },
+      {
+        path: '/recibo-caja',
+        name: 'recibo-caja',
+        component: () => import('../pages/ReciboCajaPage.vue')
+      },
+      {
+        path: '/recibos-caja-list',
+        name: 'recibos-caja-list',
+        component: () => import('../pages/ReciboCajaListPage.vue')
+      },
       // Instalaciones Routes
       {
         path: '/instalaciones/saldos-a-favor',

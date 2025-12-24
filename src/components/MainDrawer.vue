@@ -81,6 +81,17 @@ const inventarioItems = [
   }
 ];
 
+const documentosItems = [
+  {
+    icon: 'receipt',
+    label: 'Recibos de Caja',
+    route: '/recibos-caja-list',
+    closable: true,
+  }
+];
+
+const consumoExpanded = ref(false);
+const documentosExpanded = ref(false);
 const maestrosExpanded = ref(false);
 const inventarioExpanded = ref(false);
 const facturacionExpanded = ref(false);
@@ -397,23 +408,75 @@ const handleSync = async () => {
 
       <q-separator spaced />
 
-      <!-- Menu Items -->
-      <q-item
-        v-for="item in menuItems"
-        :key="item.route"
-        clickable
-        v-ripple
-        :active="router.currentRoute.value.path === item.route"
-        active-class="text-primary"
-        @click="navigateTo(item)"
+      <!-- Consumo Section -->
+      <q-expansion-item
+        v-model="consumoExpanded"
+        icon="water_drop"
+        label="Consumo"
+        header-class="text-weight-bold"
       >
-        <q-item-section avatar>
-          <q-icon :name="item.icon" />
-        </q-item-section>
-        <q-item-section>
-          {{ item.label }}
-        </q-item-section>
-      </q-item>
+        <q-item
+          v-for="item in menuItems"
+          :key="item.route"
+          clickable
+          v-ripple
+          :active="router.currentRoute.value.path === item.route"
+          active-class="text-primary"
+          @click="navigateTo(item)"
+          class="q-pl-md"
+        >
+          <q-item-section avatar>
+            <q-icon :name="item.icon" />
+          </q-item-section>
+          <q-item-section>
+            {{ item.label }}
+          </q-item-section>
+        </q-item>
+
+        <!-- Sincronizar Datos dentro del submenu -->
+        <q-item
+          clickable
+          v-ripple
+          @click="handleSync"
+          :disable="syncing"
+          class="q-pl-md"
+        >
+          <q-item-section avatar>
+            <q-icon :name="syncing ? 'sync_disabled' : 'sync'" />
+          </q-item-section>
+          <q-item-section>
+            {{ syncing ? 'Sincronizando...' : 'Sincronizar Datos' }}
+          </q-item-section>
+        </q-item>
+      </q-expansion-item>
+
+      <q-separator spaced />
+
+      <!-- Documentos Section -->
+      <q-expansion-item
+        v-model="documentosExpanded"
+        icon="description"
+        label="Documentos"
+        header-class="text-weight-bold"
+      >
+        <q-item
+          v-for="item in documentosItems"
+          :key="item.route"
+          clickable
+          v-ripple
+          :active="router.currentRoute.value.path === item.route"
+          active-class="text-primary"
+          @click="navigateTo(item)"
+          class="q-pl-md"
+        >
+          <q-item-section avatar>
+            <q-icon :name="item.icon" />
+          </q-item-section>
+          <q-item-section>
+            {{ item.label }}
+          </q-item-section>
+        </q-item>
+      </q-expansion-item>
 
       <q-separator spaced />
 
@@ -692,21 +755,6 @@ const handleSync = async () => {
       </q-expansion-item>
 
       <!-- Sync Button -->
-      <q-separator spaced />
-      
-      <q-item 
-        clickable 
-        v-ripple 
-        @click="handleSync"
-        :disable="syncing"
-      >
-        <q-item-section avatar>
-          <q-icon :name="syncing ? 'sync_disabled' : 'sync'" />
-        </q-item-section>
-        <q-item-section>
-          {{ syncing ? 'Sincronizando...' : 'Sincronizar Datos' }}
-        </q-item-section>
-      </q-item>
     </q-list>
   </q-drawer>
 </template>

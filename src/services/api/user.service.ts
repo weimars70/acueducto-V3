@@ -71,5 +71,14 @@ export const userService = {
     } catch (error) {
       throw error;
     }
+  },
+
+  async getEmpresaInfo(userId: number): Promise<any> {
+    try {
+      const { data } = await apiClient.get('/users/empresa-info', { params: { userId } });
+      return data;
+    } catch (error) {
+      throw error;
+    }
   }
 };

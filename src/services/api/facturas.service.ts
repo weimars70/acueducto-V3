@@ -3,6 +3,7 @@ import type { PaginatedResponse } from '../../types/api';
 
 export interface Factura {
     mes: number;
+    mes_nombre: string;
     year: number;
     prefijo: string;
     factura: number;
@@ -88,6 +89,11 @@ interface FacturaResponse extends PaginatedResponse<Factura> { }
 export const facturasService = {
     async getFacturas(filters: FacturasFilters = {}): Promise<FacturaResponse> {
         const { data } = await apiClient.get('/facturas', { params: filters });
+        return data;
+    },
+
+    async getEmpresaInfo(): Promise<any> {
+        const { data } = await apiClient.get('/facturas/empresa-info');
         return data;
     }
 };

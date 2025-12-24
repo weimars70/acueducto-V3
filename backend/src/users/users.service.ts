@@ -19,7 +19,7 @@ export class UsersService {
     private readonly tipoCuentaRepository: Repository<TipoCuenta>,
     @InjectDataSource()
     private dataSource: DataSource,
-  ) {}
+  ) { }
 
   // Método legacy - mantener por compatibilidad si es necesario
   async findOne(username: string) {
@@ -244,6 +244,19 @@ export class UsersService {
       });
     } catch (error) {
       throw new Error(`Error al obtener tipos de cuenta: ${error.message}`);
+    }
+  }
+
+  async getEmpresaInfo(empresaId: number) {
+    try {
+      const empresaInfo = await this.userRepository.query(
+        `SELECT nombre, direccion, ident, telefono, descripcion FROM public.empresas where id = $1`,
+        [empresaId]
+      );
+
+      return empresaInfo[0];
+    } catch (error) {
+      throw new Error(`Error al obtener información de la empresa: ${error.message}`);
     }
   }
 }

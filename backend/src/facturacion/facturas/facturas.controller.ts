@@ -7,6 +7,15 @@ import { FacturasService } from './facturas.service';
 export class FacturasController {
     constructor(private readonly facturasService: FacturasService) { }
 
+    @Get('empresa-info')
+    async getEmpresaInfo(@Request() req: any) {
+        const empresaId = req.user?.empresaId || req.user?.empresa_id;
+        if (!empresaId) {
+            throw new Error("Empresa ID not found in session");
+        }
+        return this.facturasService.getEmpresaInfo(empresaId);
+    }
+
     @Get()
     async findAll(
         @Query('page') page: string,

@@ -75,7 +75,7 @@
           flat
           v-model:pagination="pagination"
           @request="onRequest"
-          :rows-per-page-options="[20, 50, 100]"
+          :rows-per-page-options="[15, 20, 25]"
           rows-per-page-label="Registros por página:"
           :pagination-label="(firstRowIndex, endRowIndex, totalRowsNumber) => `${firstRowIndex}-${endRowIndex} de ${totalRowsNumber}`"
           no-data-label="No hay datos disponibles"
@@ -286,11 +286,14 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { facturasService, type Factura } from '../services/api/facturas.service';
 import { useQuasar } from 'quasar';
 import * as XLSX from 'xlsx';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
 const $q = useQuasar();
+const router = useRouter();
 
 const facturas = ref<Factura[]>([]);
 const loading = ref(false);
@@ -329,7 +332,7 @@ const pagination = ref({
   sortBy: 'factura',
   descending: true,
   page: 1,
-  rowsPerPage: 20,
+  rowsPerPage: 10,
   rowsNumber: 0
 });
 
@@ -459,21 +462,184 @@ const highlightText = (text: string | number, fieldName: string): string => {
 
 // Funciones de acciones
 const pagarFactura = (factura: Factura) => {
-  console.log('Pagar factura:', factura);
-  $q.notify({
-    type: 'info',
-    message: `Función pagar - Factura ${factura.prefijo}-${factura.factura}`,
-    position: 'top'
+  router.push({
+    path: '/recibo-caja',
+    query: {
+      instalacion: factura.instalacion_codigo.toString(),
+      nombre: factura.nombre,
+      factura: `${factura.prefijo}-${factura.factura}`,
+      valor: factura.total_total.toString()
+    }
   });
 };
 
-const imprimirFactura = (factura: Factura) => {
-  console.log('Imprimir factura:', factura);
-  $q.notify({
-    type: 'info',
-    message: `Función imprimir - Factura ${factura.prefijo}-${factura.factura}`,
-    position: 'top'
-  });
+const imprimirFactura = async (factura: Factura) => {
+  try {
+    $q.loading.show({ message: 'Generando PDF...' });
+
+    // 1. Obtener datos de la empresa
+    // 1. Obtener datos de la empresa
+    const empresa = await facturasService.getEmpresaInfo();
+    console.log("Datos empresa:", empresa);
+
+    // 2. Cargar el PDF base
+    const existingPdfBytes = await fetch('/formato_factura_socorro.pdf').then(res => res.arrayBuffer());
+
+    // 3. Cargar en pdf-lib
+    const pdfDoc = await PDFDocument.load(existingPdfBytes);
+    const pages = pdfDoc.getPages();
+    const firstPage = pages[0];
+    const { width, height } = firstPage.getSize();
+    
+    // Configurar fuente
+    const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+    // Helper para centrar texto en un ancho fijo
+    const drawCenteredText = (text: string, x: number, y: number, w: number, font: any, size: number, color: any = rgb(0, 0, 0)) => {
+        if (!text) return;
+        const sanitizedText = text.replace(/[\r\n]+/g, ' ').trim();
+        const textWidth = font.widthOfTextAtSize(sanitizedText, size);
+        const centeredX = x + (w - textWidth) / 2;
+        firstPage.drawText(sanitizedText, {
+            x: centeredX,
+            y,
+            size,
+            font,
+            color,
+        });
+    };
+
+    // Helper para texto multilínea centrado
+    const drawMultiLineCenteredText = (text: string, x: number, y: number, w: number, font: any, size: number, color: any = rgb(0, 0, 0), lineHeight: number = 12) => {
+        if (!text) return;
+        const sanitizedText = text.replace(/[\r\n]+/g, ' ').trim();
+        const words = sanitizedText.split(' ');
+        let currentLine = '';
+        let currentY = y;
+
+        for (const word of words) {
+            const testLine = currentLine ? `${currentLine} ${word}` : word;
+            const testWidth = font.widthOfTextAtSize(testLine, size);
+            
+            if (testWidth <= w) {
+                currentLine = testLine;
+            } else {
+                // Dibujar línea actual
+                if (currentLine) {
+                    const lineWidth = font.widthOfTextAtSize(currentLine, size);
+                    const centeredX = x + (w - lineWidth) / 2;
+                    firstPage.drawText(currentLine, { x: centeredX, y: currentY, size, font, color });
+                    currentY -= lineHeight; // Bajar para la siguiente línea
+                }
+                currentLine = word;
+            }
+        }
+        // Dibujar última línea
+        if (currentLine) {
+            const lineWidth = font.widthOfTextAtSize(currentLine, size);
+            const centeredX = x + (w - lineWidth) / 2;
+            firstPage.drawText(currentLine, { x: centeredX, y: currentY, size, font, color });
+        }
+    };
+
+    // 4. Escribir datos de la empresa (Ajustar coordenadas según plantilla)
+    // Definir el cuadro donde se centrará el texto (X inicial y Ancho)
+    const headerBoxX = 50; 
+    const headerBoxWidth = 300; // Ancho fijo para centrar
+
+    // Nombre Empresa
+    drawCenteredText(empresa.nombre || '', headerBoxX, height - 25, headerBoxWidth, helveticaBold, 13);
+
+    // NIT
+    drawCenteredText(`NIT: ${empresa.ident || ''} Tel: ${empresa.telefono || ''}`, headerBoxX, height - 37, headerBoxWidth, helveticaFont, 10);
+
+    // Dirección
+    drawCenteredText(empresa.direccion || '', headerBoxX, height - 47, headerBoxWidth, helveticaFont, 10);
+
+     // Teléfono
+   // drawCenteredText(`Tel: ${empresa.telefono || ''}`, headerBoxX, height - 62, headerBoxWidth, helveticaFont, 10);
+    
+    // Descripción (Multilínea)
+    // Ajuste específico para la descripción: más a la derecha y menos ancho
+    const descriptionBoxX = headerBoxX + 60; 
+    const descriptionBoxWidth = headerBoxWidth - 120;
+    drawMultiLineCenteredText(empresa.descripcion || '', descriptionBoxX, height - 57, descriptionBoxWidth, helveticaFont, 10);
+
+    // TODO: Escribir datos de la factura aquí
+    // Ejemplo:
+    firstPage.drawText(`${factura.prefijo}-${factura.factura}`, {
+        x: 427,
+        y: height - 35,
+        size: 6,
+        font: helveticaBold,
+        color: rgb(1, 0, 0) // Rojo para destacar
+    });
+
+    firstPage.drawText(`${factura.instalacion_codigo}`, {
+        x: 555,
+        y: height - 35,
+        size: 8,
+        font: helveticaBold,
+        color: rgb(1, 0, 0) // Rojo para destacar
+    });
+
+    drawCenteredText(`${factura.mes_nombre} de ${factura.year}`, 300, height - 65, 200, helveticaBold, 8);
+    drawCenteredText(`FACTURA DE SERVICIOS PUBLICOS: ${factura.factura}`, 300, height - 77, 200, helveticaBold, 7);
+
+    drawMultiLineCenteredText(` ${factura.nota_cuentas_vencidas}`, 505, height - 60, 95, helveticaBold, 6, rgb(1, 0, 0));
+
+    drawMultiLineCenteredText(` $ ${formatNumber(factura.saldo)}`, 480, height - 106, 100, helveticaBold, 15, rgb(0, 0, 1));
+    
+    firstPage.drawText(` ${factura.nombre} CC: ${factura.ident} Dirección: ${factura.direccion} Teléfono: ${factura.telefono}`, {
+        x: 30,
+        y: height - 146,
+        size: 8,
+        font: helveticaBold,
+        color: rgb(0, 0, 0),
+    });
+    
+    firstPage.drawText(` Estrato: ${factura.estrato} Medidor: ${factura.codigo_medidor} Uso: ${factura.uso_nombre} Sector: ${factura.sector_nombre}`, {
+        x: 30,
+        y: height - 163,
+        size: 8,
+        font: helveticaBold,
+        color: rgb(0, 0, 0),
+    });
+
+    firstPage.drawText(` Consumo del ${formatDate(String(factura.consumo_desde))} al ${formatDate(String(factura.consumo_hasta))} del mes de ${factura.mes_nombre} año  ${factura.year}`, {
+        x: 95,
+        y: height - 189,
+        size: 8,
+        font: helveticaBold,
+        color: rgb(0, 0, 0),
+    });
+
+     firstPage.drawText(` Sin recargo: ${formatDate(String(factura.sin_recargo))}       Con recargo: ${formatDate(String(factura.con_recargo))}       Lectura Actual: ${factura.lectura}       Lectura Anterior: ${factura.lec_ant}       Consumo M3: ${factura.consumo}`, {
+        x: 16,
+        y: height - 205,
+        size: 8,
+        font: helveticaBold,
+        color: rgb(0, 0, 0),
+    });
+    
+
+    // 5. Guardar y visualizar
+    const pdfBytes = await pdfDoc.save();
+    const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+
+  } catch (error: any) {
+    console.error("Error al imprimir factura:", error);
+    $q.notify({
+      type: 'negative',
+      message: 'Error al generar PDF: ' + error.message,
+      position: 'top'
+    });
+  } finally {
+    $q.loading.hide();
+  }
 };
 
 const enviarDian = (factura: Factura) => {
