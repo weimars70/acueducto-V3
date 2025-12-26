@@ -1,4 +1,4 @@
-import { Injectable, ExecutionContext } from '@nestjs/common';
+import { Injectable, ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 
 @Injectable()
@@ -22,7 +22,15 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         info: info?.message,
         user: user
       });
-      throw err || new Error('Unauthorized');
+
+      // Detectar si el token expiró
+      const message = info?.message === 'jwt expired'
+        ? 'Sesión expirada. Por favor inicie sesión nuevamente.'
+        : info?.message === 'No auth token'
+        ? 'Token de autenticación no proporcionado.'
+        : 'No autorizado.';
+
+      throw new UnauthorizedException(message);
     }
 
     console.log('✅ JWT Guard - Authentication successful:', {

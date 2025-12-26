@@ -561,10 +561,10 @@
     "@xml-tools/parser" "^1.0.11"
     prettier ">=2.4.0"
 
-"@quasar/extras@^1.16.9":
-  version "1.16.15"
-  resolved "https://registry.npmjs.org/@quasar/extras/-/extras-1.16.15.tgz"
-  integrity sha512-ZM8rUAagZ3Gm7Thu6DjKdGfkyFBv61RaCeVSIWdve6+q300yN+6aouxttf2RmxCk12RsSqEyzBnIg7BlF1s7MA==
+"@quasar/extras@^1.17.0":
+  version "1.17.0"
+  resolved "https://registry.npmjs.org/@quasar/extras/-/extras-1.17.0.tgz"
+  integrity sha512-KqAHdSJfIDauiR1nJ8rqHWT0diqD0QradZKoVIZJAilHAvgwyPIY7MbyR2z4RIMkUIMUSqBZcbshMpEw+9A30w==
 
 "@quasar/vite-plugin@^1.6.0":
   version "1.8.1"

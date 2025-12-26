@@ -11,11 +11,11 @@ async function bootstrap() {
 
   // Middleware para loggear todas las peticiones
   app.use((req, res, next) => {
-    console.log('====================================');
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    //console.log('====================================');
+    /*console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
     console.log('Headers:', req.headers);
     console.log('Body:', req.body);
-    console.log('====================================');
+    console.log('====================================');*/
     next();
   });
 

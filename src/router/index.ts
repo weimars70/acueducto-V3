@@ -192,6 +192,11 @@ const routes = [
         component: () => import('../pages/FacturasPage.vue')
       },
       {
+        path: '/enviar-dian',
+        name: 'enviar-dian',
+        component: () => import('../pages/EnviarDianPage.vue')
+      },
+      {
         path: '/recibo-caja',
         name: 'recibo-caja',
         component: () => import('../pages/ReciboCajaPage.vue')

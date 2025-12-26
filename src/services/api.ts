@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Notify } from 'quasar';
 import type { Consumption } from '../types/consumption';
 import type { PaginatedResponse } from '../types/api';
 
@@ -44,11 +45,23 @@ api.interceptors.response.use(
       console.error('🔒 [api.ts] Token expirado o inválido:', errorInfo);
       console.error('🔄 Limpiando sesión y redirigiendo al login...');
 
+      // Mostrar notificación al usuario
+      Notify.create({
+        type: 'warning',
+        message: 'Tu sesión ha expirado',
+        caption: 'Por favor, inicia sesión nuevamente',
+        position: 'top',
+        timeout: 3000,
+        actions: [{ label: 'Cerrar', color: 'white' }]
+      });
+
       localStorage.removeItem('token');
       localStorage.removeItem('user');
 
-      // Redirigir al login
-      window.location.href = '/login';
+      // Redirigir al login después de un breve delay para que se vea la notificación
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 1000);
     }
 
     throw error;
@@ -105,3 +118,5 @@ export const consumptionService = {
     return URL.createObjectURL(response.data);
   }
 };
+
+export { api };

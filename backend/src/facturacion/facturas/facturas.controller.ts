@@ -1,11 +1,15 @@
-import { Controller, Get, Query, Request, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Request, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { FacturasService } from './facturas.service';
+import { WhatsappService } from '../../whatsapp/whatsapp.service';
 
 @Controller('facturas')
 @UseGuards(JwtAuthGuard)
 export class FacturasController {
-    constructor(private readonly facturasService: FacturasService) { }
+    constructor(
+        private readonly facturasService: FacturasService,
+        private readonly whatsappService: WhatsappService,
+    ) { }
 
     @Get('empresa-info')
     async getEmpresaInfo(@Request() req: any) {
@@ -58,5 +62,29 @@ export class FacturasController {
             year ? parseInt(year) : undefined,
             filters
         );
+    }
+
+    @Post('enviar-whatsapp')
+    async enviarWhatsapp(
+        @Body() body: {
+            telefono: string;
+            pdfBase64: string;
+            factura: string;
+            prefijo?: string;
+        },
+        @Request() req: any,
+    ) {
+        const empresaId = req.user?.empresaId || req.user?.empresa_id;
+        if (!empresaId) {
+            throw new Error("Empresa ID not found in session");
+        }
+
+        return this.whatsappService.sendInvoiceWhatsApp({
+            empresaId,
+            telefono: body.telefono,
+            pdfBase64: body.pdfBase64,
+            factura: body.factura,
+            prefijo: body.prefijo,
+        });
     }
 }

@@ -22,7 +22,7 @@ apiClient.interceptors.request.use((config) => {
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
-    console.log('✅ Header Authorization agregado');
+    //console.log('✅ Header Authorization agregado');
   } else {
     console.warn('❌ NO hay token en localStorage - request sin autenticar');
   }

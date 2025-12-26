@@ -32,12 +32,24 @@ export class Empresa {
     @Column({ nullable: true })
     ruta: string;
 
-    @Column({ nullable: true })
-    email: string;
+    @Column({ name: 'whatsapp_api_url', nullable: true })
+    whatsappApiUrl: string;
 
-    @Column({ nullable: true })
-    clave: string;
+    @Column({ name: 'whatsapp_api', nullable: true })
+    whatsappApi: string;
 
-    @Column({ nullable: true })
-    usuario: string;
+    @Column({ name: 'whatsapp_api_key', nullable: true })
+    whatsappApiKey: string;
+
+    @Column({ name: 'host_email', nullable: true })
+    hostEmail: string;
+
+    @Column({ name: 'user_email', nullable: true })
+    userEmail: string;
+
+    @Column({ name: 'passwd_email', nullable: true })
+    passwdEmail: string;
+
+    @Column({ name: 'port_email', nullable: true })
+    portEmail: number;
 }

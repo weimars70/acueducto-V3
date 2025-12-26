@@ -202,6 +202,12 @@ const facturacionItems = [
     label: 'Listado de Facturas',
     route: '/facturas',
     closable: true,
+  },
+  {
+    icon: 'cloud_upload',
+    label: 'Enviar DIAN',
+    route: '/enviar-dian',
+    closable: true,
   }
 ];
 

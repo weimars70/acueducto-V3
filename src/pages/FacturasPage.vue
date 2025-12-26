@@ -47,8 +47,9 @@
               icon="search"
               color="primary"
               unelevated
+              label="Buscar"
               @click="loadFacturas"
-              style="border-radius: 10px; width: 40px; height: 40px;"
+             
             >
               <q-tooltip>Buscar</q-tooltip>
             </q-btn>
@@ -56,8 +57,9 @@
               icon="download"
               color="positive"
               outline
+              label="Exportar a Excel"
               @click="exportarExcel"
-              style="border-radius: 10px; width: 40px; height: 40px;"
+              
             >
               <q-tooltip>Exportar a Excel</q-tooltip>
             </q-btn>
@@ -161,13 +163,13 @@
                   flat
                   dense
                   round
-                  icon="payment"
+                  icon="payments"
                   size="sm"
                   color="green-7"
                   @click.stop="pagarFactura(props.row)"
                   class="accion-btn"
                 >
-                  <q-tooltip>Pagar</q-tooltip>
+                  <q-tooltip>Pagar Factura</q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
@@ -199,22 +201,21 @@
                   round
                   icon="email"
                   size="sm"
-                  color="orange-7"
+                  color="red-7"
                   @click.stop="enviarEmail(props.row)"
                   class="accion-btn"
                 >
                   <q-tooltip>Enviar Email</q-tooltip>
                 </q-btn>
                 <q-btn
-                  flat
+                  unelevated
                   dense
                   round
-                  icon="chat"
                   size="sm"
-                  color="teal-7"
                   @click.stop="enviarWhatsapp(props.row)"
                   class="accion-btn"
                 >
+                  <q-icon name="fab fa-whatsapp" color="green" />
                   <q-tooltip>Enviar WhatsApp</q-tooltip>
                 </q-btn>
               </div>
@@ -288,6 +289,8 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { facturasService, type Factura } from '../services/api/facturas.service';
+import { whatsappService } from '../services/api/whatsapp.service';
+import { emailService } from '../services/api/email.service';
 import { useQuasar } from 'quasar';
 import * as XLSX from 'xlsx';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
@@ -568,7 +571,7 @@ const imprimirFactura = async (factura: Factura) => {
         drawRightAlignedText(`$ ${formatNumber(val1)}`, 275, y, helveticaBold, 8);
 
         // Columna 4: Val 2 (Right align at ~440)
-        drawRightAlignedText(`$ ${formatNumber(val2)}`, 415, y, helveticaBold, 8);
+        drawRightAlignedText(`$ ${formatNumber(val2)}`, 340, y, helveticaBold, 8);
 
         // Columna 5: Val 3 (Right align at ~505)
         drawRightAlignedText(`$ ${formatNumber(val3)}`, 480, y, helveticaBold, 8);
@@ -578,129 +581,254 @@ const imprimirFactura = async (factura: Factura) => {
 
         // Columna 7: Saldo (Right align at ~650)
         if (saldo > 0) {
-            drawRightAlignedText(`$ ${formatNumber(saldo)}`, 600, y, helveticaBold, 8);
+            drawRightAlignedText(`$ ${formatNumber(saldo)}`, 596, y, helveticaBold, 8);
         }
     };
 
-    // 4. Escribir datos de la empresa (Ajustar coordenadas según plantilla)
-    // Definir el cuadro donde se centrará el texto (X inicial y Ancho)
-    const headerBoxX = 50; 
-    const headerBoxWidth = 300; // Ancho fijo para centrar
+    // Helper para dibujar una sección de la factura (mitad superior o inferior)
+    const drawInvoiceSection = (baseY: number) => {
+        // 4. Escribir datos de la empresa (Ajustar coordenadas según plantilla)
+        // Definir el cuadro donde se centrará el texto (X inicial y Ancho)
+        const headerBoxX = 50; 
+        const headerBoxWidth = 300; // Ancho fijo para centrar
 
-    // Nombre Empresa
-    drawCenteredText(empresa.nombre || '', headerBoxX, height - 25, headerBoxWidth, helveticaBold, 13);
+        // Nombre Empresa
+        drawCenteredText(empresa.nombre || '', headerBoxX, baseY - 25, headerBoxWidth, helveticaBold, 13);
 
-    // NIT
-    drawCenteredText(`NIT: ${empresa.ident || ''} Tel: ${empresa.telefono || ''}`, headerBoxX, height - 37, headerBoxWidth, helveticaFont, 10);
+        // NIT
+        drawCenteredText(`NIT: ${empresa.ident || ''} Tel: ${empresa.telefono || ''}`, headerBoxX, baseY - 37, headerBoxWidth, helveticaFont, 10);
 
-    // Dirección
-    drawCenteredText(empresa.direccion || '', headerBoxX, height - 47, headerBoxWidth, helveticaFont, 10);
+        // Dirección
+        drawCenteredText(empresa.direccion || '', headerBoxX, baseY - 47, headerBoxWidth, helveticaFont, 10);
+        
+        // Descripción (Multilínea)
+        // Ajuste específico para la descripción: más a la derecha y menos ancho
+        const descriptionBoxX = headerBoxX + 60; 
+        const descriptionBoxWidth = headerBoxWidth - 120;
+        drawMultiLineCenteredText(empresa.descripcion || '', descriptionBoxX, baseY - 57, descriptionBoxWidth, helveticaFont, 10);
 
-     // Teléfono
-   // drawCenteredText(`Tel: ${empresa.telefono || ''}`, headerBoxX, height - 62, headerBoxWidth, helveticaFont, 10);
-    
-    // Descripción (Multilínea)
-    // Ajuste específico para la descripción: más a la derecha y menos ancho
-    const descriptionBoxX = headerBoxX + 60; 
-    const descriptionBoxWidth = headerBoxWidth - 120;
-    drawMultiLineCenteredText(empresa.descripcion || '', descriptionBoxX, height - 57, descriptionBoxWidth, helveticaFont, 10);
+        // Datos de la factura
+        firstPage.drawText(`${factura.prefijo}-${factura.factura}`, {
+            x: 427,
+            y: baseY - 35,
+            size: 6,
+            font: helveticaBold,
+            color: rgb(1, 0, 0) // Rojo para destacar
+        });
 
-    // TODO: Escribir datos de la factura aquí
-    // Ejemplo:
-    firstPage.drawText(`${factura.prefijo}-${factura.factura}`, {
-        x: 427,
-        y: height - 35,
-        size: 6,
-        font: helveticaBold,
-        color: rgb(1, 0, 0) // Rojo para destacar
-    });
+        firstPage.drawText(`${factura.instalacion_codigo}`, {
+            x: 555,
+            y: baseY - 35,
+            size: 8,
+            font: helveticaBold,
+            color: rgb(1, 0, 0) // Rojo para destacar
+        });
 
-    firstPage.drawText(`${factura.instalacion_codigo}`, {
-        x: 555,
-        y: height - 35,
-        size: 8,
-        font: helveticaBold,
-        color: rgb(1, 0, 0) // Rojo para destacar
-    });
+        drawCenteredText(`${factura.mes_nombre} de ${factura.year}`, 300, baseY - 65, 200, helveticaBold, 8);
+        drawCenteredText(`FACTURA DE SERVICIOS PUBLICOS: ${factura.factura}`, 300, baseY - 77, 200, helveticaBold, 7);
 
-    drawCenteredText(`${factura.mes_nombre} de ${factura.year}`, 300, height - 65, 200, helveticaBold, 8);
-    drawCenteredText(`FACTURA DE SERVICIOS PUBLICOS: ${factura.factura}`, 300, height - 77, 200, helveticaBold, 7);
+        drawMultiLineCenteredText(` ${factura.nota_cuentas_vencidas}`, 505, baseY - 60, 95, helveticaBold, 6, rgb(1, 0, 0));
 
-    drawMultiLineCenteredText(` ${factura.nota_cuentas_vencidas}`, 505, height - 60, 95, helveticaBold, 6, rgb(1, 0, 0));
+        drawMultiLineCenteredText(` $ ${formatNumber(factura.saldo)}`, 480, baseY - 106, 100, helveticaBold, 15, rgb(0, 0, 1));
+        
+        firstPage.drawText(` ${factura.nombre} CC: ${factura.ident} Dirección: ${factura.direccion} Teléfono: ${factura.telefono}`, {
+            x: 30,
+            y: baseY - 146,
+            size: 8,
+            font: helveticaBold,
+            color: rgb(0, 0, 0),
+        });
+        
+        firstPage.drawText(` Estrato: ${factura.estrato} Medidor: ${factura.codigo_medidor} Uso: ${factura.uso_nombre} Sector: ${factura.sector_nombre}`, {
+            x: 30,
+            y: baseY - 163,
+            size: 8,
+            font: helveticaBold,
+            color: rgb(0, 0, 0),
+        });
 
-    drawMultiLineCenteredText(` $ ${formatNumber(factura.saldo)}`, 480, height - 106, 100, helveticaBold, 15, rgb(0, 0, 1));
-    
-    firstPage.drawText(` ${factura.nombre} CC: ${factura.ident} Dirección: ${factura.direccion} Teléfono: ${factura.telefono}`, {
-        x: 30,
-        y: height - 146,
-        size: 8,
-        font: helveticaBold,
-        color: rgb(0, 0, 0),
-    });
-    
-    firstPage.drawText(` Estrato: ${factura.estrato} Medidor: ${factura.codigo_medidor} Uso: ${factura.uso_nombre} Sector: ${factura.sector_nombre}`, {
-        x: 30,
-        y: height - 163,
-        size: 8,
-        font: helveticaBold,
-        color: rgb(0, 0, 0),
-    });
+        firstPage.drawText(` Consumo del ${formatDate(String(factura.consumo_desde))} al ${formatDate(String(factura.consumo_hasta))} del mes de ${factura.mes_nombre} año  ${factura.year}`, {
+            x: 95,
+            y: baseY - 189,
+            size: 8,
+            font: helveticaBold,
+            color: rgb(0, 0, 0),
+        });
 
-    firstPage.drawText(` Consumo del ${formatDate(String(factura.consumo_desde))} al ${formatDate(String(factura.consumo_hasta))} del mes de ${factura.mes_nombre} año  ${factura.year}`, {
-        x: 95,
-        y: height - 189,
-        size: 8,
-        font: helveticaBold,
-        color: rgb(0, 0, 0),
-    });
+         firstPage.drawText(` Sin recargo: ${formatDate(String(factura.sin_recargo))}               Con recargo: ${formatDate(String(factura.con_recargo))}             Lectura Actual: ${factura.lectura}                Lectura Anterior: ${factura.lec_ant}                Consumo M3: ${factura.consumo}`, {
+            x: 16,
+            y: baseY - 205,
+            size: 8,
+            font: helveticaBold,
+            color: rgb(0, 0, 0),
+        });
 
-     firstPage.drawText(` Sin recargo: ${formatDate(String(factura.sin_recargo))}               Con recargo: ${formatDate(String(factura.con_recargo))}             Lectura Actual: ${factura.lectura}                Lectura Anterior: ${factura.lec_ant}                Consumo M3: ${factura.consumo}`, {
-        x: 16,
-        y: height - 205,
-        size: 8,
-        font: helveticaBold,
-        color: rgb(0, 0, 0),
-    });
+        let currentY = baseY - 240;
+        const rowHeight = 10;
 
-   
+        if (Number(factura.cargo_fijo) > 0) {
+            drawInvoiceRow(
+                currentY,
+                "Cargo Fijo ",
+                "1 Mes",
+                factura.cargo_fijo,
+                factura.cargo_fijo,
+                factura.valor_subsidio_cargo_fijo,
+                Number(factura.cargo_fijo) + Number(factura.valor_subsidio_cargo_fijo),
+                0
+            );
+            currentY -= rowHeight;
+        }
+        if (Number(factura.valor_basico) > 0) {
+            drawInvoiceRow(
+                currentY,
+                "Consumo Basico ",
+                "1 Mes",
+                factura.v_u_basico ?? 0,
+                factura.valor_basico,
+                factura.valor_subsidio_consumo,
+                Number(factura.valor_basico) + Number(factura.valor_subsidio_consumo),
+                0
+            );
+            currentY -= rowHeight;
+        }
+        if (Number(factura.valor_complementario) > 0) {
+            drawInvoiceRow(
+                currentY,
+                "Consumo Complemetario",
+                `${factura.complementario} M3`,
+                factura.v_u_complementario ?? 0,
+                factura.valor_complementario,
+                factura.valor_sub_complementario,
+                Number(factura.valor_complementario) + Number(factura.valor_sub_complementario),
+                0
+            );
+            currentY -= rowHeight;
+        }
 
-    if (Number(factura.cargo_fijo) > 0) {
-        drawInvoiceRow(
-            height - 240,
-            "Cargo Fijo ",
-            "1 Mes",
-            factura.cargo_fijo,
-            factura.cargo_fijo,
-            factura.valor_subsidio_cargo_fijo,
-            Number(factura.cargo_fijo) + Number(factura.valor_subsidio_cargo_fijo),0
-        );
-    }
+         if (Number(factura.valor_suntuario) > 0) {
+            drawInvoiceRow(
+                currentY,
+                "Consumo Suntuario",
+                `${factura.suntuario} M3`,
+                factura.v_u_suntuario ?? 0,
+                factura.valor_suntuario,
+                factura.valor_sub_suntuario,
+                Number(factura.valor_suntuario) + Number(factura.valor_sub_suntuario),
+                0
+            );
+            currentY -= rowHeight;
+        }
+        
+         if (Number(factura.cuota_conexion) > 0) {
+            drawInvoiceRow(
+                currentY,
+                "Cuota de Conexión",
+                `1`,
+                factura.cuota_conexion ?? 0,
+                factura.cuota_conexion,
+                0,
+                Number(factura.cuota_conexion),
+                Number(factura.saldo_conexion),
+            );
+            currentY -= rowHeight;
+        }
 
-    if (Number(factura.valor_complementario) > 0) {
-        drawInvoiceRow(
-            height - 250,
-            "Consumo Complemetario",
-            `${factura.complementario} M3`,
-            factura.v_u_complementario ?? 0,
-            factura.valor_complementario,
-            factura.valor_sub_complementario,
-            Number(factura.valor_complementario) + Number(factura.valor_sub_complementario),0
-        );
-    }
+         if (Number(factura.cuota_medidor) > 0) {
+            drawInvoiceRow(
+                currentY,
+                "Cuota de Medidor",
+                `1`,
+                factura.cuota_medidor ?? 0,
+                factura.cuota_medidor,
+                0,
+                Number(factura.cuota_medidor),
+                Number(factura.saldo_medidor),
+            );
+            currentY -= rowHeight;
+        }
+         if (Number(factura.cuota_diferido) > 0) {
+            drawInvoiceRow(
+                currentY,
+                "Cuota Diferida",
+                `1`,
+                factura.cuota_diferido ?? 0,
+                factura.cuota_diferido,
+                0,
+                Number(factura.cuota_diferido),
+                Number(factura.saldo_diferido),
+            );
+            currentY -= rowHeight;
+        }
+        drawMultiLineCenteredText(` $${formatNumber(factura.total_total)}`, 470, baseY - 364, 100, helveticaBold, 12, rgb(1, 1, 1));
 
-     if (Number(factura.valor_suntuario) > 0) {
-        drawInvoiceRow(
-            height - 260,
-            "Consumo Suntuario",
-            `${factura.suntuario} M3`,
-            factura.v_u_suntuario ?? 0,
-            factura.valor_suntuario,
-            factura.valor_sub_suntuario,
-            Number(factura.valor_suntuario) + Number(factura.valor_sub_suntuario),0
-        );
-    }
+        
+        
+        if (Number(factura.interes) > 0) {
+            drawInvoiceRow(
+                currentY,
+                "Interes por Mora",
+                `1`,
+                factura.interes ?? 0,
+                factura.interes,
+                0,
+                Number(factura.interes),
+                0
+            );
+            currentY -= rowHeight;
+        }
 
+         if (Number(factura.interes_capital_saldo_anterior) > 0) {
+            drawInvoiceRow(
+                currentY,
+                "Interes Capital Saldo Anterior",
+                `1`,
+                factura.interes_capital_saldo_anterior ?? 0,
+                factura.interes_capital_saldo_anterior,
+                0,
+                Number(factura.interes_capital_saldo_anterior),
+                0
+            );
+            currentY -= rowHeight;
+        }
 
+         if (Number(factura.saldo_anterior) > 0) {
+            drawInvoiceRow(
+                currentY,
+                "Saldo Anterior",
+                `1`,
+                factura.saldo_anterior ?? 0,
+                factura.saldo_anterior,
+                0,
+                Number(factura.saldo_anterior),
+                0
+            );
+            currentY -= rowHeight;
+        }
+
+        /* if (Number(factura.total_otros_cobros) > 0) {
+            drawInvoiceRow(
+                currentY,
+                "Otros Cobros",
+                `1`,
+                factura.total_otros_cobros ?? 0,
+                factura.total_otros_cobros,
+                0,
+                Number(factura.total_otros_cobros),
+                0
+            );
+            currentY -= rowHeight;
+        }*/
+
+       
+
+    };
+
+    // Dibujar primera copia (arriba)
+    drawInvoiceSection(height);
+
+    // Dibujar segunda copia (abajo)
+    drawInvoiceSection(height / 2.04);
     // 5. Guardar y visualizar
     const pdfBytes = await pdfDoc.save();
     const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
@@ -728,22 +856,433 @@ const enviarDian = (factura: Factura) => {
   });
 };
 
-const enviarEmail = (factura: Factura) => {
-  console.log('Enviar email:', factura);
-  $q.notify({
-    type: 'info',
-    message: `Función enviar email - Factura ${factura.prefijo}-${factura.factura}`,
-    position: 'top'
-  });
+const enviarEmail = async (factura: Factura) => {
+  try {
+    // Validar que tenga email
+    if (!factura.email || factura.email.trim() === '') {
+      $q.notify({
+        type: 'warning',
+        message: 'El cliente no tiene email registrado',
+        position: 'top'
+      });
+      return;
+    }
+
+    $q.loading.show({ message: 'Generando factura y enviando por email...' });
+
+    // Usar exactamente la misma lógica que enviarWhatsapp para generar el PDF
+    const empresa = await facturasService.getEmpresaInfo();
+
+    // Cargar el PDF template comprimido
+    const existingPdfBytes = await fetch('/formato_factura_socorro_whatsapp.pdf').then(res => res.arrayBuffer());
+    const pdfDoc = await PDFDocument.load(existingPdfBytes);
+    const pages = pdfDoc.getPages();
+    const firstPage = pages[0];
+    const { width, height } = firstPage.getSize();
+
+    // Configurar fuente
+    const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+    // Copiar todos los helpers de imprimirFactura
+    const drawCenteredText = (text: string, x: number, y: number, w: number, font: any, size: number, color: any = rgb(0, 0, 0)) => {
+      if (!text) return;
+      const sanitizedText = text.replace(/[\r\n]+/g, ' ').trim();
+      const textWidth = font.widthOfTextAtSize(sanitizedText, size);
+      const centeredX = x + (w - textWidth) / 2;
+      firstPage.drawText(sanitizedText, { x: centeredX, y, size, font, color });
+    };
+
+    const drawMultiLineCenteredText = (text: string, x: number, y: number, w: number, font: any, size: number, color: any = rgb(0, 0, 0), lineHeight: number = 12) => {
+      if (!text) return;
+      const sanitizedText = text.replace(/[\r\n]+/g, ' ').trim();
+      const words = sanitizedText.split(' ');
+      let currentLine = '';
+      let currentY = y;
+      for (const word of words) {
+        const testLine = currentLine ? `${currentLine} ${word}` : word;
+        const testWidth = font.widthOfTextAtSize(testLine, size);
+        if (testWidth <= w) {
+          currentLine = testLine;
+        } else {
+          if (currentLine) {
+            const lineWidth = font.widthOfTextAtSize(currentLine, size);
+            const centeredX = x + (w - lineWidth) / 2;
+            firstPage.drawText(currentLine, { x: centeredX, y: currentY, size, font, color });
+            currentY -= lineHeight;
+          }
+          currentLine = word;
+        }
+      }
+      if (currentLine) {
+        const lineWidth = font.widthOfTextAtSize(currentLine, size);
+        const centeredX = x + (w - lineWidth) / 2;
+        firstPage.drawText(currentLine, { x: centeredX, y: currentY, size, font, color });
+      }
+    };
+
+    const drawRightAlignedText = (text: string, x: number, y: number, font: any, size: number, color: any = rgb(0, 0, 0)) => {
+      if (!text) return;
+      const width = font.widthOfTextAtSize(text, size);
+      firstPage.drawText(text, { x: x - width, y, size, font, color });
+    };
+
+    const drawInvoiceRow = (y: number, label: string, info: string, val1: number, val2: number, val3: number, total: number, saldo: number) => {
+      firstPage.drawText(label, { x: 16, y, size: 8, font: helveticaBold });
+      firstPage.drawText(info, { x: 170, y, size: 8, font: helveticaBold });
+      drawRightAlignedText(`$ ${formatNumber(val1)}`, 275, y, helveticaBold, 8);
+      drawRightAlignedText(`$ ${formatNumber(val2)}`, 340, y, helveticaBold, 8);
+      drawRightAlignedText(`$ ${formatNumber(val3)}`, 480, y, helveticaBold, 8);
+      drawRightAlignedText(`$ ${formatNumber(total)}`, 545, y, helveticaBold, 8);
+      if (saldo > 0) {
+        drawRightAlignedText(`$ ${formatNumber(saldo)}`, 596, y, helveticaBold, 8);
+      }
+    };
+
+    const drawInvoiceSection = (baseY: number) => {
+      const headerBoxX = 50;
+      const headerBoxWidth = 300;
+
+      drawCenteredText(empresa.nombre || '', headerBoxX, baseY - 25, headerBoxWidth, helveticaBold, 13);
+      drawCenteredText(`NIT: ${empresa.ident || ''} Tel: ${empresa.telefono || ''}`, headerBoxX, baseY - 37, headerBoxWidth, helveticaFont, 10);
+      drawCenteredText(empresa.direccion || '', headerBoxX, baseY - 47, headerBoxWidth, helveticaFont, 10);
+
+      const descriptionBoxX = headerBoxX + 60;
+      const descriptionBoxWidth = headerBoxWidth - 120;
+      drawMultiLineCenteredText(empresa.descripcion || '', descriptionBoxX, baseY - 57, descriptionBoxWidth, helveticaFont, 10);
+
+      firstPage.drawText(`${factura.prefijo}-${factura.factura}`, {
+        x: 427, y: baseY - 35, size: 6, font: helveticaBold, color: rgb(1, 0, 0)
+      });
+
+      firstPage.drawText(`${factura.instalacion_codigo}`, {
+        x: 555, y: baseY - 35, size: 8, font: helveticaBold, color: rgb(1, 0, 0)
+      });
+
+      drawCenteredText(`${factura.mes_nombre} de ${factura.year}`, 300, baseY - 65, 200, helveticaBold, 8);
+      drawCenteredText(`FACTURA DE SERVICIOS PUBLICOS: ${factura.factura}`, 300, baseY - 77, 200, helveticaBold, 7);
+      drawMultiLineCenteredText(` ${factura.nota_cuentas_vencidas}`, 505, baseY - 60, 95, helveticaBold, 6, rgb(1, 0, 0));
+      drawMultiLineCenteredText(` $ ${formatNumber(factura.saldo)}`, 480, baseY - 106, 100, helveticaBold, 15, rgb(0, 0, 1));
+
+      firstPage.drawText(` ${factura.nombre} CC: ${factura.ident} Dirección: ${factura.direccion} Teléfono: ${factura.telefono}`, {
+        x: 30, y: baseY - 146, size: 8, font: helveticaBold
+      });
+
+      firstPage.drawText(` Estrato: ${factura.estrato} Medidor: ${factura.codigo_medidor} Uso: ${factura.uso_nombre} Sector: ${factura.sector_nombre}`, {
+        x: 30, y: baseY - 163, size: 8, font: helveticaBold
+      });
+
+      firstPage.drawText(` Consumo del ${formatDate(String(factura.consumo_desde))} al ${formatDate(String(factura.consumo_hasta))} del mes de ${factura.mes_nombre} año  ${factura.year}`, {
+        x: 95, y: baseY - 189, size: 8, font: helveticaBold
+      });
+
+      firstPage.drawText(` Sin recargo: ${formatDate(String(factura.sin_recargo))}               Con recargo: ${formatDate(String(factura.con_recargo))}             Lectura Actual: ${factura.lectura}                Lectura Anterior: ${factura.lec_ant}                Consumo M3: ${factura.consumo}`, {
+        x: 16, y: baseY - 205, size: 8, font: helveticaBold
+      });
+
+      let currentY = baseY - 240;
+      const rowHeight = 10;
+
+      if (Number(factura.cargo_fijo) > 0) {
+        drawInvoiceRow(currentY, "Cargo Fijo ", "1 Mes", factura.cargo_fijo, factura.cargo_fijo, factura.valor_subsidio_cargo_fijo, Number(factura.cargo_fijo) + Number(factura.valor_subsidio_cargo_fijo), 0);
+        currentY -= rowHeight;
+      }
+      if (Number(factura.valor_basico) > 0) {
+        drawInvoiceRow(currentY, "Consumo Basico ", "1 Mes", factura.v_u_basico ?? 0, factura.valor_basico, factura.valor_subsidio_consumo, Number(factura.valor_basico) + Number(factura.valor_subsidio_consumo), 0);
+        currentY -= rowHeight;
+      }
+      if (Number(factura.valor_complementario) > 0) {
+        drawInvoiceRow(currentY, "Consumo Complemetario", `${factura.complementario} M3`, factura.v_u_complementario ?? 0, factura.valor_complementario, factura.valor_sub_complementario, Number(factura.valor_complementario) + Number(factura.valor_sub_complementario), 0);
+        currentY -= rowHeight;
+      }
+      if (Number(factura.valor_suntuario) > 0) {
+        drawInvoiceRow(currentY, "Consumo Suntuario", `${factura.suntuario} M3`, factura.v_u_suntuario ?? 0, factura.valor_suntuario, factura.valor_sub_suntuario, Number(factura.valor_suntuario) + Number(factura.valor_sub_suntuario), 0);
+        currentY -= rowHeight;
+      }
+      if (Number(factura.cuota_conexion) > 0) {
+        drawInvoiceRow(currentY, "Cuota de Conexión", `1`, factura.cuota_conexion ?? 0, factura.cuota_conexion, 0, Number(factura.cuota_conexion), Number(factura.saldo_conexion));
+        currentY -= rowHeight;
+      }
+      if (Number(factura.cuota_medidor) > 0) {
+        drawInvoiceRow(currentY, "Cuota de Medidor", `1`, factura.cuota_medidor ?? 0, factura.cuota_medidor, 0, Number(factura.cuota_medidor), Number(factura.saldo_medidor));
+        currentY -= rowHeight;
+      }
+      if (Number(factura.cuota_diferido) > 0) {
+        drawInvoiceRow(currentY, "Cuota Diferida", `1`, factura.cuota_diferido ?? 0, factura.cuota_diferido, 0, Number(factura.cuota_diferido), Number(factura.saldo_diferido));
+        currentY -= rowHeight;
+      }
+      drawMultiLineCenteredText(` $${formatNumber(factura.total_total)}`, 470, baseY - 364, 100, helveticaBold, 12, rgb(1, 1, 1));
+
+      if (Number(factura.interes) > 0) {
+        drawInvoiceRow(currentY, "Interes por Mora", `1`, factura.interes ?? 0, factura.interes, 0, Number(factura.interes), 0);
+        currentY -= rowHeight;
+      }
+      if (Number(factura.interes_capital_saldo_anterior) > 0) {
+        drawInvoiceRow(currentY, "Interes Capital Saldo Anterior", `1`, factura.interes_capital_saldo_anterior ?? 0, factura.interes_capital_saldo_anterior, 0, Number(factura.interes_capital_saldo_anterior), 0);
+        currentY -= rowHeight;
+      }
+      if (Number(factura.saldo_anterior) > 0) {
+        drawInvoiceRow(currentY, "Saldo Anterior", `1`, factura.saldo_anterior ?? 0, factura.saldo_anterior, 0, Number(factura.saldo_anterior), 0);
+        currentY -= rowHeight;
+      }
+    };
+
+    // Dibujar ambas secciones
+    drawInvoiceSection(height);
+    drawInvoiceSection(height / 2.04);
+
+    // Guardar y convertir a base64
+    const pdfBytes = await pdfDoc.save();
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = (reader.result as string).split(',')[1];
+        resolve(base64String);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+
+    // Enviar por Email
+    await emailService.enviarFacturaEmail({
+      emailDestinatario: factura.email,
+      pdfBase64: base64,
+      factura: factura.factura.toString(),
+      prefijo: factura.prefijo,
+      nombreCliente: factura.nombre
+    });
+
+    $q.notify({
+      type: 'positive',
+      message: `Factura enviada por email a ${factura.email}`,
+      position: 'top'
+    });
+
+  } catch (error: any) {
+    console.error('Error al enviar email:', error);
+    $q.notify({
+      type: 'negative',
+      message: error.response?.data?.message || error.message || 'Error al enviar email',
+      position: 'top'
+    });
+  } finally {
+    $q.loading.hide();
+  }
 };
 
-const enviarWhatsapp = (factura: Factura) => {
-  console.log('Enviar WhatsApp:', factura);
-  $q.notify({
-    type: 'info',
-    message: `Función enviar WhatsApp - Factura ${factura.prefijo}-${factura.factura}`,
-    position: 'top'
-  });
+const enviarWhatsapp = async (factura: Factura) => {
+  try {
+    // Validar que tenga teléfono
+    if (!factura.telefono || factura.telefono.trim() === '') {
+      $q.notify({
+        type: 'warning',
+        message: 'El cliente no tiene número de teléfono registrado',
+        position: 'top'
+      });
+      return;
+    }
+
+    $q.loading.show({ message: 'Generando factura y enviando por WhatsApp...' });
+
+    // Usar exactamente la misma lógica que imprimirFactura
+    const empresa = await facturasService.getEmpresaInfo();
+
+    // Cargar el PDF template comprimido para WhatsApp
+    const existingPdfBytes = await fetch('/formato_factura_socorro_whatsapp.pdf').then(res => res.arrayBuffer());
+    const pdfDoc = await PDFDocument.load(existingPdfBytes);
+    const pages = pdfDoc.getPages();
+    const firstPage = pages[0];
+    const { width, height } = firstPage.getSize();
+
+    // Configurar fuente
+    const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+    // Copiar todos los helpers de imprimirFactura
+    const drawCenteredText = (text: string, x: number, y: number, w: number, font: any, size: number, color: any = rgb(0, 0, 0)) => {
+      if (!text) return;
+      const sanitizedText = text.replace(/[\r\n]+/g, ' ').trim();
+      const textWidth = font.widthOfTextAtSize(sanitizedText, size);
+      const centeredX = x + (w - textWidth) / 2;
+      firstPage.drawText(sanitizedText, { x: centeredX, y, size, font, color });
+    };
+
+    const drawMultiLineCenteredText = (text: string, x: number, y: number, w: number, font: any, size: number, color: any = rgb(0, 0, 0), lineHeight: number = 12) => {
+      if (!text) return;
+      const sanitizedText = text.replace(/[\r\n]+/g, ' ').trim();
+      const words = sanitizedText.split(' ');
+      let currentLine = '';
+      let currentY = y;
+      for (const word of words) {
+        const testLine = currentLine ? `${currentLine} ${word}` : word;
+        const testWidth = font.widthOfTextAtSize(testLine, size);
+        if (testWidth <= w) {
+          currentLine = testLine;
+        } else {
+          if (currentLine) {
+            const lineWidth = font.widthOfTextAtSize(currentLine, size);
+            const centeredX = x + (w - lineWidth) / 2;
+            firstPage.drawText(currentLine, { x: centeredX, y: currentY, size, font, color });
+            currentY -= lineHeight;
+          }
+          currentLine = word;
+        }
+      }
+      if (currentLine) {
+        const lineWidth = font.widthOfTextAtSize(currentLine, size);
+        const centeredX = x + (w - lineWidth) / 2;
+        firstPage.drawText(currentLine, { x: centeredX, y: currentY, size, font, color });
+      }
+    };
+
+    const drawRightAlignedText = (text: string, x: number, y: number, font: any, size: number, color: any = rgb(0, 0, 0)) => {
+      if (!text) return;
+      const width = font.widthOfTextAtSize(text, size);
+      firstPage.drawText(text, { x: x - width, y, size, font, color });
+    };
+
+    const drawInvoiceRow = (y: number, label: string, info: string, val1: number, val2: number, val3: number, total: number, saldo: number) => {
+      firstPage.drawText(label, { x: 16, y, size: 8, font: helveticaBold });
+      firstPage.drawText(info, { x: 170, y, size: 8, font: helveticaBold });
+      drawRightAlignedText(`$ ${formatNumber(val1)}`, 275, y, helveticaBold, 8);
+      drawRightAlignedText(`$ ${formatNumber(val2)}`, 340, y, helveticaBold, 8);
+      drawRightAlignedText(`$ ${formatNumber(val3)}`, 480, y, helveticaBold, 8);
+      drawRightAlignedText(`$ ${formatNumber(total)}`, 545, y, helveticaBold, 8);
+      if (saldo > 0) {
+        drawRightAlignedText(`$ ${formatNumber(saldo)}`, 596, y, helveticaBold, 8);
+      }
+    };
+
+    const drawInvoiceSection = (baseY: number) => {
+      const headerBoxX = 50;
+      const headerBoxWidth = 300;
+
+      drawCenteredText(empresa.nombre || '', headerBoxX, baseY - 25, headerBoxWidth, helveticaBold, 13);
+      drawCenteredText(`NIT: ${empresa.ident || ''} Tel: ${empresa.telefono || ''}`, headerBoxX, baseY - 37, headerBoxWidth, helveticaFont, 10);
+      drawCenteredText(empresa.direccion || '', headerBoxX, baseY - 47, headerBoxWidth, helveticaFont, 10);
+
+      const descriptionBoxX = headerBoxX + 60;
+      const descriptionBoxWidth = headerBoxWidth - 120;
+      drawMultiLineCenteredText(empresa.descripcion || '', descriptionBoxX, baseY - 57, descriptionBoxWidth, helveticaFont, 10);
+
+      firstPage.drawText(`${factura.prefijo}-${factura.factura}`, {
+        x: 427, y: baseY - 35, size: 6, font: helveticaBold, color: rgb(1, 0, 0)
+      });
+
+      firstPage.drawText(`${factura.instalacion_codigo}`, {
+        x: 555, y: baseY - 35, size: 8, font: helveticaBold, color: rgb(1, 0, 0)
+      });
+
+      drawCenteredText(`${factura.mes_nombre} de ${factura.year}`, 300, baseY - 65, 200, helveticaBold, 8);
+      drawCenteredText(`FACTURA DE SERVICIOS PUBLICOS: ${factura.factura}`, 300, baseY - 77, 200, helveticaBold, 7);
+      drawMultiLineCenteredText(` ${factura.nota_cuentas_vencidas}`, 505, baseY - 60, 95, helveticaBold, 6, rgb(1, 0, 0));
+      drawMultiLineCenteredText(` $ ${formatNumber(factura.saldo)}`, 480, baseY - 106, 100, helveticaBold, 15, rgb(0, 0, 1));
+
+      firstPage.drawText(` ${factura.nombre} CC: ${factura.ident} Dirección: ${factura.direccion} Teléfono: ${factura.telefono}`, {
+        x: 30, y: baseY - 146, size: 8, font: helveticaBold
+      });
+
+      firstPage.drawText(` Estrato: ${factura.estrato} Medidor: ${factura.codigo_medidor} Uso: ${factura.uso_nombre} Sector: ${factura.sector_nombre}`, {
+        x: 30, y: baseY - 163, size: 8, font: helveticaBold
+      });
+
+      firstPage.drawText(` Consumo del ${formatDate(String(factura.consumo_desde))} al ${formatDate(String(factura.consumo_hasta))} del mes de ${factura.mes_nombre} año  ${factura.year}`, {
+        x: 95, y: baseY - 189, size: 8, font: helveticaBold
+      });
+
+      firstPage.drawText(` Sin recargo: ${formatDate(String(factura.sin_recargo))}               Con recargo: ${formatDate(String(factura.con_recargo))}             Lectura Actual: ${factura.lectura}                Lectura Anterior: ${factura.lec_ant}                Consumo M3: ${factura.consumo}`, {
+        x: 16, y: baseY - 205, size: 8, font: helveticaBold
+      });
+
+      let currentY = baseY - 240;
+      const rowHeight = 10;
+
+      if (Number(factura.cargo_fijo) > 0) {
+        drawInvoiceRow(currentY, "Cargo Fijo ", "1 Mes", factura.cargo_fijo, factura.cargo_fijo, factura.valor_subsidio_cargo_fijo, Number(factura.cargo_fijo) + Number(factura.valor_subsidio_cargo_fijo), 0);
+        currentY -= rowHeight;
+      }
+      if (Number(factura.valor_basico) > 0) {
+        drawInvoiceRow(currentY, "Consumo Basico ", "1 Mes", factura.v_u_basico ?? 0, factura.valor_basico, factura.valor_subsidio_consumo, Number(factura.valor_basico) + Number(factura.valor_subsidio_consumo), 0);
+        currentY -= rowHeight;
+      }
+      if (Number(factura.valor_complementario) > 0) {
+        drawInvoiceRow(currentY, "Consumo Complemetario", `${factura.complementario} M3`, factura.v_u_complementario ?? 0, factura.valor_complementario, factura.valor_sub_complementario, Number(factura.valor_complementario) + Number(factura.valor_sub_complementario), 0);
+        currentY -= rowHeight;
+      }
+      if (Number(factura.valor_suntuario) > 0) {
+        drawInvoiceRow(currentY, "Consumo Suntuario", `${factura.suntuario} M3`, factura.v_u_suntuario ?? 0, factura.valor_suntuario, factura.valor_sub_suntuario, Number(factura.valor_suntuario) + Number(factura.valor_sub_suntuario), 0);
+        currentY -= rowHeight;
+      }
+      if (Number(factura.cuota_conexion) > 0) {
+        drawInvoiceRow(currentY, "Cuota de Conexión", `1`, factura.cuota_conexion ?? 0, factura.cuota_conexion, 0, Number(factura.cuota_conexion), Number(factura.saldo_conexion));
+        currentY -= rowHeight;
+      }
+      if (Number(factura.cuota_medidor) > 0) {
+        drawInvoiceRow(currentY, "Cuota de Medidor", `1`, factura.cuota_medidor ?? 0, factura.cuota_medidor, 0, Number(factura.cuota_medidor), Number(factura.saldo_medidor));
+        currentY -= rowHeight;
+      }
+      if (Number(factura.cuota_diferido) > 0) {
+        drawInvoiceRow(currentY, "Cuota Diferida", `1`, factura.cuota_diferido ?? 0, factura.cuota_diferido, 0, Number(factura.cuota_diferido), Number(factura.saldo_diferido));
+        currentY -= rowHeight;
+      }
+      drawMultiLineCenteredText(` $${formatNumber(factura.total_total)}`, 470, baseY - 364, 100, helveticaBold, 12, rgb(1, 1, 1));
+
+      if (Number(factura.interes) > 0) {
+        drawInvoiceRow(currentY, "Interes por Mora", `1`, factura.interes ?? 0, factura.interes, 0, Number(factura.interes), 0);
+        currentY -= rowHeight;
+      }
+      if (Number(factura.interes_capital_saldo_anterior) > 0) {
+        drawInvoiceRow(currentY, "Interes Capital Saldo Anterior", `1`, factura.interes_capital_saldo_anterior ?? 0, factura.interes_capital_saldo_anterior, 0, Number(factura.interes_capital_saldo_anterior), 0);
+        currentY -= rowHeight;
+      }
+      if (Number(factura.saldo_anterior) > 0) {
+        drawInvoiceRow(currentY, "Saldo Anterior", `1`, factura.saldo_anterior ?? 0, factura.saldo_anterior, 0, Number(factura.saldo_anterior), 0);
+        currentY -= rowHeight;
+      }
+    };
+
+    // Dibujar ambas secciones
+    drawInvoiceSection(height);
+    drawInvoiceSection(height / 2.04);
+
+    // Guardar y convertir a base64
+    const pdfBytes = await pdfDoc.save();
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = (reader.result as string).split(',')[1];
+        resolve(base64String);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+
+    // Enviar por WhatsApp
+    await whatsappService.enviarFacturaWhatsapp({
+      telefono: factura.telefono,
+      pdfBase64: base64,
+      factura: factura.factura.toString(),
+      prefijo: factura.prefijo
+    });
+
+    $q.notify({
+      type: 'positive',
+      message: `Factura enviada por WhatsApp a ${factura.telefono}`,
+      position: 'top'
+    });
+
+  } catch (error: any) {
+    console.error('Error al enviar WhatsApp:', error);
+    $q.notify({
+      type: 'negative',
+      message: error.response?.data?.message || error.message || 'Error al enviar WhatsApp',
+      position: 'top'
+    });
+  } finally {
+    $q.loading.hide();
+  }
 };
 
 const exportarExcel = async () => {

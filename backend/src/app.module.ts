@@ -48,8 +48,9 @@ import { PrefacturaModule } from './facturacion/prefactura/prefactura.module';
 import { FacturasModule } from './facturacion/facturas/facturas.module';
 import { SaldosAFavorModule } from './instalaciones/saldos-a-favor/saldos-a-favor.module';
 import { RecibosCajaModule } from './recibos-caja/recibos-caja.module';
-
-
+import { WhatsappModule } from './whatsapp/whatsapp.module';
+import { EmailModule } from './email/email.module';
+import { DianModule } from './dian/dian.module';
 
 @Module({
   imports: [
@@ -105,6 +106,9 @@ import { RecibosCajaModule } from './recibos-caja/recibos-caja.module';
     FacturasModule,
     SaldosAFavorModule,
     RecibosCajaModule,
+    WhatsappModule,
+    EmailModule,
+    DianModule,
   ],
 })
 export class AppModule { }
