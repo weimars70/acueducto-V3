@@ -80,7 +80,8 @@ export class AuthService {
 
   async login(user: any) {
     const empresa = await this.empresaRepository.findOne({
-      where: { id: user.selectedEmpresaId }
+      where: { id: user.selectedEmpresaId },
+      select: ['id', 'nombre', 'codigoAlterno', 'direccion', 'ident', 'telefono', 'logo']
     });
 
     const payload = {

@@ -20,7 +20,7 @@ api.interceptors.request.use((config) => {
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
-    console.log('✅ [api.ts] Header Authorization agregado');
+    //console.log('✅ [api.ts] Header Authorization agregado');
   } else {
     console.warn('❌ [api.ts] NO hay token en localStorage');
   }
