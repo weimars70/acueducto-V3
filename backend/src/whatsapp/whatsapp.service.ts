@@ -2,7 +2,7 @@ import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Empresa } from '../entities/empresa.entity';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
 export interface SendWhatsAppDto {
     empresaId: number;
@@ -14,6 +14,11 @@ export interface SendWhatsAppDto {
 
 @Injectable()
 export class WhatsappService {
+    // Configuración de retry
+    private readonly MAX_RETRIES = 3;
+    private readonly BASE_DELAY = 2000; // 2 segundos
+    private readonly MAX_PDF_SIZE_MB = 16; // Límite de WhatsApp es 16MB para documentos
+
     constructor(
         @InjectRepository(Empresa)
         private empresaRepository: Repository<Empresa>,
@@ -33,6 +38,56 @@ export class WhatsappService {
         }
 
         return cleaned;
+    }
+
+    /**
+     * Calcula el tamaño del PDF en MB desde base64
+     */
+    private calculatePdfSizeMB(base64: string): number {
+        // El tamaño en base64 es aproximadamente 4/3 del tamaño real
+        const sizeInBytes = (base64.length * 3) / 4;
+        return sizeInBytes / (1024 * 1024);
+    }
+
+    /**
+     * Calcula el timeout dinámicamente basado en el tamaño del archivo
+     * Mínimo 30 segundos, incrementa 10 segundos por cada MB adicional
+     */
+    private calculateTimeout(pdfSizeMB: number): number {
+        const baseTimeout = 30000; // 30 segundos base
+        const additionalTimeout = Math.ceil(pdfSizeMB) * 10000; // 10 segundos por MB
+        return baseTimeout + additionalTimeout;
+    }
+
+    /**
+     * Espera un tiempo antes de reintentar (exponential backoff)
+     */
+    private async delay(attempt: number): Promise<void> {
+        const delayTime = this.BASE_DELAY * Math.pow(2, attempt);
+        console.log(`⏱️ [WhatsApp] Esperando ${delayTime}ms antes del reintento ${attempt + 1}...`);
+        return new Promise(resolve => setTimeout(resolve, delayTime));
+    }
+
+    /**
+     * Determina si un error es retryable
+     */
+    private isRetryableError(error: any): boolean {
+        // Errores de conexión que vale la pena reintentar
+        const retryableMessages = [
+            'Connection Closed',
+            'ECONNRESET',
+            'ETIMEDOUT',
+            'ECONNREFUSED',
+            'socket hang up',
+            'Network Error'
+        ];
+
+        const errorMessage = error.message || '';
+        const responseMessage = error.response?.data?.message?.join(' ') || '';
+
+        return retryableMessages.some(msg =>
+            errorMessage.includes(msg) || responseMessage.includes(msg)
+        );
     }
 
     /**
@@ -90,14 +145,30 @@ export class WhatsappService {
                 );
             }
 
-            // 3. Preparar mensaje
+            // 3. Validar tamaño del PDF
+            const pdfSizeMB = this.calculatePdfSizeMB(pdfBase64);
+            console.log('📄 [WhatsApp] Tamaño del PDF:', pdfSizeMB.toFixed(2), 'MB');
+
+            if (pdfSizeMB > this.MAX_PDF_SIZE_MB) {
+                console.error('❌ [WhatsApp] PDF demasiado grande:', pdfSizeMB.toFixed(2), 'MB');
+                throw new HttpException(
+                    `El PDF es demasiado grande (${pdfSizeMB.toFixed(2)}MB). El límite de WhatsApp es ${this.MAX_PDF_SIZE_MB}MB`,
+                    HttpStatus.BAD_REQUEST,
+                );
+            }
+
+            if (pdfSizeMB > 5) {
+                console.warn('⚠️ [WhatsApp] PDF grande detectado:', pdfSizeMB.toFixed(2), 'MB - El envío puede tardar más de lo normal');
+            }
+
+            // 4. Preparar mensaje
             const facturaCompleta = prefijo ? `${prefijo}-${factura}` : factura;
             const mensaje = `Estimado cliente,\n\n` +
                 `Adjunto encontrarás tu factura #${facturaCompleta} correspondiente.\n\n` +
                 `Saludos,\n` +
                 `*${empresa.nombre || 'Acueducto'}*`;
 
-            // 4. Preparar datos para Evolution API v2.3.6
+            // 5. Preparar datos para Evolution API v2.3.6
             const whatsappData = {
                 number: formattedPhone, // Número sin formato @s.whatsapp.net
                 mediatype: 'document',
@@ -107,10 +178,13 @@ export class WhatsappService {
                 fileName: `Factura_${facturaCompleta}.pdf`,
             };
 
-            // 5. Enviar a Evolution API
+            // 6. Enviar a Evolution API con retry logic
             const fullUrl = `${empresa.whatsappApiUrl}/message/sendMedia/${empresa.whatsappApi}`;
+            const timeout = this.calculateTimeout(pdfSizeMB);
+
             console.log('🚀 [WhatsApp] Enviando a Evolution API:', fullUrl);
             console.log('📦 [WhatsApp] Tamaño del base64:', pdfBase64.length, 'caracteres');
+            console.log('⏱️ [WhatsApp] Timeout configurado:', timeout, 'ms');
             console.log('📦 [WhatsApp] Payload (sin media):', {
                 number: formattedPhone,
                 mediatype: 'document',
@@ -120,33 +194,66 @@ export class WhatsappService {
                 mediaLength: pdfBase64.length
             });
 
-            const response = await axios.post(fullUrl, whatsappData, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'apikey': empresa.whatsappApiKey,
-                },
-                timeout: 30000, // 30 segundos de timeout
-            });
+            // Retry loop
+            let lastError: any;
+            for (let attempt = 0; attempt < this.MAX_RETRIES; attempt++) {
+                try {
+                    if (attempt > 0) {
+                        console.log(`🔄 [WhatsApp] Intento ${attempt + 1} de ${this.MAX_RETRIES}`);
+                    }
 
-            console.log('✅ [WhatsApp] Respuesta de Evolution API:', {
-                status: response.status,
-                statusText: response.statusText
-            });
+                    const response = await axios.post(fullUrl, whatsappData, {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'apikey': empresa.whatsappApiKey,
+                        },
+                        timeout: timeout,
+                    });
 
-            if (response.status === 200 || response.status === 201) {
-                return {
-                    success: true,
-                    message: 'Factura enviada por WhatsApp exitosamente',
-                    telefono: formattedPhone,
-                    factura: facturaCompleta,
-                };
-            } else {
-                console.error('❌ [WhatsApp] Respuesta inesperada:', response.status);
-                throw new HttpException(
-                    `Error al enviar WhatsApp: ${response.statusText}`,
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                );
+                    console.log('✅ [WhatsApp] Respuesta de Evolution API:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        attempt: attempt + 1
+                    });
+
+                    if (response.status === 200 || response.status === 201) {
+                        return {
+                            success: true,
+                            message: 'Factura enviada por WhatsApp exitosamente',
+                            telefono: formattedPhone,
+                            factura: facturaCompleta,
+                            attempts: attempt + 1
+                        };
+                    } else {
+                        console.error('❌ [WhatsApp] Respuesta inesperada:', response.status);
+                        throw new HttpException(
+                            `Error al enviar WhatsApp: ${response.statusText}`,
+                            HttpStatus.INTERNAL_SERVER_ERROR,
+                        );
+                    }
+                } catch (error: any) {
+                    lastError = error;
+
+                    // Log del error en cada intento
+                    console.error(`❌ [WhatsApp] Error en intento ${attempt + 1}:`, {
+                        message: error.message,
+                        response: error.response?.data,
+                        status: error.response?.status,
+                        isRetryable: this.isRetryableError(error)
+                    });
+
+                    // Si no es retryable o es el último intento, lanzar el error
+                    if (!this.isRetryableError(error) || attempt === this.MAX_RETRIES - 1) {
+                        break;
+                    }
+
+                    // Esperar antes del siguiente intento
+                    await this.delay(attempt);
+                }
             }
+
+            // Si llegamos aquí, todos los intentos fallaron
+            throw lastError;
         } catch (error: any) {
             console.error('❌ [WhatsApp] Error completo:', {
                 message: error.message,
@@ -160,19 +267,47 @@ export class WhatsappService {
                 throw error;
             }
 
-            // Si es un error de axios, extraer información útil
+            // Construir mensaje de error más informativo
+            let errorMessage = 'Error al enviar WhatsApp';
+            let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+
+            // Analizar el tipo de error
             if (error.response) {
-                throw new HttpException(
-                    `Error al enviar WhatsApp: ${error.response.data?.message || error.message}`,
-                    error.response.status || HttpStatus.INTERNAL_SERVER_ERROR,
-                );
+                // Error de respuesta HTTP de Evolution API
+                const responseMessage = Array.isArray(error.response.data?.message)
+                    ? error.response.data.message.join(', ')
+                    : error.response.data?.message || error.message;
+
+                statusCode = error.response.status || HttpStatus.INTERNAL_SERVER_ERROR;
+
+                // Mensajes específicos para errores comunes
+                if (responseMessage.includes('Connection Closed')) {
+                    errorMessage = 'La conexión con WhatsApp se cerró inesperadamente. ' +
+                        'Esto puede ocurrir si: 1) La instancia de WhatsApp no está conectada en Evolution API, ' +
+                        '2) El servidor de Evolution API está sobrecargado, o 3) El archivo es muy grande. ' +
+                        'Por favor, verifica que WhatsApp esté conectado en Evolution API.';
+                } else if (responseMessage.includes('timeout')) {
+                    errorMessage = `El envío excedió el tiempo límite. El archivo puede ser demasiado grande. Error: ${responseMessage}`;
+                } else if (responseMessage.includes('Unauthorized') || responseMessage.includes('apikey')) {
+                    errorMessage = 'Error de autenticación con Evolution API. Verifica que la API Key sea correcta.';
+                    statusCode = HttpStatus.UNAUTHORIZED;
+                } else {
+                    errorMessage = `Error del servidor de WhatsApp: ${responseMessage}`;
+                }
+            } else if (error.code === 'ECONNREFUSED') {
+                errorMessage = 'No se pudo conectar al servidor de Evolution API. Verifica que esté en ejecución y la URL sea correcta.';
+                statusCode = HttpStatus.SERVICE_UNAVAILABLE;
+            } else if (error.code === 'ETIMEDOUT' || error.message.includes('timeout')) {
+                errorMessage = 'El envío excedió el tiempo límite. El archivo puede ser demasiado grande o el servidor está lento.';
+                statusCode = HttpStatus.REQUEST_TIMEOUT;
+            } else if (error.code === 'ENOTFOUND') {
+                errorMessage = 'No se pudo resolver la URL del servidor de WhatsApp. Verifica la configuración de whatsappApiUrl.';
+                statusCode = HttpStatus.BAD_GATEWAY;
+            } else {
+                errorMessage = `Error al enviar WhatsApp: ${error.message}`;
             }
 
-            // Error genérico
-            throw new HttpException(
-                `Error al enviar WhatsApp: ${error.message}`,
-                HttpStatus.INTERNAL_SERVER_ERROR,
-            );
+            throw new HttpException(errorMessage, statusCode);
         }
     }
 }

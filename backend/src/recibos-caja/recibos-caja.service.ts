@@ -20,6 +20,7 @@ export class RecibosCajaService {
                     nombre,
                     anulado,
                     factura,
+                    prefijo,
                     valor,
                     documento,
                     forma_pago,
@@ -122,10 +123,23 @@ export class RecibosCajaService {
     }
 
     async create(createReciboCajaDto: CreateReciboCajaDto, empresaId: number, usuario: string) {
+        // Separar prefijo y factura
+        let prefijo = createReciboCajaDto.prefijo || null;
+        let factura = createReciboCajaDto.factura;
+
+        // Si no viene prefijo separado, intentar extraerlo del campo factura
+        if (!prefijo && factura && factura.includes('-')) {
+            const parts = factura.split('-');
+            if (parts.length === 2) {
+                prefijo = parts[0].trim();
+                factura = parts[1].trim();
+            }
+        }
+
         const query = `
             INSERT INTO public.caja_recibos
-            (fecha, observacion, tipo, instalacion_codigo, factura, valor, documento, forma_pago, nro_nota, valor_nota, banco, empresa_id, usuario)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULL, NULL, NULL, $9, $10)
+            (fecha, observacion, tipo, instalacion_codigo, factura, prefijo, valor, documento, forma_pago, nro_nota, valor_nota, banco, empresa_id, usuario)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NULL, NULL, NULL, $10, $11)
             RETURNING *
         `;
 
@@ -134,7 +148,8 @@ export class RecibosCajaService {
             createReciboCajaDto.observacion || '',
             createReciboCajaDto.tipo,
             createReciboCajaDto.instalacion_codigo,
-            createReciboCajaDto.factura,
+            factura,
+            prefijo,
             createReciboCajaDto.valor,
             createReciboCajaDto.documento || '',
             createReciboCajaDto.forma_pago,
