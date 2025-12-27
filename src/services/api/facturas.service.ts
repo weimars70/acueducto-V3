@@ -90,7 +90,7 @@ export interface FacturasFilters {
 interface FacturaResponse extends PaginatedResponse<Factura> { }
 
 export const facturasService = {
-    async getFacturas(filters: FacturasFilters = {}): Promise<FacturaResponse> {
+    async getFacturas(filters: FacturasFilters = {}, p0: { facturaData: any; "": any; }, limit: any, p1: number): Promise<FacturaResponse> {
         const { data } = await apiClient.get('/facturas', { params: filters });
         return data;
     },

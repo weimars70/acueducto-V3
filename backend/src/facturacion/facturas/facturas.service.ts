@@ -167,4 +167,70 @@ export class FacturasService {
             throw new Error(`Error al obtener información de la empresa: ${error.message}`);
         }
     }
+
+    async obtenerFacturasParaEnvioMasivo(
+        empresaId: number,
+        mes: number,
+        year: number,
+        enviarEmail: boolean,
+        enviarWhatsapp: boolean
+    ) {
+        try {
+            const facturas: any = {
+                email: [],
+                whatsapp: []
+            };
+
+            // Obtener facturas para envío por email
+            if (enviarEmail) {
+                const facturasEmail = await this.dataSource.query(
+                    `SELECT f.prefijo, f.codigo, f.mes, f.year, f.instalacion_codigo
+                     FROM facturas f
+                     WHERE f.mes = $1
+                       AND f.year = $2
+                       AND f.empresa_id = $3
+                       AND f.instalacion_codigo IN (
+                           SELECT codigo
+                           FROM instalaciones
+                           WHERE activo = true
+                             AND enviar_factura_email = true
+                             AND empresa_id = $3
+                       )`,
+                    [mes, year, empresaId]
+                );
+                facturas.email = facturasEmail;
+            }
+
+            // Obtener facturas para envío por whatsapp
+            if (enviarWhatsapp) {
+                const facturasWhatsapp = await this.dataSource.query(
+                    `SELECT f.prefijo, f.codigo, f.mes, f.year, f.instalacion_codigo
+                     FROM facturas f
+                     WHERE f.mes = $1
+                       AND f.year = $2
+                       AND f.empresa_id = $3
+                       AND f.instalacion_codigo IN (
+                           SELECT codigo
+                           FROM instalaciones
+                           WHERE activo = true
+                             AND enviar_factura_whatsapp = true
+                             AND empresa_id = $3
+                       )`,
+                    [mes, year, empresaId]
+                );
+                facturas.whatsapp = facturasWhatsapp;
+            }
+
+            return {
+                totalEmail: facturas.email.length,
+                totalWhatsapp: facturas.whatsapp.length,
+                facturasEmail: facturas.email,
+                facturasWhatsapp: facturas.whatsapp
+            };
+
+        } catch (error) {
+            console.error('Error al obtener facturas para envío masivo:', error);
+            throw new Error(`Error al obtener facturas para envío masivo: ${error.message}`);
+        }
+    }
 }

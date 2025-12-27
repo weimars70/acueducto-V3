@@ -35,11 +35,11 @@ export class FacturasController {
         @Query('sector_nombre') sector_nombre: string,
         @Request() req: any,
     ) {
-        console.log('\n=== FACTURAS CONTROLLER ===');
-        console.log('Query params recibidos:', { page, limit, mes, year, factura, nombre, ident, instalacion_codigo, direccion, ciudad_nombre, sector_nombre });
+        //console.log('\n=== FACTURAS CONTROLLER ===');
+        //console.log('Query params recibidos:', { page, limit, mes, year, factura, nombre, ident, instalacion_codigo, direccion, ciudad_nombre, sector_nombre });
 
         const empresaId = req.user?.empresaId || req.user?.empresa_id;
-        console.log('Empresa ID extraído:', empresaId);
+        //console.log('Empresa ID extraído:', empresaId);
 
         const filters = {
             factura,
@@ -86,5 +86,29 @@ export class FacturasController {
             factura: body.factura,
             prefijo: body.prefijo,
         });
+    }
+
+    @Post('obtener-facturas-masivo')
+    async obtenerFacturasMasivo(
+        @Body() body: {
+            mes: number;
+            year: number;
+            enviarEmail: boolean;
+            enviarWhatsapp: boolean;
+        },
+        @Request() req: any,
+    ) {
+        const empresaId = req.user?.empresaId || req.user?.empresa_id;
+        if (!empresaId) {
+            throw new Error("Empresa ID not found in session");
+        }
+
+        return this.facturasService.obtenerFacturasParaEnvioMasivo(
+            empresaId,
+            body.mes,
+            body.year,
+            body.enviarEmail,
+            body.enviarWhatsapp
+        );
     }
 }

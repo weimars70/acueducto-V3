@@ -214,6 +214,12 @@ const facturacionItems = [
     label: 'Enviar DIAN',
     route: '/enviar-dian',
     closable: true,
+  },
+  {
+    icon: 'send',
+    label: 'Envío Email Whatsapp',
+    route: '/enviar-facturas-masivo',
+    closable: true,
   }
 ];
 
