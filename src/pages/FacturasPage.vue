@@ -167,9 +167,10 @@
                   size="sm"
                   color="green-7"
                   @click.stop="pagarFactura(props.row)"
+                  :disable="props.row.saldo <= 0"
                   class="accion-btn"
                 >
-                  <q-tooltip>Pagar Factura</q-tooltip>
+                  <q-tooltip>{{ props.row.saldo <= 0 ? 'Factura ya pagada' : 'Pagar Factura' }}</q-tooltip>
                 </q-btn>
                 <q-btn
                   flat
@@ -291,12 +292,15 @@ import { useRouter } from 'vue-router';
 import { facturasService, type Factura } from '../services/api/facturas.service';
 import { whatsappService } from '../services/api/whatsapp.service';
 import { emailService } from '../services/api/email.service';
+import { dianService } from '../services/api/dian.service';
 import { useQuasar } from 'quasar';
+import { useAuthStore } from '../stores/auth';
 import * as XLSX from 'xlsx';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
 const $q = useQuasar();
 const router = useRouter();
+const authStore = useAuthStore();
 
 const facturas = ref<Factura[]>([]);
 const loading = ref(false);
@@ -414,7 +418,7 @@ const loadFacturas = async () => {
     $q.notify({
       type: 'negative',
       message: error.message || 'Error al cargar facturas',
-      position: 'top'
+      position: 'center'
     });
   } finally {
     loading.value = false;
@@ -840,20 +844,84 @@ const imprimirFactura = async (factura: Factura) => {
     $q.notify({
       type: 'negative',
       message: 'Error al generar PDF: ' + error.message,
-      position: 'top'
+      position: 'center'
     });
   } finally {
     $q.loading.hide();
   }
 };
 
-const enviarDian = (factura: Factura) => {
-  console.log('Enviar a DIAN:', factura);
-  $q.notify({
-    type: 'info',
-    message: `Función enviar DIAN - Factura ${factura.prefijo}-${factura.factura}`,
-    position: 'top'
-  });
+const enviarDian = async (factura: Factura) => {
+  try {
+    // Validar que tengamos empresaId
+    if (!authStore.user?.empresaId) {
+      $q.notify({
+        type: 'negative',
+        message: 'No se pudo obtener la empresa del usuario',
+        position: 'center'
+      });
+      return;
+    }
+
+    // Confirmar antes de enviar
+    $q.dialog({
+      title: 'Confirmar envío a DIAN',
+      message: `¿Está seguro de enviar la factura ${factura.prefijo}-${factura.factura} a la DIAN?`,
+      cancel: {
+        label: 'Cancelar',
+        color: 'negative',
+        flat: true
+      },
+      ok: {
+        label: 'Enviar',
+        color: 'primary'
+      },
+      persistent: true
+    }).onOk(async () => {
+      $q.loading.show({ message: 'Enviando factura a DIAN...' });
+
+      try {
+        const response = await dianService.enviarFacturaUnicaDian({
+          empresaId: authStore.user!.empresaId,
+          prefijo: factura.prefijo,
+          factura: Number(factura.factura)
+        });
+
+        if (response.success) {
+          $q.notify({
+            type: 'positive',
+            message: response.message || `Factura ${factura.prefijo}-${factura.factura} enviada exitosamente a la DIAN`,
+            position: 'center',
+            timeout: 5000
+          });
+        } else {
+          $q.notify({
+            type: 'warning',
+            message: response.error || 'La factura se procesó pero hubo un problema',
+            position: 'center',
+            timeout: 5000
+          });
+        }
+      } catch (error: any) {
+        console.error('Error al enviar a DIAN:', error);
+        $q.notify({
+          type: 'negative',
+          message: error.response?.data?.message || error.message || 'Error al enviar factura a DIAN',
+          position: 'center',
+          timeout: 5000
+        });
+      } finally {
+        $q.loading.hide();
+      }
+    });
+  } catch (error: any) {
+    console.error('Error en enviarDian:', error);
+    $q.notify({
+      type: 'negative',
+      message: error.message || 'Error inesperado',
+      position: 'center'
+    });
+  }
 };
 
 const enviarEmail = async (factura: Factura) => {
@@ -863,7 +931,7 @@ const enviarEmail = async (factura: Factura) => {
       $q.notify({
         type: 'warning',
         message: 'El cliente no tiene email registrado',
-        position: 'top'
+        position: 'center'
       });
       return;
     }
@@ -1056,7 +1124,7 @@ const enviarEmail = async (factura: Factura) => {
     $q.notify({
       type: 'positive',
       message: `Factura enviada por email a ${factura.email}`,
-      position: 'top'
+      position: 'center'
     });
 
   } catch (error: any) {
@@ -1064,7 +1132,7 @@ const enviarEmail = async (factura: Factura) => {
     $q.notify({
       type: 'negative',
       message: error.response?.data?.message || error.message || 'Error al enviar email',
-      position: 'top'
+      position: 'center'
     });
   } finally {
     $q.loading.hide();
@@ -1078,7 +1146,7 @@ const enviarWhatsapp = async (factura: Factura) => {
       $q.notify({
         type: 'warning',
         message: 'El cliente no tiene número de teléfono registrado',
-        position: 'top'
+        position: 'center'
       });
       return;
     }
@@ -1270,7 +1338,7 @@ const enviarWhatsapp = async (factura: Factura) => {
     $q.notify({
       type: 'positive',
       message: `Factura enviada por WhatsApp a ${factura.telefono}`,
-      position: 'top'
+      position: 'center'
     });
 
   } catch (error: any) {
@@ -1278,7 +1346,7 @@ const enviarWhatsapp = async (factura: Factura) => {
     $q.notify({
       type: 'negative',
       message: error.response?.data?.message || error.message || 'Error al enviar WhatsApp',
-      position: 'top'
+      position: 'center'
     });
   } finally {
     $q.loading.hide();
@@ -1374,13 +1442,13 @@ const exportarExcel = async () => {
     $q.notify({
       type: 'positive',
       message: `Archivo Excel exportado correctamente (${response.total} registros)`,
-      position: 'top'
+      position: 'center'
     });
   } catch (error: any) {
     $q.notify({
       type: 'negative',
       message: 'Error al exportar a Excel: ' + error.message,
-      position: 'top'
+      position: 'center'
     });
   } finally {
     loading.value = false;

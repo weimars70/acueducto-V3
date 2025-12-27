@@ -171,6 +171,71 @@ export class DianService {
     }
 
     /**
+     * Envía una sola factura a la DIAN
+     */
+    async enviarFacturaUnicaDian(dto: { empresaId: number, prefijo: string, factura: number }): Promise<any> {
+        const { empresaId, prefijo, factura } = dto;
+
+        console.log('📤 [DIAN] Enviando factura única:', { empresaId, prefijo, factura });
+
+        try {
+            // Verificar que la factura exista
+            const facturaExists = await this.dataSource.query(
+                `SELECT prefijo, codigo FROM facturas WHERE empresa_id = $1 AND prefijo = $2 AND codigo = $3`,
+                [empresaId, prefijo, factura]
+            );
+
+            if (facturaExists.length === 0) {
+                throw new HttpException(
+                    `No se encontró la factura ${prefijo}-${factura}`,
+                    HttpStatus.NOT_FOUND
+                );
+            }
+
+            // Procesar la factura usando el método privado existente
+            await this.procesarFactura(prefijo, factura);
+
+            console.log(`✅ [DIAN] Factura ${prefijo}-${factura} enviada exitosamente`);
+
+            return {
+                success: true,
+                message: `Factura ${prefijo}-${factura} enviada exitosamente a la DIAN`,
+                prefijo,
+                factura
+            };
+
+        } catch (error: any) {
+            console.error('❌ [DIAN] Error al enviar factura única:', error);
+
+            // Extraer mensaje de error detallado
+            let errorMessage = error.message || 'Error desconocido';
+
+            if (error.response?.data) {
+                const dianError = error.response.data;
+                if (typeof dianError === 'string') {
+                    errorMessage = dianError;
+                } else if (dianError.message) {
+                    errorMessage = dianError.message;
+                } else if (dianError.errors) {
+                    const errorsArray = Array.isArray(dianError.errors)
+                        ? dianError.errors
+                        : Object.values(dianError.errors);
+                    errorMessage = errorsArray.join(', ');
+                }
+            }
+
+            if (error instanceof HttpException) {
+                throw error;
+            }
+
+            throw new HttpException(
+                `Error al enviar factura a DIAN: ${errorMessage}`,
+                HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
+    /**
      * Procesa una factura individual enviándola a la DIAN
      */
     private async procesarFactura(prefijo: string, factura: number): Promise<void> {

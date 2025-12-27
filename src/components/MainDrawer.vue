@@ -198,6 +198,12 @@ const facturacionItems = [
     closable: true,
   },
   {
+    icon: 'assignment_turned_in',
+    label: 'Facturar',
+    route: '/facturar',
+    closable: true,
+  },
+  {
     icon: 'list_alt',
     label: 'Listado de Facturas',
     route: '/facturas',

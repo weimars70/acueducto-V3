@@ -46,6 +46,7 @@ import { NotasDebitoConceptosModule } from './notas-debito-conceptos/notas-debit
 import { NotasDebitoModule } from './notas-debito/notas-debito.module';
 import { PrefacturaModule } from './facturacion/prefactura/prefactura.module';
 import { FacturasModule } from './facturacion/facturas/facturas.module';
+import { FacturacionModule } from './facturacion/facturacion.module';
 import { SaldosAFavorModule } from './instalaciones/saldos-a-favor/saldos-a-favor.module';
 import { RecibosCajaModule } from './recibos-caja/recibos-caja.module';
 import { WhatsappModule } from './whatsapp/whatsapp.module';
@@ -104,6 +105,7 @@ import { DianModule } from './dian/dian.module';
     NotasCreditoModule,
     PrefacturaModule,
     FacturasModule,
+    FacturacionModule,
     SaldosAFavorModule,
     RecibosCajaModule,
     WhatsappModule,

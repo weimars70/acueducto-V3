@@ -13,6 +13,12 @@ export class DianController {
         return this.dianService.enviarFacturasDian(dto);
     }
 
+    @Post('enviar-factura-unica')
+    @UseGuards(JwtAuthGuard)  // Solo valida JWT al enviar factura
+    async enviarFacturaUnicaDian(@Body() dto: { empresaId: number, prefijo: string, factura: number }) {
+        return this.dianService.enviarFacturaUnicaDian(dto);
+    }
+
     @Get('progress')
     // Sin guard - no valida JWT en cada polling
     async getProgress(
