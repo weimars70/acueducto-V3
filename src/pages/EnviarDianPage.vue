@@ -131,6 +131,19 @@
           <div style="margin-top: 8px; text-align: center; color: #6b7280; font-size: 14px;">
             {{ progreso.porcentaje.toFixed(1) }}%
           </div>
+
+          <!-- Mensaje informativo durante el proceso -->
+          <div v-if="tiempoTranscurrido > 120" style="margin-top: 12px; padding: 12px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
+            <div style="display: flex; align-items: center; gap: 8px; color: #92400e;">
+              <q-icon name="schedule" size="20px" />
+              <span style="font-size: 13px; font-weight: 500;">
+                El proceso puede tardar varios minutos. Por favor, mantenga esta ventana abierta.
+                <span v-if="tiempoTranscurrido > 300">
+                  ({{ Math.floor(tiempoTranscurrido / 60) }} minutos transcurridos)
+                </span>
+              </span>
+            </div>
+          </div>
         </div>
 
         <!-- Resultados -->
@@ -212,6 +225,7 @@ const progreso = ref({
   total: 0,
   porcentaje: 0
 });
+const tiempoTranscurrido = ref(0); // Tiempo en segundos
 
 const resultados = ref<any[]>([]);
 
@@ -333,6 +347,7 @@ const enviarDian = async () => {
     procesando.value = true;
     resultados.value = [];
     progreso.value = { actual: 0, total: 0, porcentaje: 0 };
+    tiempoTranscurrido.value = 0;
 
     if (!authStore.user?.empresaId) {
       $q.notify({
@@ -356,9 +371,27 @@ const enviarDian = async () => {
       payload.nroFinal = formData.value.nroFinal;
     }
 
+    // Iniciar contador de tiempo
+    const timeInterval = setInterval(() => {
+      tiempoTranscurrido.value++;
+    }, 1000);
+
     // Iniciar polling del progreso
     let lastProgress = { actual: 0, total: 0, porcentaje: 0 };
+    let pollingAttempts = 0;
+    const MAX_POLLING_TIME = 7200000; // 2 horas máximo de polling
+    const pollingStartTime = Date.now();
+
     const progressInterval = setInterval(async () => {
+      pollingAttempts++;
+
+      // Verificar timeout máximo de polling
+      if (Date.now() - pollingStartTime > MAX_POLLING_TIME) {
+        clearInterval(progressInterval);
+        console.warn('⚠️ Polling timeout alcanzado (2 horas)');
+        return;
+      }
+
       try {
         const progressData = await dianService.getProgress(
           authStore.user!.empresaId,
@@ -366,8 +399,13 @@ const enviarDian = async () => {
           formData.value.mes!
         );
 
-        // Actualizar solo si hay progreso activo O si hay cambios
-        if (progressData.enProceso || progressData.porcentaje > lastProgress.porcentaje) {
+        // Actualizar progreso si:
+        // 1. El proceso está activo (enProceso = true), O
+        // 2. Hay cambios en el porcentaje, O
+        // 3. Hay cambios en el número actual de procesadas
+        if (progressData.enProceso ||
+            progressData.porcentaje > lastProgress.porcentaje ||
+            progressData.actual > lastProgress.actual) {
           progreso.value = {
             actual: progressData.actual,
             total: progressData.total,
@@ -377,9 +415,11 @@ const enviarDian = async () => {
         }
       } catch (error) {
         // Silenciar errores de polling para no interrumpir el proceso
-        console.log('Esperando progreso...');
+        if (pollingAttempts % 10 === 0) { // Log cada 10 intentos (~10 segundos)
+          console.log('Esperando progreso...');
+        }
       }
-    }, 1000); // Consultar cada 1 segundo (reducido para evitar sobrecarga)
+    }, 1000); // Consultar cada 1 segundo
 
     try {
       const response = await dianService.enviarFacturasDian(payload);
@@ -450,14 +490,28 @@ const enviarDian = async () => {
       });
 
     } catch (error: any) {
+      console.error('Error al enviar facturas:', error);
+
+      // Mejorar mensaje de error
+      let errorMessage = 'Error al enviar facturas a DIAN';
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        errorMessage = 'El proceso excedió el tiempo máximo (1 hora). Por favor, verifique los resultados en la base de datos o intente con un rango menor de facturas.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
       $q.notify({
         type: 'negative',
-        message: error.response?.data?.message || error.message || 'Error al enviar facturas a DIAN',
-        position: 'top'
+        message: errorMessage,
+        position: 'top',
+        timeout: 10000
       });
     } finally {
-      // Detener polling siempre
+      // Detener polling y contador de tiempo
       clearInterval(progressInterval);
+      clearInterval(timeInterval);
       procesando.value = false;
     }
   });

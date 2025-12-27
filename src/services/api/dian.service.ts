@@ -29,7 +29,7 @@ export const dianService = {
      */
     async enviarFacturasDian(data: EnviarFacturasDianDto): Promise<EnviarFacturasDianResponse> {
         const { data: response } = await apiClient.post<EnviarFacturasDianResponse>('/dian/enviar-facturas', data, {
-            timeout: 600000 // 10 minutos de timeout para procesos largos
+            timeout: 3600000 // 1 hora de timeout para procesos largos (puede procesar ~1000 facturas)
         });
         return response;
     },
