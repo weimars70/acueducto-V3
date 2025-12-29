@@ -9,12 +9,13 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UserEmpresa } from '../entities/user-empresa.entity';
 import { Empresa } from '../entities/empresa.entity';
+import { Role } from '../entities/role.entity';
 
 @Module({
   imports: [
     UsersModule,
     PassportModule,
-    TypeOrmModule.forFeature([UserEmpresa, Empresa]),
+    TypeOrmModule.forFeature([UserEmpresa, Empresa, Role]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

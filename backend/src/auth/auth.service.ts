@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserEmpresa } from '../entities/user-empresa.entity';
 import { Empresa } from '../entities/empresa.entity';
+import { Role } from '../entities/role.entity';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -16,6 +17,8 @@ export class AuthService {
     private userEmpresaRepository: Repository<UserEmpresa>,
     @InjectRepository(Empresa)
     private empresaRepository: Repository<Empresa>,
+    @InjectRepository(Role)
+    private roleRepository: Repository<Role>,
   ) { }
 
   async getCompaniesByEmail(email: string) {
@@ -84,10 +87,30 @@ export class AuthService {
       select: ['id', 'nombre', 'codigoAlterno', 'direccion', 'ident', 'telefono', 'logo']
     });
 
+    // Fetch role name
+    let roleName = 'user';
+    if (user.role_nombre) {
+      roleName = user.role_nombre;
+    } else if (user.roleId) {
+      // Fallback only if n_rol wasn't found (should rely on optimization)
+      const role = await this.roleRepository.findOne({ where: { id: user.roleId } });
+      if (role) {
+        roleName = role.nombre;
+      }
+    }
+
+    console.log('Login successful. User data:', {
+      id: user.id,
+      roleId: user.roleId,
+      roleName: roleName,
+      fullUser: user
+    });
+
     const payload = {
       email: user.email,
       sub: user.id,
-      empresaId: user.selectedEmpresaId
+      empresaId: user.selectedEmpresaId,
+      role: roleName
     };
 
     return {
@@ -96,7 +119,7 @@ export class AuthService {
         id: user.id,
         username: user.email,
         email: user.email,
-        role: user.role || 'user',
+        role: roleName,
         name: user.name || 'Usuario',
         empresaId: user.selectedEmpresaId,
         empresa: empresa ? {

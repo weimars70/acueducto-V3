@@ -34,7 +34,7 @@ export class UsersService {
 
       // Primero intentar con una consulta directa para verificar
       const allUsers = await this.userRepository.query(
-        `SELECT * FROM usuarios WHERE email = $1`,
+        `SELECT *,func_nombre_rol(role_id, empresa_id ) as n_rol FROM usuarios WHERE email = $1`,
         [email]
       );
       console.log('Resultado consulta directa (SQL raw):', JSON.stringify(allUsers, null, 2));
@@ -47,6 +47,11 @@ export class UsersService {
       if (!user) {
         console.log('Usuario NO encontrado en la base de datos');
         throw new Error('Usuario no encontrado');
+      }
+
+      // Attach role name from raw query
+      if (allUsers.length > 0 && allUsers[0].n_rol) {
+        (user as any).role_nombre = allUsers[0].n_rol;
       }
 
       console.log('Usuario encontrado exitosamente');

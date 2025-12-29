@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useQuasar, Loading } from 'quasar';
 import { useAuthStore } from '../stores/auth';
@@ -20,6 +20,11 @@ const authStore = useAuthStore();
 const tabsStore = useTabsStore();
 const miniState = ref(false);
 const syncing = ref(false);
+
+const isFontanero = computed(() => {
+  const role = authStore.user?.role || (authStore.user as any)?.role_nombre;
+  return role === 'Fontanero';
+});
 
 const menuItems = [
   {
@@ -465,10 +470,11 @@ const handleSync = async () => {
         </q-item>
       </q-expansion-item>
 
-      <q-separator class="elegant-separator" />
+      <q-separator class="elegant-separator" v-if="!isFontanero" />
 
       <!-- Documentos Section -->
       <q-expansion-item
+        v-if="!isFontanero"
         v-model="documentosExpanded"
         icon="description"
         label="Documentos"
@@ -494,10 +500,11 @@ const handleSync = async () => {
         </q-item>
       </q-expansion-item>
 
-      <q-separator class="elegant-separator" />
+      <q-separator class="elegant-separator" v-if="!isFontanero" />
 
       <!-- Inventario Section -->
       <q-expansion-item
+        v-if="!isFontanero"
         v-model="inventarioExpanded"
         icon="inventory_2"
         label="Inventario"
@@ -523,10 +530,11 @@ const handleSync = async () => {
         </q-item>
       </q-expansion-item>
 
-      <q-separator class="elegant-separator" />
+      <q-separator class="elegant-separator" v-if="!isFontanero" />
 
       <!-- Maestros Section -->
       <q-expansion-item
+        v-if="!isFontanero"
         v-model="maestrosExpanded"
         icon="folder"
         label="Maestros"
@@ -552,10 +560,11 @@ const handleSync = async () => {
         </q-item>
       </q-expansion-item>
 
-      <q-separator class="elegant-separator" />
+      <q-separator class="elegant-separator" v-if="!isFontanero" />
 
       <!-- Facturación Section -->
       <q-expansion-item
+        v-if="!isFontanero"
         v-model="facturacionExpanded"
         icon="receipt_long"
         label="Facturación"
@@ -581,10 +590,11 @@ const handleSync = async () => {
         </q-item>
       </q-expansion-item>
 
-      <q-separator class="elegant-separator" />
+      <q-separator class="elegant-separator" v-if="!isFontanero" />
 
       <!-- Instalaciones Section -->
       <q-expansion-item
+        v-if="!isFontanero"
         v-model="instalacionesExpanded"
         icon="home_work"
         label="Instalaciones"
@@ -610,10 +620,11 @@ const handleSync = async () => {
         </q-item>
       </q-expansion-item>
 
-      <q-separator class="elegant-separator" />
+      <q-separator class="elegant-separator" v-if="!isFontanero" />
 
       <!-- Diferido Section -->
       <q-expansion-item
+        v-if="!isFontanero"
         v-model="diferidoExpanded"
         icon="schedule"
         label="Diferido"
@@ -639,10 +650,11 @@ const handleSync = async () => {
         </q-item>
       </q-expansion-item>
 
-      <q-separator class="elegant-separator" />
+      <q-separator class="elegant-separator" v-if="!isFontanero" />
 
       <!-- Notas Section -->
       <q-expansion-item
+        v-if="!isFontanero"
         v-model="notasExpanded"
         icon="note"
         label="Notas"
@@ -668,10 +680,11 @@ const handleSync = async () => {
         </q-item>
       </q-expansion-item>
 
-      <q-separator class="elegant-separator" />
+      <q-separator class="elegant-separator" v-if="!isFontanero" />
 
       <!-- Compras Section -->
       <q-expansion-item
+        v-if="!isFontanero"
         v-model="comprasExpanded"
         icon="shopping_cart"
         label="Compras"
@@ -697,10 +710,11 @@ const handleSync = async () => {
         </q-item>
       </q-expansion-item>
 
-      <q-separator class="elegant-separator" />
+      <q-separator class="elegant-separator" v-if="!isFontanero" />
 
       <!-- Estratos Section -->
       <q-expansion-item
+        v-if="!isFontanero"
         v-model="estratosExpanded"
         icon="layers"
         label="Estratos"
@@ -728,6 +742,7 @@ const handleSync = async () => {
 
       <!-- Configuración Section -->
       <q-expansion-item
+        v-if="!isFontanero"
         v-model="configuracionExpanded"
         icon="settings"
         label="Configuración"
@@ -753,10 +768,11 @@ const handleSync = async () => {
         </q-item>
       </q-expansion-item>
 
-      <q-separator class="elegant-separator" />
+      <q-separator class="elegant-separator" v-if="!isFontanero" />
 
       <!-- Instalaciones Section -->
       <q-expansion-item
+        v-if="!isFontanero"
         v-model="instalacionesExpanded"
         icon="home"
         label="Instalaciones"
@@ -780,10 +796,11 @@ const handleSync = async () => {
         </q-item>
       </q-expansion-item>
 
-      <q-separator class="elegant-separator" />
+      <q-separator class="elegant-separator" v-if="!isFontanero" />
 
       <!-- Nómina Section -->
       <q-expansion-item
+        v-if="!isFontanero"
         v-model="nominaExpanded"
         icon="payments"
         label="Nómina"
