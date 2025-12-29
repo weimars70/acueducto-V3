@@ -203,10 +203,10 @@ const formData = ref({
   instalacion: '',
   nombre: '',
   factura: '',
-  tipo: null,
+  tipo: null as number | null,
   valor: '',
   valorAbono: '',
-  formaPago: null,
+  formaPago: null as number | null,
   documento: '',
   observaciones: ''
 });
@@ -228,6 +228,20 @@ const loadCatalogos = async () => {
     });
   } finally {
     loading.value = false;
+  }
+};
+
+const setTipoFromQuery = () => {
+  const tipoNombre = route.query.tipo_nombre as string;
+  if (tipoNombre && tiposRecibo.value.length > 0) {
+    // Buscar coincidencia insensible a mayúsculas/minúsculas
+    const tipoEncontrado = tiposRecibo.value.find(
+      t => t.nombre.toLowerCase() === tipoNombre.toLowerCase()
+    );
+    
+    if (tipoEncontrado) {
+      formData.value.tipo = tipoEncontrado.codigo;
+    }
   }
 };
 
@@ -283,7 +297,11 @@ const volver = () => {
 
 onMounted(() => {
   // Cargar catálogos
-  loadCatalogos();
+  // Cargar catálogos
+  loadCatalogos().then(() => {
+    // Intentar establecer el tipo si viene en la query
+    setTipoFromQuery();
+  });
 
   // Recibir parámetros de la factura
   if (route.query.instalacion) {

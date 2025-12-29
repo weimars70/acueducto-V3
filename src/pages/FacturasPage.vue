@@ -151,6 +151,22 @@
                     <q-icon name="search" size="xs" />
                   </template>
                 </q-input>
+
+                <q-input
+                  v-if="col.name === 'saldo'"
+                  v-model="filters.saldo"
+                  dense
+                  debounce="500"
+                  placeholder="Saldo..."
+                  clearable
+                  @update:model-value="loadFacturas"
+                  class="q-mt-xs"
+                  style="min-width: 100px;"
+                >
+                  <template v-slot:append>
+                    <q-icon name="search" size="xs" />
+                  </template>
+                </q-input>
               </q-th>
             </q-tr>
           </template>
@@ -314,7 +330,9 @@ const filters = ref({
   instalacion_codigo: '',
   direccion: '',
   ciudad_nombre: '',
-  sector_nombre: ''
+  ciudad_nombre: '',
+  sector_nombre: '',
+  saldo: ''
 });
 
 const mesesOptions = [
@@ -348,8 +366,8 @@ const columns = [
   { name: 'periodo', label: 'Periodo', field: 'mes', align: 'center' as const },
   { name: 'factura_completa', label: 'Factura', field: 'factura', align: 'left' as const, sortable: true },
   { name: 'cliente', label: 'Cliente', field: 'nombre', align: 'left' as const, sortable: true },
-  { name: 'suscriptor_instalacion', label: 'Suscriptor / Instalación', field: 'suscriptor', align: 'left' as const },
-  { name: 'total_total', label: 'Total', field: 'total_total', align: 'right' as const },
+  { name: 'suscriptor_instalacion', label: 'Suscriptor / Instalación', field: 'instalacion_codigo', align: 'left' as const, sortable: true },
+  { name: 'total_total', label: 'Total', field: 'total_total', align: 'right' as const, sortable: true },
   { name: 'saldo', label: 'Saldo', field: 'saldo', align: 'right' as const, sortable: true },
   { name: 'consumo', label: 'Consumo', field: 'consumo', align: 'center' as const, format: (val: number) => `${val} m³` },
   { name: 'estrato', label: 'Estrato', field: 'estrato', align: 'center' as const },
@@ -379,7 +397,9 @@ const loadFacturas = async () => {
   try {
     const cleanFilters: any = {
       page: pagination.value.page,
-      limit: pagination.value.rowsPerPage
+      limit: pagination.value.rowsPerPage,
+      sortBy: pagination.value.sortBy,
+      order: pagination.value.descending ? 'DESC' : 'ASC'
     };
 
     if (filters.value.mes) {
@@ -408,6 +428,9 @@ const loadFacturas = async () => {
     }
     if (filters.value.sector_nombre?.trim()) {
       cleanFilters.sector_nombre = filters.value.sector_nombre.trim();
+    }
+    if (filters.value.saldo?.trim()) {
+      cleanFilters.saldo = filters.value.saldo.trim();
     }
 
     const response = await facturasService.getFacturas(cleanFilters);
@@ -475,7 +498,8 @@ const pagarFactura = (factura: Factura) => {
       instalacion: factura.instalacion_codigo.toString(),
       nombre: factura.nombre,
       factura: `${factura.prefijo}-${factura.factura}`,
-      valor: factura.total_total.toString()
+      valor: factura.total_total.toString(),
+      tipo_nombre: 'ABONO FACTURA'
     }
   });
 };

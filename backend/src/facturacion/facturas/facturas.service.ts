@@ -11,7 +11,9 @@ export class FacturasService {
         limit: number = 20,
         mes?: number,
         year?: number,
-        filters?: Record<string, any>
+        filters?: Record<string, any>,
+        sortBy?: string,
+        order?: string
     ) {
         // Si no se proporciona mes o year, usar los valores actuales
         const currentDate = new Date();
@@ -23,6 +25,7 @@ export class FacturasService {
         console.log('Page:', page, 'Limit:', limit);
         console.log('Filtros por columna:', filters);
         console.log('Mes filtro:', filterMes, 'Year filtro:', filterYear);
+        console.log('Orden:', sortBy, order);
 
         try {
             let query = `
@@ -118,6 +121,13 @@ export class FacturasService {
                     queryParams.push(`%${filters.sector_nombre.trim()}%`);
                     paramCount++;
                 }
+
+                // Filtro de Saldo
+                if (filters.saldo && filters.saldo.trim()) {
+                    query += ` AND saldo::text ILIKE $${paramCount}`;
+                    queryParams.push(`%${filters.saldo.trim()}%`);
+                    paramCount++;
+                }
             }
 
             // Obtener el total de registros
@@ -126,7 +136,33 @@ export class FacturasService {
             const total = parseInt(totalResult[0].count);
 
             // Agregar ordenamiento y paginación (si limit es 0, traer todos los registros)
-            query += ` ORDER BY factura DESC`;
+            // Lógica de ordenamiento
+            let orderColumn = 'factura';
+            let orderDirection = 'DESC';
+
+            if (sortBy) {
+                // Mapeo seguro de columnas para evitar inyección SQL
+                const allowedColumns = {
+                    'factura': 'factura',
+                    'nombre': 'nombre',
+                    'instalacion_codigo': 'instalacion_codigo',
+                    'saldo': 'saldo',
+                    'total_total': 'total_total',
+                    'mes': 'mes',
+                    'suscriptor': 'suscriptor'
+                };
+
+                if (allowedColumns[sortBy]) {
+                    orderColumn = allowedColumns[sortBy];
+                }
+
+                if (order && (order.toUpperCase() === 'ASC' || order.toUpperCase() === 'DESC')) {
+                    orderDirection = order.toUpperCase();
+                }
+            }
+
+            query += ` ORDER BY ${orderColumn} ${orderDirection}`;
+
             if (limit > 0) {
                 query += ` LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
                 queryParams.push(limit, (page - 1) * limit);

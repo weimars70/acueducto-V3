@@ -33,10 +33,13 @@ export class FacturasController {
         @Query('direccion') direccion: string,
         @Query('ciudad_nombre') ciudad_nombre: string,
         @Query('sector_nombre') sector_nombre: string,
+        @Query('sortBy') sortBy: string,
+        @Query('order') order: string,
+        @Query('saldo') saldo: string,
         @Request() req: any,
     ) {
         //console.log('\n=== FACTURAS CONTROLLER ===');
-        //console.log('Query params recibidos:', { page, limit, mes, year, factura, nombre, ident, instalacion_codigo, direccion, ciudad_nombre, sector_nombre });
+        //console.log('Query params recibidos:', { page, limit, mes, year, factura, nombre, ident, instalacion_codigo, direccion, ciudad_nombre, sector_nombre, sortBy, order, saldo });
 
         const empresaId = req.user?.empresaId || req.user?.empresa_id;
         //console.log('Empresa ID extraído:', empresaId);
@@ -48,7 +51,8 @@ export class FacturasController {
             instalacion_codigo,
             direccion,
             ciudad_nombre,
-            sector_nombre
+            sector_nombre,
+            saldo
         };
 
         const pageNum = page ? parseInt(page) : 1;
@@ -60,7 +64,9 @@ export class FacturasController {
             limitNum,
             mes ? parseInt(mes) : undefined,
             year ? parseInt(year) : undefined,
-            filters
+            filters,
+            sortBy,
+            order
         );
     }
 
