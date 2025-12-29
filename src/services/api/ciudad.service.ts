@@ -2,6 +2,17 @@ import { apiClient } from './client';
 import type { Ciudad, CreateCiudadDto, UpdateCiudadDto } from '../../types/ciudad';
 
 export const ciudadService = {
+  async getAll(empresaId?: number): Promise<Ciudad[]> {
+    try {
+      const params: any = {};
+      if (empresaId) params.empresaId = empresaId;
+      const { data } = await apiClient.get<Ciudad[]>(`/ciudades`, { params });
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   async getByEmpresa(empresaId: number): Promise<Ciudad[]> {
     try {
       const { data } = await apiClient.get<Ciudad[]>(`/ciudades`, {

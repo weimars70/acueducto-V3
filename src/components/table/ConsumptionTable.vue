@@ -56,6 +56,21 @@ const handleEdit = (consumption: Consumption) => {
       loading-label="Cargando..."
       selected-rows-label="Filas seleccionadas"
     >
+      <!-- Slot para campo facturado -->
+      <template v-slot:body-cell-facturado="props">
+        <q-td :props="props">
+          <q-chip
+            :color="props.row.facturado ? 'positive' : 'grey-5'"
+            :text-color="props.row.facturado ? 'white' : 'grey-8'"
+            dense
+            size="sm"
+            :icon="props.row.facturado ? 'check_circle' : 'cancel'"
+          >
+            {{ props.row.facturado ? 'Sí' : 'No' }}
+          </q-chip>
+        </q-td>
+      </template>
+
       <!-- Slot para acciones -->
       <template v-slot:body-cell-actions="props">
         <q-td :props="props">

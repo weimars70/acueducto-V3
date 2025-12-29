@@ -2,10 +2,10 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { InstalacionesService } from './instalaciones.service';
 import { InstalacionesController } from './instalaciones.controller';
-import { Installation } from '../entities/installation.entity';
+import { Instalacion } from './entities/instalacion.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Installation])],
+  imports: [TypeOrmModule.forFeature([Instalacion])],
   controllers: [InstalacionesController],
   providers: [InstalacionesService],
   exports: [InstalacionesService],

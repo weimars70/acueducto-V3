@@ -223,6 +223,15 @@ const facturacionItems = [
   }
 ];
 
+const instalacionesItems = [
+  {
+    icon: 'list',
+    label: 'Listado Instalaciones',
+    route: '/instalaciones',
+    closable: true,
+  }
+];
+
 const diferidoItems = [
   {
     icon: 'schedule',
@@ -385,20 +394,20 @@ const handleSync = async () => {
   <q-drawer
     :model-value="modelValue"
     :mini="miniState"
-    :width="240"
+    :width="260"
     :breakpoint="500"
     bordered
-    class="bg-white"
+    class="elegant-drawer"
     show-if-above
     @update:model-value="emit('update:modelValue', $event)"
   >
     <!-- Header -->
-    <q-toolbar class="bg-primary text-white">
-      <q-avatar>
+    <q-toolbar class="drawer-header">
+      <q-avatar size="42px" class="drawer-avatar">
         <img src="https://cdn.quasar.dev/logo-v2/svg/logo-mono-white.svg" />
       </q-avatar>
-      <q-toolbar-title class="text-weight-bold">
-        Menu
+      <q-toolbar-title class="drawer-title">
+        <span class="text-weight-bold">Menú</span>
       </q-toolbar-title>
       <q-btn
         flat
@@ -407,31 +416,19 @@ const handleSync = async () => {
         icon="chevron_left"
         @click="toggleMiniState"
         :rotate="miniState ? 180 : 0"
+        class="toggle-btn"
       />
     </q-toolbar>
 
-    <!-- User Info -->
+    <!-- Menu Items -->
     <q-list padding>
-      <q-item v-if="authStore.user">
-        <q-item-section avatar>
-          <q-avatar color="primary" text-color="white">
-            {{ authStore.user.name?.charAt(0).toUpperCase() || 'U' }}
-          </q-avatar>
-        </q-item-section>
-        <q-item-section>
-          <q-item-label>{{ authStore.user.name || 'Usuario' }}</q-item-label>
-          <q-item-label caption>{{ authStore.user.email || '' }}</q-item-label>
-        </q-item-section>
-      </q-item>
-
-      <q-separator spaced />
-
       <!-- Consumo Section -->
       <q-expansion-item
         v-model="consumoExpanded"
         icon="water_drop"
         label="Consumo"
-        header-class="text-weight-bold"
+        header-class="text-weight-bold expansion-header"
+        class="menu-expansion"
       >
         <q-item
           v-for="item in menuItems"
@@ -441,7 +438,7 @@ const handleSync = async () => {
           :active="router.currentRoute.value.path === item.route"
           active-class="text-primary"
           @click="navigateTo(item)"
-          class="q-pl-md"
+          class="menu-item q-pl-md"
         >
           <q-item-section avatar>
             <q-icon :name="item.icon" />
@@ -457,7 +454,7 @@ const handleSync = async () => {
           v-ripple
           @click="handleSync"
           :disable="syncing"
-          class="q-pl-md"
+          class="menu-item sync-item q-pl-md"
         >
           <q-item-section avatar>
             <q-icon :name="syncing ? 'sync_disabled' : 'sync'" />
@@ -468,14 +465,15 @@ const handleSync = async () => {
         </q-item>
       </q-expansion-item>
 
-      <q-separator spaced />
+      <q-separator class="elegant-separator" />
 
       <!-- Documentos Section -->
       <q-expansion-item
         v-model="documentosExpanded"
         icon="description"
         label="Documentos"
-        header-class="text-weight-bold"
+        header-class="text-weight-bold expansion-header"
+        class="menu-expansion"
       >
         <q-item
           v-for="item in documentosItems"
@@ -485,7 +483,7 @@ const handleSync = async () => {
           :active="router.currentRoute.value.path === item.route"
           active-class="text-primary"
           @click="navigateTo(item)"
-          class="q-pl-md"
+          class="menu-item q-pl-md"
         >
           <q-item-section avatar>
             <q-icon :name="item.icon" />
@@ -496,14 +494,15 @@ const handleSync = async () => {
         </q-item>
       </q-expansion-item>
 
-      <q-separator spaced />
+      <q-separator class="elegant-separator" />
 
       <!-- Inventario Section -->
       <q-expansion-item
         v-model="inventarioExpanded"
         icon="inventory_2"
         label="Inventario"
-        header-class="text-weight-bold"
+        header-class="text-weight-bold expansion-header"
+        class="menu-expansion"
       >
         <q-item
           v-for="item in inventarioItems"
@@ -513,7 +512,7 @@ const handleSync = async () => {
           :active="router.currentRoute.value.path === item.route"
           active-class="text-primary"
           @click="navigateTo(item)"
-          class="q-pl-lg"
+          class="menu-item q-pl-lg"
         >
           <q-item-section avatar>
             <q-icon :name="item.icon" />
@@ -524,14 +523,15 @@ const handleSync = async () => {
         </q-item>
       </q-expansion-item>
 
-      <q-separator spaced />
+      <q-separator class="elegant-separator" />
 
       <!-- Maestros Section -->
       <q-expansion-item
         v-model="maestrosExpanded"
         icon="folder"
         label="Maestros"
-        header-class="text-weight-bold"
+        header-class="text-weight-bold expansion-header"
+        class="menu-expansion"
       >
         <q-item
           v-for="item in maestrosItems"
@@ -541,7 +541,7 @@ const handleSync = async () => {
           :active="router.currentRoute.value.path === item.route"
           active-class="text-primary"
           @click="navigateTo(item)"
-          class="q-pl-lg"
+          class="menu-item q-pl-lg"
         >
           <q-item-section avatar>
             <q-icon :name="item.icon" />
@@ -552,14 +552,15 @@ const handleSync = async () => {
         </q-item>
       </q-expansion-item>
 
-      <q-separator spaced />
+      <q-separator class="elegant-separator" />
 
       <!-- Facturación Section -->
       <q-expansion-item
         v-model="facturacionExpanded"
         icon="receipt_long"
         label="Facturación"
-        header-class="text-weight-bold"
+        header-class="text-weight-bold expansion-header"
+        class="menu-expansion"
       >
         <q-item
           v-for="item in facturacionItems"
@@ -569,7 +570,7 @@ const handleSync = async () => {
           :active="router.currentRoute.value.path === item.route"
           active-class="text-primary"
           @click="navigateTo(item)"
-          class="q-pl-lg"
+          class="menu-item q-pl-lg"
         >
           <q-item-section avatar>
             <q-icon :name="item.icon" />
@@ -580,14 +581,44 @@ const handleSync = async () => {
         </q-item>
       </q-expansion-item>
 
-      <q-separator spaced />
+      <q-separator class="elegant-separator" />
+
+      <!-- Instalaciones Section -->
+      <q-expansion-item
+        v-model="instalacionesExpanded"
+        icon="home_work"
+        label="Instalaciones"
+        header-class="text-weight-bold expansion-header"
+        class="menu-expansion"
+      >
+        <q-item
+          v-for="item in instalacionesItems"
+          :key="item.route"
+          clickable
+          v-ripple
+          :active="router.currentRoute.value.path === item.route"
+          active-class="text-primary"
+          @click="navigateTo(item)"
+          class="menu-item q-pl-lg"
+        >
+          <q-item-section avatar>
+            <q-icon :name="item.icon" />
+          </q-item-section>
+          <q-item-section>
+            {{ item.label }}
+          </q-item-section>
+        </q-item>
+      </q-expansion-item>
+
+      <q-separator class="elegant-separator" />
 
       <!-- Diferido Section -->
       <q-expansion-item
         v-model="diferidoExpanded"
         icon="schedule"
         label="Diferido"
-        header-class="text-weight-bold"
+        header-class="text-weight-bold expansion-header"
+        class="menu-expansion"
       >
         <q-item
           v-for="item in diferidoItems"
@@ -597,7 +628,7 @@ const handleSync = async () => {
           :active="router.currentRoute.value.path === item.route"
           active-class="text-primary"
           @click="navigateTo(item)"
-          class="q-pl-lg"
+          class="menu-item q-pl-lg"
         >
           <q-item-section avatar>
             <q-icon :name="item.icon" />
@@ -608,14 +639,15 @@ const handleSync = async () => {
         </q-item>
       </q-expansion-item>
 
-      <q-separator spaced />
+      <q-separator class="elegant-separator" />
 
       <!-- Notas Section -->
       <q-expansion-item
         v-model="notasExpanded"
         icon="note"
         label="Notas"
-        header-class="text-weight-bold"
+        header-class="text-weight-bold expansion-header"
+        class="menu-expansion"
       >
         <q-item
           v-for="item in notasItems"
@@ -625,7 +657,7 @@ const handleSync = async () => {
           :active="router.currentRoute.value.path === item.route"
           active-class="text-primary"
           @click="navigateTo(item)"
-          class="q-pl-lg"
+          class="menu-item q-pl-lg"
         >
           <q-item-section avatar>
             <q-icon :name="item.icon" />
@@ -636,14 +668,15 @@ const handleSync = async () => {
         </q-item>
       </q-expansion-item>
 
-      <q-separator spaced />
+      <q-separator class="elegant-separator" />
 
       <!-- Compras Section -->
       <q-expansion-item
         v-model="comprasExpanded"
         icon="shopping_cart"
         label="Compras"
-        header-class="text-weight-bold"
+        header-class="text-weight-bold expansion-header"
+        class="menu-expansion"
       >
         <q-item
           v-for="item in comprasItems"
@@ -653,7 +686,7 @@ const handleSync = async () => {
           :active="router.currentRoute.value.path === item.route"
           active-class="text-primary"
           @click="navigateTo(item)"
-          class="q-pl-lg"
+          class="menu-item q-pl-lg"
         >
           <q-item-section avatar>
             <q-icon :name="item.icon" />
@@ -664,14 +697,15 @@ const handleSync = async () => {
         </q-item>
       </q-expansion-item>
 
-      <q-separator spaced />
+      <q-separator class="elegant-separator" />
 
       <!-- Estratos Section -->
       <q-expansion-item
         v-model="estratosExpanded"
         icon="layers"
         label="Estratos"
-        header-class="text-weight-bold"
+        header-class="text-weight-bold expansion-header"
+        class="menu-expansion"
       >
         <q-item
           v-for="item in estratosItems"
@@ -681,7 +715,7 @@ const handleSync = async () => {
           :active="router.currentRoute.value.path === item.route"
           active-class="text-primary"
           @click="navigateTo(item)"
-          class="q-pl-lg"
+          class="menu-item q-pl-lg"
         >
           <q-item-section avatar>
             <q-icon :name="item.icon" />
@@ -697,7 +731,8 @@ const handleSync = async () => {
         v-model="configuracionExpanded"
         icon="settings"
         label="Configuración"
-        header-class="text-weight-bold"
+        header-class="text-weight-bold expansion-header"
+        class="menu-expansion"
       >
         <q-item
           v-for="item in configuracionItems"
@@ -707,7 +742,7 @@ const handleSync = async () => {
           :active="router.currentRoute.value.path === item.route"
           active-class="text-primary"
           @click="navigateTo(item)"
-          class="q-pl-lg"
+          class="menu-item q-pl-lg"
         >
           <q-item-section avatar>
             <q-icon :name="item.icon" />
@@ -718,14 +753,15 @@ const handleSync = async () => {
         </q-item>
       </q-expansion-item>
 
-      <q-separator spaced />
+      <q-separator class="elegant-separator" />
 
       <!-- Instalaciones Section -->
       <q-expansion-item
         v-model="instalacionesExpanded"
         icon="home"
         label="Instalaciones"
-        header-class="text-weight-bold"
+        header-class="text-weight-bold expansion-header"
+        class="menu-expansion"
       >
         <q-item
           clickable
@@ -733,7 +769,7 @@ const handleSync = async () => {
           :active="router.currentRoute.value.path === '/instalaciones/saldos-a-favor'"
           active-class="text-primary"
           @click="navigateTo({ label: 'Saldos a Favor', route: '/instalaciones/saldos-a-favor', icon: 'account_balance_wallet', closable: true })"
-          class="q-pl-lg"
+          class="menu-item q-pl-lg"
         >
           <q-item-section avatar>
             <q-icon name="account_balance_wallet" />
@@ -744,14 +780,15 @@ const handleSync = async () => {
         </q-item>
       </q-expansion-item>
 
-      <q-separator spaced />
+      <q-separator class="elegant-separator" />
 
       <!-- Nómina Section -->
       <q-expansion-item
         v-model="nominaExpanded"
         icon="payments"
         label="Nómina"
-        header-class="text-weight-bold"
+        header-class="text-weight-bold expansion-header"
+        class="menu-expansion"
       >
         <q-item
           v-for="item in nominaItems"
@@ -761,7 +798,7 @@ const handleSync = async () => {
           :active="router.currentRoute.value.path === item.route"
           active-class="text-primary"
           @click="navigateTo(item)"
-          class="q-pl-lg"
+          class="menu-item q-pl-lg"
         >
           <q-item-section avatar>
             <q-icon :name="item.icon" />
@@ -778,17 +815,194 @@ const handleSync = async () => {
 </template>
 
 <style lang="scss" scoped>
-.q-drawer {
-  .q-toolbar {
-    height: 64px;
+.elegant-drawer {
+  background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.08);
+}
+
+.drawer-header {
+  height: 70px;
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 0 16px;
+}
+
+.drawer-avatar {
+  transition: transform 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+
+  &:hover {
+    transform: scale(1.1) rotate(10deg);
   }
-  
-  .q-item {
-    border-radius: 8px;
-    margin: 0 8px;
-    
-    &.q-item--active {
-      background: rgba(25, 118, 210, 0.1);
+}
+
+.drawer-title {
+  font-size: 18px;
+  letter-spacing: 0.5px;
+}
+
+.toggle-btn {
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(1.1);
+  }
+}
+
+.elegant-separator {
+  margin: 12px 16px;
+  background: linear-gradient(90deg, transparent 0%, #1976d2 50%, transparent 100%);
+  height: 1px;
+  opacity: 0.3;
+}
+
+.menu-expansion {
+  margin: 4px 8px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(25, 118, 210, 0.03);
+  }
+
+  :deep(.expansion-header) {
+    font-size: 14px;
+    padding: 12px 16px;
+    transition: all 0.3s ease;
+
+    .q-icon {
+      color: #1976d2;
+      transition: transform 0.3s ease;
+    }
+
+    &:hover {
+      background: rgba(25, 118, 210, 0.05);
+
+      .q-icon {
+        transform: scale(1.15);
+      }
+    }
+  }
+
+  :deep(.q-item__label) {
+    color: #2c3e50;
+    font-weight: 600;
+  }
+}
+
+.menu-item {
+  border-radius: 8px;
+  margin: 4px 8px;
+  padding: 10px 8px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 3px;
+    background: #1976d2;
+    transform: scaleY(0);
+    transition: transform 0.3s ease;
+  }
+
+  .q-icon {
+    color: #546e7a;
+    transition: all 0.3s ease;
+  }
+
+  :deep(.q-item__label) {
+    color: #37474f;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  &:hover {
+    background: linear-gradient(90deg, rgba(25, 118, 210, 0.08) 0%, rgba(25, 118, 210, 0.03) 100%);
+    transform: translateX(4px);
+
+    .q-icon {
+      color: #1976d2;
+      transform: scale(1.1);
+    }
+
+    &::before {
+      transform: scaleY(1);
+    }
+  }
+
+  &.q-item--active {
+    background: linear-gradient(90deg, rgba(25, 118, 210, 0.15) 0%, rgba(25, 118, 210, 0.05) 100%);
+
+    &::before {
+      transform: scaleY(1);
+    }
+
+    .q-icon {
+      color: #1976d2;
+    }
+
+    :deep(.q-item__label) {
+      color: #1976d2;
+      font-weight: 600;
+    }
+  }
+}
+
+.sync-item {
+  .q-icon {
+    animation: rotation 2s infinite linear;
+  }
+
+  &:hover .q-icon {
+    animation: rotation 1s infinite linear;
+  }
+}
+
+@keyframes rotation {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Mini state adjustments
+:deep(.q-drawer--mini) {
+  .elegant-separator {
+    margin: 8px 4px;
+  }
+
+  .menu-item {
+    margin: 4px;
+    padding: 8px 4px;
+  }
+}
+
+// Scrollbar styling
+:deep(.q-scrollarea__content) {
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(25, 118, 210, 0.3);
+    border-radius: 3px;
+    transition: background 0.3s ease;
+
+    &:hover {
+      background: rgba(25, 118, 210, 0.5);
     }
   }
 }

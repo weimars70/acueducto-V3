@@ -6,21 +6,29 @@
         <h4 style="margin: 0; font-weight: 700; color: #1f2937;">Recibos de Caja</h4>
         <div style="display: flex; gap: 12px;">
           <q-btn
-            @click="exportToExcel"
-            color="green-7"
+            outline
+            color="positive"
             icon="description"
-            label="Exportar Excel"
-            unelevated
+            label="Excel"
+            @click="exportToExcel"
+            no-caps
+            class="export-btn"
             :loading="exporting"
-          />
+          >
+            <q-tooltip>Exportar a Excel</q-tooltip>
+          </q-btn>
           <q-btn
-            @click="exportToPDF"
-            color="red-7"
+            outline
+            color="negative"
             icon="picture_as_pdf"
-            label="Exportar PDF"
-            unelevated
+            label="PDF"
+            @click="exportToPDF"
+            no-caps
+            class="export-btn"
             :loading="exporting"
-          />
+          >
+            <q-tooltip>Exportar a PDF</q-tooltip>
+          </q-btn>
         </div>
       </div>
 
@@ -552,5 +560,18 @@ onMounted(() => {
   font-weight: 600;
   font-size: 13px;
   color: #374151;
+}
+
+.export-btn {
+  min-width: 90px;
+  height: 36px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.export-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 </style>

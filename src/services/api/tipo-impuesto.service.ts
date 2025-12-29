@@ -3,6 +3,13 @@ import type { TipoImpuesto, CreateTipoImpuestoDto, UpdateTipoImpuestoDto } from 
 import type { PaginatedResponse } from '../../types/api';
 
 export const tipoImpuestoService = {
+    async getAll(empresaId?: number): Promise<TipoImpuesto[]> {
+        const params: any = { page: 1, limit: 1000 };
+        if (empresaId) params.empresaId = empresaId;
+        const response = await apiClient.get<{ data: TipoImpuesto[]; total: number }>('/tipo-impuesto/view', { params });
+        return response.data.data;
+    },
+
     async getTipoImpuestos(params: {
         nombre?: string;
         codigo?: number;

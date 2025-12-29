@@ -2,6 +2,13 @@ import { apiClient } from './client';
 import type { TipoRegimen, CreateTipoRegimenDto, UpdateTipoRegimenDto } from '../../types/tipo-regimen';
 
 export const tipoRegimenService = {
+    async getAll(empresaId?: number): Promise<TipoRegimen[]> {
+        const params: any = { page: 1, limit: 1000 };
+        if (empresaId) params.empresaId = empresaId;
+        const response = await apiClient.get<{ data: TipoRegimen[]; total: number }>('/tipo-regimen', { params });
+        return response.data.data;
+    },
+
     async getTipoRegimenes(params?: { page?: number; limit?: number; nombre?: string }) {
         const response = await apiClient.get<{ data: TipoRegimen[]; total: number }>('/tipo-regimen', { params });
         return response.data;

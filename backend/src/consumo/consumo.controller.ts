@@ -94,8 +94,25 @@ export class ConsumoController {
 
   @Get(':id')
   async findOne(@Param('id') id: string, @Request() req: any) {
+    console.log('🎯 Controller - GET /consumo/:id llamado');
+    console.log('📥 Parámetros:', {
+      id,
+      idType: typeof id,
+      userId: req.user?.email,
+      empresaId: req.user?.empresaId
+    });
+
     const empresaId = req.user.empresaId;
-    return this.consumoService.findOne(parseInt(id, 10), empresaId);
+    console.log('🔄 Llamando a consumoService.findOne...');
+
+    try {
+      const result = await this.consumoService.findOne(parseInt(id, 10), empresaId);
+      console.log('✅ Controller - Resultado obtenido exitosamente');
+      return result;
+    } catch (error) {
+      console.error('❌ Controller - Error al obtener consumo:', error);
+      throw error;
+    }
   }
 
   @Post()

@@ -2,13 +2,61 @@
 <template>
   <div class="q-pa-sm">
     <div class="row q-col-gutter-xs">
-      <!-- Fecha, Mes y Año -->
-      <div class="col-12 q-mb-xs">
-        <DateFields v-model="formData" />
+      <!-- Año y Mes en mobile ocupan toda la fila -->
+      <div class="col-6 col-sm-3 col-md-2 q-mb-xs">
+        <q-select
+          :model-value="formData.year"
+          :options="yearOptions"
+          label="Año"
+          outlined
+          dense
+          emit-value
+          map-options
+          @update:model-value="value => formData.year = value"
+        />
+      </div>
+
+      <div class="col-6 col-sm-3 col-md-2 q-mb-xs">
+        <q-select
+          :model-value="formData.mes"
+          :options="months"
+          label="Mes"
+          outlined
+          dense
+          option-value="text"
+          option-label="text"
+          emit-value
+          map-options
+          @update:model-value="value => formData.mes = value"
+        />
+      </div>
+
+      <!-- Fecha y Código en la misma fila en mobile -->
+      <div class="col-6 col-sm-3 col-md-3 q-mb-xs">
+        <q-input
+          :model-value="formData.fecha"
+          label="Fecha"
+          outlined
+          dense
+          readonly
+          @update:model-value="value => formData.fecha = value"
+        >
+          <template v-slot:append>
+            <q-icon name="event" class="cursor-pointer">
+              <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                <q-date
+                  :model-value="formData.fecha"
+                  mask="YYYY-MM-DD"
+                  @update:model-value="value => formData.fecha = value"
+                />
+              </q-popup-proxy>
+            </q-icon>
+          </template>
+        </q-input>
       </div>
 
       <!-- Código de Instalación -->
-      <div class="col-6 col-sm-6 col-md-3 q-mb-xs">
+      <div class="col-6 col-sm-3 col-md-3 q-mb-xs">
         <InstallationCodeField
           ref="codigoRef"
           @installation-found="onInstallationFound"
@@ -29,16 +77,15 @@
         />
       </div>
 
-      <!-- Sector -->
-      <div class="col-12 col-sm-6 col-md-3 q-mb-xs">
+      <!-- Sector y Medidor en la misma fila en mobile -->
+      <div class="col-6 col-sm-6 col-md-3 q-mb-xs">
         <ReadonlyField
           v-model="formData.sector"
           label="Sector"
         />
       </div>
 
-      <!-- Medidor -->
-      <div class="col-12 col-sm-6 col-md-2 q-mb-xs">
+      <div class="col-6 col-sm-6 col-md-2 q-mb-xs">
         <ReadonlyField
           v-model="formData.medidor"
           label="Medidor"
@@ -53,50 +100,35 @@
         />
       </div>
 
-      <!-- Foto del Medidor -->
-      <div class="col-12 q-mb-xs">
+      <!-- Preview de imagen capturada (solo si existe) -->
+      <div v-if="capturedImage" class="col-12 q-mb-xs">
         <div class="photo-section">
           <div class="section-header q-mb-sm">
             <q-icon name="photo_camera" size="20px" color="primary" />
             <span class="section-title q-ml-sm">Foto del Medidor</span>
           </div>
 
-          <div class="photo-capture-container">
-            <!-- Botón para capturar foto -->
-            <q-btn
-              v-if="!capturedImage"
-              :loading="isCapturing"
-              @click="takePhoto"
-              color="primary"
-              icon="camera_alt"
-              label="Tomar Foto"
-              style="width: 100%; height: 52px;"
-              class="modern-button"
-            />
-
-            <!-- Preview de imagen capturada -->
-            <div v-else class="image-preview-container">
-              <q-img
-                :src="getDataUrl(capturedImage)"
-                :ratio="16/9"
-                style="border-radius: 12px; max-height: 300px;"
-                fit="contain"
-              >
-                <div class="absolute-top-right" style="padding: 8px;">
-                  <q-btn
-                    round
-                    dense
-                    color="negative"
-                    icon="close"
-                    size="sm"
-                    @click="clearPhoto"
-                  />
-                </div>
-              </q-img>
-              <div class="text-caption text-center q-mt-sm text-grey-7">
-                <q-icon name="check_circle" color="positive" size="16px" />
-                Foto capturada
+          <div class="image-preview-container">
+            <q-img
+              :src="getDataUrl(capturedImage)"
+              :ratio="16/9"
+              style="border-radius: 12px; max-height: 300px;"
+              fit="contain"
+            >
+              <div class="absolute-top-right" style="padding: 8px;">
+                <q-btn
+                  round
+                  dense
+                  color="negative"
+                  icon="close"
+                  size="sm"
+                  @click="clearPhoto"
+                />
               </div>
+            </q-img>
+            <div class="text-caption text-center q-mt-sm text-grey-7">
+              <q-icon name="check_circle" color="positive" size="16px" />
+              Foto capturada
             </div>
           </div>
         </div>
@@ -145,7 +177,7 @@
         />
       </div>
 
-      <!-- Cobros Adicionales - Hidden on mobile/tablet -->
+      <!-- Cobros Adicionales - Ocultos en mobile -->
       <div class="col-12 col-md-6 q-mb-xs hide-on-mobile">
         <q-input
           ref="otrosCobrosRef"
@@ -169,49 +201,22 @@
         />
       </div>
 
-      <!-- Cobros Adicionales - Hidden on mobile -->
-      <div class="col-12 hide-on-mobile q-mb-xs">
-        <q-btn
-          label="Mostrar cobros adicionales"
-          color="primary"
-          flat
-          @click="showAdditionalCharges = !showAdditionalCharges"
-          class="full-width"
-          :icon-right="showAdditionalCharges ? 'expand_less' : 'expand_more'"
-        />
-        
-        <q-slide-transition>
-          <div v-show="showAdditionalCharges">
-            <div class="row q-col-gutter-xs q-mt-xs">
-              <div class="col-12 col-sm-6 q-mb-xs">
-                <q-input
-                  ref="otrosCobrosRef"
-                  v-model="formData.otros_cobros"
-                  label="Otros Cobros"
-                  type="number"
-                  outlined
-                  dense
-                  @keyup="handleOtrosCobrosKeyup"
-                />
-              </div>
-
-              <div class="col-12 col-sm-6 q-mb-xs">
-                <q-input
-                  ref="reconexionRef"
-                  v-model="formData.reconexion"
-                  label="Reconexión"
-                  type="number"
-                  outlined
-                  dense
-                />
-              </div>
-            </div>
-          </div>
-        </q-slide-transition>
-      </div>
-
       <!-- Botones -->
       <div class="col-12 row justify-end q-gutter-sm q-mt-sm">
+        <!-- Botón de foto (antes de Cancelar) -->
+        <q-btn
+          v-if="!capturedImage"
+          :loading="isCapturing"
+          @click="takePhoto"
+          color="primary"
+          icon="camera_alt"
+          :label="$q.screen.xs ? '' : 'Foto'"
+          outline
+          class="photo-btn"
+        >
+          <q-tooltip v-if="$q.screen.xs">Tomar Foto</q-tooltip>
+        </q-btn>
+
         <q-btn
           label="Cancelar"
           color="grey-7"
@@ -230,22 +235,6 @@
         />
       </div>
     </div>
-
-    <!-- Floating Voice Button -->
-    <q-btn
-      v-if="isVoiceSupported && mode !== 'edit'"
-      fab
-      :icon="isListening ? 'mic' : 'mic_none'"
-      :color="isListening ? 'red' : 'primary'"
-      class="voice-fab"
-      :class="{ 'mic-pulse': isListening }"
-      @click="toggleVoice"
-      size="lg"
-    >
-      <q-tooltip>
-        {{ isListening ? 'Detener comandos de voz' : 'Activar comandos de voz' }}
-      </q-tooltip>
-    </q-btn>
   </div>
 </template>
 
@@ -255,7 +244,6 @@ import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import InstallationCodeField from './fields/InstallationCodeField.vue';
 import ReadonlyField from './fields/ReadonlyField.vue';
-import DateFields from './fields/DateFields.vue';
 import { getCurrentDate, getCurrentMonth, getCurrentYear, months } from '../../utils/dates';
 import { useConsumptionForm } from '../../composables/useConsumptionForm';
 import { useVoiceInput } from '../../composables/useVoiceInput';
@@ -275,11 +263,20 @@ const codigoRef = ref(null);
 const lecturaActualRef = ref(null);
 const otrosCobrosRef = ref(null);
 const reconexionRef = ref(null);
-const showAdditionalCharges = ref(false);
 
 const { formData, updateConsumo, saveConsumption } = useConsumptionForm(props.mode);
 const { status: voiceStatus, isSupported: isVoiceSupported, isListening, toggleListening } = useVoiceInput();
 const { capturedImage, isCapturing, takePhoto, clearPhoto, getDataUrl } = useCamera();
+
+// Opciones de años
+const currentYear = new Date().getFullYear();
+const yearOptions = computed(() => {
+  const result = [];
+  for (let i = currentYear; i >= currentYear - 5; i--) {
+    result.push(i);
+  }
+  return result;
+});
 
 // Inicializar valores por defecto solo en modo create
 if (props.mode !== 'edit') {
@@ -507,6 +504,14 @@ defineExpose({
 }
 
 // Button hover effects
+.photo-btn {
+  &:hover {
+    background: #e3f2fd !important;
+    border-color: #1976d2 !important;
+    color: #1565c0 !important;
+  }
+}
+
 .cancel-btn {
   &:hover {
     background: #fff4e6 !important;
@@ -523,45 +528,6 @@ defineExpose({
   }
 }
 
-.mic-pulse {
-  animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-  0% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.7;
-    transform: scale(1.1);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-// Floating voice button
-.voice-fab {
-  position: fixed;
-  bottom: 80px;
-  right: 20px;
-  z-index: 1000;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
-
-  &:hover {
-    transform: scale(1.1);
-  }
-}
-
-// En mobile, posicionar más arriba para evitar conflictos con el navegador
-@media (max-width: 768px) {
-  .voice-fab {
-    bottom: 90px;
-    right: 16px;
-  }
-}
 
 // Estilos para la sección de foto
 .photo-section {

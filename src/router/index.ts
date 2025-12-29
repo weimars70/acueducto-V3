@@ -202,6 +202,22 @@ const routes = [
         component: () => import('../pages/EnviarDianPage.vue')
       },
       {
+        path: '/instalaciones',
+        name: 'instalaciones',
+        component: () => import('../pages/InstallacionesPage.vue')
+      },
+      {
+        path: '/instalaciones/new',
+        name: 'new-instalacion',
+        component: () => import('../pages/NewInstalacionPage.vue')
+      },
+      {
+        path: '/instalaciones/edit/:codigo',
+        name: 'edit-instalacion',
+        component: () => import('../pages/EditInstalacionPage.vue'),
+        props: true
+      },
+      {
         path: '/enviar-facturas-masivo',
         name: 'enviar-facturas-masivo',
         component: () => import('../pages/EnviarFacturasMasivoPage.vue')

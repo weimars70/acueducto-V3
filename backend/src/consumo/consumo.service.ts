@@ -47,24 +47,76 @@ export class ConsumoService implements OnModuleInit {
   }
 
   async findOne(id: number, empresaId: number) {
+    console.log('🔍 findOne - Iniciando búsqueda de consumo');
+    console.log('📊 Parámetros recibidos:', { id, empresaId, idType: typeof id, empresaIdType: typeof empresaId });
 
     try {
       if (isNaN(id) || !Number.isInteger(id)) {
+        console.error('❌ ID inválido:', id);
         throw new Error('El ID debe ser un número entero válido');
       }
 
-      const consumption = await this.consumoRepository
-        .createQueryBuilder('consumo')
-        .where('consumo.codigo = :id', { id })
-        .andWhere('consumo.empresa_id = :empresaId', { empresaId })
-        .getOne();
+      console.log('🔎 Ejecutando consulta SQL...');
+      // Consultar con JOIN para obtener toda la información
+      const result = await this.consumoRepository.query(
+        `SELECT
+          c.codigo,
+          c.instalacion,
+          i.nombre,
+          c.lectura,
+          c.fecha,
+          c.mes,
+          c.year,
+          c.mes as mes_codigo,
+          c.consumo,
+          c.medidor,
+          c.otros_cobros,
+          c.reconexion,
+          c.facturado,
+          c.imagen_url,
+          i.sector as sector,
+          i.direccion,
+          c.usuario,
+          c.latitud,
+          c.longitud
+        FROM consumo c
+        LEFT JOIN instalaciones i ON c.instalacion = i.codigo AND i.empresa_id = c.empresa_id
+        WHERE c.codigo = $1 AND c.empresa_id = $2`,
+        [id, empresaId]
+      );
 
-      if (!consumption) {
+      console.log('📦 Resultado de consulta:', {
+        found: result?.length > 0,
+        resultLength: result?.length,
+        firstRecord: result?.[0] ? 'Existe' : 'No existe'
+      });
+
+      if (!result || result.length === 0) {
+        console.error('❌ No se encontró el consumo');
         throw new Error(`Consumo con ID ${id} no encontrado`);
       }
 
-      return consumption;
+      console.log('📈 Obteniendo lectura anterior y promedio...');
+      // Obtener lectura anterior y promedio
+      const previousReading = await this.getPreviousReading(
+        result[0].instalacion,
+        result[0].codigo,
+        empresaId
+      );
+
+      console.log('✅ Lectura anterior obtenida:', previousReading);
+
+      const finalResult = {
+        ...result[0],
+        lectura_anterior: previousReading.lectura_anterior,
+        promedio: previousReading.promedio
+      };
+
+      console.log('✅ findOne completado exitosamente');
+      return finalResult;
     } catch (error) {
+      console.error('❌ Error en findOne:', error);
+      console.error('Stack trace:', error.stack);
       throw new Error(`Error al obtener consumo: ${error.message}`);
     }
   }

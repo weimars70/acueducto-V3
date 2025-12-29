@@ -3,7 +3,9 @@ import type { Estrato, CreateEstratoDto, UpdateEstratoDto } from '../../types/es
 
 export const estratosService = {
     async getAll(empresaId?: number): Promise<Estrato[]> {
-        const response = await apiClient.get('/estratos', { params: { empresaId } });
+        const params: any = {};
+        if (empresaId) params.empresaId = empresaId;
+        const response = await apiClient.get('/estratos', { params });
         return response.data;
     },
 

@@ -2,6 +2,17 @@ import { apiClient } from './client';
 import type { CentroCostos, CreateCentroCostosDto, UpdateCentroCostosDto } from '../../types/centro-costos';
 
 export const centroCostosService = {
+  async getAll(empresaId?: number): Promise<CentroCostos[]> {
+    try {
+      const params: any = {};
+      if (empresaId) params.empresaId = empresaId;
+      const { data } = await apiClient.get<CentroCostos[]>(`/centro-costos`, { params });
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   async getByEmpresa(empresaId: number): Promise<CentroCostos[]> {
     try {
       const { data } = await apiClient.get<CentroCostos[]>(`/centro-costos`, {

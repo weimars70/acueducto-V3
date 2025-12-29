@@ -4,7 +4,7 @@ import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
 import { io } from 'socket.io-client';
 import { consumptionService } from '../services/api';
-import { exportToExcel } from '../utils/export';
+import { useExport } from '../composables/useExport';
 import { useScreenSize } from '../composables/useScreenSize';
 import ViewToggle from '../components/ViewToggle.vue';
 import ConsumptionGrid from '../components/ConsumptionGrid.vue';
@@ -14,6 +14,7 @@ import type { Consumption } from '../types/consumption';
 
 const $q = useQuasar();
 const router = useRouter();
+const { exportToExcel, exportToPDF } = useExport();
 const { isMobile } = useScreenSize();
 const view = ref<'grid' | 'list'>(isMobile.value ? 'grid' : 'list');
 const consumptions = ref<Consumption[]>([]);
@@ -103,20 +104,42 @@ const loadData = async () => {
   }
 };
 
-const handleExport = () => {
+const handleExportExcel = () => {
   try {
-    exportToExcel(consumptions.value);
-    $q.notify({
-      type: 'positive',
-      message: 'Exportación exitosa'
-    });
+    const exportColumns = [
+      { field: 'codigo', label: 'Código' },
+      { field: 'instalacion', label: 'Instalación' },
+      { field: 'nombre', label: 'Nombre' },
+      { field: 'lectura', label: 'Lectura' },
+      { field: 'fecha', label: 'Fecha' },
+      { field: 'mes', label: 'Mes' },
+      { field: 'year', label: 'Año' },
+      { field: 'consumo', label: 'Consumo' },
+      { field: 'medidor', label: 'Medidor' },
+      { field: 'facturado', label: 'Facturado' }
+    ];
+    exportToExcel(consumptions.value, exportColumns, 'consumos');
+    $q.notify({ type: 'positive', message: 'Exportado a Excel exitosamente' });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Error al exportar';
-    console.error('Error en exportación:', errorMessage);
-    $q.notify({
-      type: 'negative',
-      message: errorMessage
-    });
+    $q.notify({ type: 'negative', message: 'Error al exportar a Excel' });
+  }
+};
+
+const handleExportPDF = () => {
+  try {
+    const exportColumns = [
+      { field: 'codigo', label: 'Código' },
+      { field: 'instalacion', label: 'Instalación' },
+      { field: 'nombre', label: 'Nombre' },
+      { field: 'lectura', label: 'Lectura' },
+      { field: 'fecha', label: 'Fecha' },
+      { field: 'consumo', label: 'Consumo' },
+      { field: 'facturado', label: 'Facturado' }
+    ];
+    exportToPDF(consumptions.value, exportColumns, 'consumos', 'Listado de Consumos');
+    $q.notify({ type: 'positive', message: 'Exportado a PDF exitosamente' });
+  } catch (error) {
+    $q.notify({ type: 'negative', message: 'Error al exportar a PDF' });
   }
 };
 
@@ -216,20 +239,37 @@ onUnmounted(() => {
             <div class="row items-center no-wrap q-gutter-x-xs">
               <ViewToggle v-model="view" />
               <q-btn
-                color="primary"
-                :icon-right="isMobile ? undefined : 'download'"
-                :icon="isMobile ? 'download' : undefined"
-                :label="isMobile ? undefined : 'Exportar'"
-                dense
-                @click="handleExport"
-              />
+                outline
+                color="positive"
+                icon="description"
+                :label="isMobile ? undefined : 'Excel'"
+                @click="handleExportExcel"
+                no-caps
+                class="export-btn"
+                :size="isMobile ? 'sm' : 'md'"
+              >
+                <q-tooltip>Exportar a Excel</q-tooltip>
+              </q-btn>
               <q-btn
+                outline
+                color="negative"
+                icon="picture_as_pdf"
+                :label="isMobile ? undefined : 'PDF'"
+                @click="handleExportPDF"
+                no-caps
+                class="export-btn"
+                :size="isMobile ? 'sm' : 'md'"
+              >
+                <q-tooltip>Exportar a PDF</q-tooltip>
+              </q-btn>
+              <q-btn
+                unelevated
                 color="primary"
-                :icon-right="isMobile ? undefined : 'add'"
-                :icon="isMobile ? 'add' : undefined"
+                icon="add"
                 :label="isMobile ? undefined : 'Nuevo'"
-                dense
                 @click="handleNewRecord"
+                class="action-btn"
+                :size="isMobile ? 'sm' : 'md'"
               />
             </div>
           </div>
@@ -313,11 +353,11 @@ onUnmounted(() => {
     .page-header .row {
       flex-wrap: wrap;
       row-gap: 8px;
-      
+
       .col {
         width: 100%;
       }
-      
+
       .actions-wrapper {
         width: 100%;
         justify-content: flex-end;
@@ -325,5 +365,26 @@ onUnmounted(() => {
       }
     }
   }
+}
+
+.export-btn {
+  min-width: 90px;
+  height: 36px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.export-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.action-btn {
+  height: 38px;
+  padding: 0 20px;
+  font-weight: 500;
+  font-size: 13px;
+  border-radius: 8px;
 }
 </style>

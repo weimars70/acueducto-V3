@@ -85,7 +85,7 @@ SELECT
     c.medidor,
     c.otros_cobros,
     c.reconexion,
-    c.facturada as facturado,
+    c.facturado,
     c.empresa_id
 FROM consumo c
 LEFT JOIN instalaciones i ON c.instalacion = i.codigo;

@@ -27,30 +27,23 @@ const handleEdit = (consumption: Consumption) => {
 </script>
 
 <template>
-  <div class="row q-col-gutter-sm">
+  <div class="row q-col-gutter-md">
     <div v-for="item in items" :key="item.codigo" class="col-12 col-sm-6 col-md-4">
       <q-card class="consumption-card">
-        <!-- Encabezado -->
-        <q-card-section class="bg-primary text-white q-pa-sm">
-          <div class="row items-center justify-between">
+        <!-- Encabezado con gradiente -->
+        <q-card-section class="card-header q-pa-md">
+          <div class="row items-start justify-between no-wrap">
             <div class="col">
-              <div class="text-subtitle1">{{ item.nombre }}</div>
-              <div class="text-caption row items-center q-gutter-x-sm">
-                <span class="flex items-center">
-                  <q-icon name="tag" size="xs" class="q-mr-xs text-green" />
-                  <span class="field-label">Código:</span>
+              <div class="customer-name">{{ item.nombre }}</div>
+              <div class="row items-center q-gutter-x-xs q-mt-xs">
+                <q-badge color="white" text-color="primary" class="info-badge">
+                  <q-icon name="tag" size="14px" class="q-mr-xs" />
                   {{ item.codigo }}
-                </span>
-                <span class="flex items-center">
-                  <q-icon name="home" size="xs" class="q-mr-xs text-green" />
-                  <span class="field-label">Instalación:</span>
+                </q-badge>
+                <q-badge color="white" text-color="primary" class="info-badge">
+                  <q-icon name="home" size="14px" class="q-mr-xs" />
                   {{ item.instalacion }}
-                </span>
-                <span class="flex items-center">
-                  <q-icon name="speed" size="xs" class="q-mr-xs text-green" />
-                  <span class="field-label">Medidor:</span>
-                  {{ item.medidor }}
-                </span>
+                </q-badge>
               </div>
             </div>
             <div class="col-auto">
@@ -60,96 +53,88 @@ const handleEdit = (consumption: Consumption) => {
                 dense
                 icon="edit"
                 color="white"
+                size="sm"
+                class="edit-btn"
                 @click="handleEdit(item)"
-              />
+              >
+                <q-tooltip>Editar</q-tooltip>
+              </q-btn>
             </div>
           </div>
         </q-card-section>
 
         <!-- Información principal -->
-        <q-card-section class="q-pa-sm">
-          <div class="row q-col-gutter-sm">
-            <!-- Dirección -->
-            <div class="col-12">
-              <div class="flex items-center">
-                <q-icon name="location_on" color="green" size="sm" class="q-mr-xs" />
-                <span class="field-label">Dirección:</span>
-                <span class="text-body2">{{ item.direccion }}</span>
-              </div>
+        <q-card-section class="card-body q-pa-md">
+          <!-- Info rápida -->
+          <div class="quick-info q-mb-md">
+            <div class="info-item">
+              <q-icon name="location_on" color="primary" size="16px" />
+              <span class="info-text">{{ item.direccion }}</span>
             </div>
-
-            <!-- Período -->
-            <div class="col-12">
-              <div class="flex items-center">
-                <q-icon name="event" color="green" size="sm" class="q-mr-xs" />
-                <span class="field-label">Período:</span>
-                <span class="text-body2">{{ item.mes }} {{ item.year }}</span>
-              </div>
+            <div class="info-item">
+              <q-icon name="event" color="primary" size="16px" />
+              <span class="info-text">{{ item.mes }} {{ item.year }}</span>
             </div>
-
-            <!-- Estado -->
-            <div class="col-12">
-              <div class="flex items-center">
-                <q-icon 
-                  :name="item.facturado ? 'check_circle' : 'pending'" 
-                  :color="item.facturado ? 'positive' : 'warning'" 
-                  size="sm" 
-                  class="q-mr-xs" 
-                />
-                <span class="field-label">Facturado:</span>
-                <span class="text-body2">{{ item.facturado ? 'Facturado' : 'Pendiente' }}</span>
-              </div>
+            <div class="info-item">
+              <q-chip
+                :color="item.facturado ? 'positive' : 'orange'"
+                text-color="white"
+                dense
+                size="sm"
+                :icon="item.facturado ? 'check_circle' : 'pending'"
+              >
+                {{ item.facturado ? 'Facturado' : 'Pendiente' }}
+              </q-chip>
             </div>
+          </div>
 
-            <!-- Lecturas -->
-            <div class="col-12 q-mt-sm">
-              <div class="text-subtitle2 text-grey-8">Lecturas</div>
-              <div class="row q-col-gutter-sm q-mt-xs">
-                <div class="col-6">
-                  <q-card flat bordered class="text-center bg-blue-1">
-                    <q-card-section class="q-pa-xs">
-                      <div class="text-caption">Lectura</div>
-                      <div class="text-h6 text-primary">{{ item.lectura }}</div>
-                    </q-card-section>
-                  </q-card>
+          <!-- Lecturas destacadas -->
+          <div class="readings-section">
+            <div class="row q-col-gutter-sm">
+              <div class="col-4">
+                <div class="reading-card reading-card-medidor">
+                  <q-icon name="speed" size="20px" class="reading-icon" />
+                  <div class="reading-label">Medidor</div>
+                  <div class="reading-value">{{ item.medidor }}</div>
                 </div>
-                <div class="col-6">
-                  <q-card flat bordered class="text-center bg-green-1">
-                    <q-card-section class="q-pa-xs">
-                      <div class="text-caption">Consumo</div>
-                      <div class="text-h6 text-positive">{{ item.consumo }}</div>
-                    </q-card-section>
-                  </q-card>
+              </div>
+              <div class="col-4">
+                <div class="reading-card reading-card-lectura">
+                  <q-icon name="visibility" size="20px" class="reading-icon" />
+                  <div class="reading-label">Lectura</div>
+                  <div class="reading-value">{{ item.lectura }}</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="reading-card reading-card-consumo">
+                  <q-icon name="water_drop" size="20px" class="reading-icon" />
+                  <div class="reading-label">Consumo</div>
+                  <div class="reading-value">{{ item.consumo }}</div>
                 </div>
               </div>
             </div>
+          </div>
 
-            <!-- Cobros Adicionales -->
-            <template v-if="item.otros_cobros || item.reconexion">
-              <div class="col-12 q-mt-sm">
-                <div class="text-subtitle2 text-grey-8">Cobros Adicionales</div>
-                <div class="row q-col-gutter-x-md q-mt-xs">
-                  <div v-if="item.otros_cobros" class="col-6">
-                    <div class="text-body2">
-                      <div class="flex items-center">
-                        <q-icon name="attach_money" color="green" size="sm" class="q-mr-xs" />
-                        Otros Cobros
-                      </div>
-                      <div class="text-caption">{{ formatCurrency(item.otros_cobros) }}</div>
-                    </div>
-                  </div>
-                  <div v-if="item.reconexion" class="col-6">
-                    <div class="text-body2">
-                      <div class="flex items-center">
-                        <q-icon name="power" color="green" size="sm" class="q-mr-xs" />
-                        Reconexión
-                      </div>
-                      <div class="text-caption">{{ formatCurrency(item.reconexion) }}</div>
-                    </div>
-                  </div>
+          <!-- Cobros Adicionales -->
+          <div v-if="item.otros_cobros || item.reconexion" class="additional-charges q-mt-md">
+            <div class="charges-header">
+              <q-icon name="attach_money" size="16px" color="grey-7" />
+              <span class="charges-title">Cobros Adicionales</span>
+            </div>
+            <div class="row q-col-gutter-xs q-mt-xs">
+              <div v-if="item.otros_cobros" class="col-6">
+                <div class="charge-item">
+                  <div class="charge-label">Otros</div>
+                  <div class="charge-value">{{ formatCurrency(item.otros_cobros) }}</div>
                 </div>
               </div>
-            </template>
+              <div v-if="item.reconexion" class="col-6">
+                <div class="charge-item">
+                  <div class="charge-label">Reconexión</div>
+                  <div class="charge-value">{{ formatCurrency(item.reconexion) }}</div>
+                </div>
+              </div>
+            </div>
           </div>
         </q-card-section>
       </q-card>
@@ -159,17 +144,229 @@ const handleEdit = (consumption: Consumption) => {
 
 <style lang="scss" scoped>
 .consumption-card {
-  transition: all 0.3s ease;
-  
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 2px 6px 0 rgba(0,0,0,.1);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   }
 }
 
-.field-label {
-  font-weight: 500;
-  margin-right: 4px;
-  opacity: 0.9;
+.card-header {
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+  color: white;
+
+  .customer-name {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+
+  .info-badge {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
+
+  .edit-btn {
+    background: rgba(255, 255, 255, 0.15);
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: scale(1.1);
+    }
+  }
+}
+
+.card-body {
+  background: #fafbfc;
+}
+
+.quick-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  .info-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .info-text {
+      font-size: 13px;
+      color: #5f6368;
+      line-height: 1.4;
+    }
+  }
+}
+
+.readings-section {
+  .reading-card {
+    background: white;
+    border-radius: 12px;
+    padding: 12px 8px;
+    text-align: center;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+
+    .reading-icon {
+      opacity: 0.7;
+      margin-bottom: 4px;
+    }
+
+    .reading-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+      opacity: 0.7;
+    }
+
+    .reading-value {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  .reading-card-medidor {
+    border-color: #e3f2fd;
+
+    .reading-icon, .reading-label {
+      color: #1976d2;
+    }
+
+    .reading-value {
+      color: #1565c0;
+    }
+  }
+
+  .reading-card-lectura {
+    border-color: #f3e5f5;
+
+    .reading-icon, .reading-label {
+      color: #7b1fa2;
+    }
+
+    .reading-value {
+      color: #6a1b9a;
+    }
+  }
+
+  .reading-card-consumo {
+    border-color: #e8f5e9;
+
+    .reading-icon, .reading-label {
+      color: #2e7d32;
+    }
+
+    .reading-value {
+      color: #1b5e20;
+    }
+  }
+}
+
+.additional-charges {
+  background: white;
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+
+  .charges-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+
+    .charges-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #5f6368;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  }
+
+  .charge-item {
+    background: #f5f5f5;
+    border-radius: 8px;
+    padding: 8px;
+
+    .charge-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #757575;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .charge-value {
+      font-size: 13px;
+      font-weight: 700;
+      color: #424242;
+    }
+  }
+}
+
+// Mobile optimizations
+@media (max-width: 599px) {
+  .card-header {
+    .customer-name {
+      font-size: 15px;
+    }
+
+    .info-badge {
+      font-size: 10px;
+      padding: 3px 6px;
+    }
+  }
+
+  .quick-info {
+    gap: 6px;
+
+    .info-text {
+      font-size: 12px;
+    }
+  }
+
+  .reading-card {
+    padding: 10px 6px;
+
+    .reading-icon {
+      font-size: 18px !important;
+    }
+
+    .reading-label {
+      font-size: 9px;
+    }
+
+    .reading-value {
+      font-size: 15px;
+    }
+  }
+
+  .additional-charges {
+    padding: 10px;
+
+    .charge-item {
+      padding: 6px;
+
+      .charge-value {
+        font-size: 12px;
+      }
+    }
+  }
 }
 </style>

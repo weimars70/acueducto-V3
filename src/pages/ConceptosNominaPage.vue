@@ -443,3 +443,19 @@ onMounted(() => {
     </div>
   </q-page>
 </template>
+
+
+<style scoped>
+.export-btn {
+  min-width: 90px;
+  height: 36px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.export-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+</style>

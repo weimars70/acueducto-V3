@@ -42,32 +42,73 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="row items-center q-gutter-x-sm">
-    <YearSelect v-model="filters.year" class="year-select" />
-    <MonthSelect v-model="filters.mes_codigo" class="month-select" />
-    <SearchInput v-model="filters.nombre" />
-    <InstallationInput v-model="filters.instalacion" />
-    <div class="filter-actions">
-      <q-btn
-        flat
-        dense
-        color="negative"
-        icon="close"
-        @click="clearFilters"
-      />
-      <q-btn
-        dense
-        unelevated
-        color="primary"
-        icon="filter_alt"
-        label="Filtrar"
-        @click="applyFilters"
-      />
+  <div class="filters-container">
+    <div class="filters-row">
+      <div class="date-filters">
+        <YearSelect v-model="filters.year" class="year-select" />
+        <MonthSelect v-model="filters.mes_codigo" class="month-select" />
+      </div>
+
+      <div class="search-filters">
+        <SearchInput v-model="filters.nombre" class="search-input" />
+        <InstallationInput v-model="filters.instalacion" class="installation-input" />
+      </div>
+
+      <div class="filter-actions">
+        <q-btn
+          flat
+          dense
+          round
+          color="negative"
+          icon="close"
+          size="sm"
+          @click="clearFilters"
+        >
+          <q-tooltip>Limpiar filtros</q-tooltip>
+        </q-btn>
+        <q-btn
+          dense
+          unelevated
+          color="primary"
+          icon="filter_alt"
+          label="Filtrar"
+          size="sm"
+          class="filter-btn"
+          @click="applyFilters"
+        />
+      </div>
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
+.filters-container {
+  background: white;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.filters-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.date-filters {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.search-filters {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+  min-width: 200px;
+}
+
 .year-select {
   width: 100px;
 }
@@ -76,13 +117,85 @@ onMounted(() => {
   width: 130px;
 }
 
+.search-input,
+.installation-input {
+  flex: 1;
+  min-width: 120px;
+}
+
 .filter-actions {
   display: flex;
-  gap: 2px;
-  margin-left: 2px;
-  
-  .q-btn {
-    min-height: 20px;
+  gap: 4px;
+  flex-shrink: 0;
+
+  .filter-btn {
+    border-radius: 8px;
+    padding: 0 16px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+    }
+  }
+}
+
+// Mobile layout
+@media (max-width: 768px) {
+  .filters-container {
+    padding: 10px;
+  }
+
+  .filters-row {
+    gap: 6px;
+  }
+
+  .date-filters {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .year-select {
+    flex: 1;
+  }
+
+  .month-select {
+    flex: 1;
+  }
+
+  .search-filters {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .filter-actions {
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 4px;
+
+    .filter-btn {
+      flex: 1;
+      max-width: 120px;
+    }
+  }
+}
+
+// Extra small mobile
+@media (max-width: 450px) {
+  .search-filters {
+    flex-direction: column;
+
+    .search-input,
+    .installation-input {
+      width: 100%;
+    }
+  }
+
+  .filter-actions {
+    .filter-btn {
+      max-width: none;
+    }
   }
 }
 </style>
