@@ -1,10 +1,12 @@
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { saveAs } from 'file-saver';
 
 export interface ExportColumn {
     field: string;
     label: string;
+    align?: 'left' | 'center' | 'right';
 }
 
 export function useExport() {
@@ -14,7 +16,7 @@ export function useExport() {
             const excelData = data.map(row => {
                 const obj: any = {};
                 columns.forEach(col => {
-                    obj[col.label] = row[col.field] || '';
+                    obj[col.label] = row[col.field] === 0 ? 0 : (row[col.field] || '');
                 });
                 return obj;
             });
@@ -31,8 +33,12 @@ export function useExport() {
             }));
             ws['!cols'] = colWidths;
 
-            // Descargar archivo
-            XLSX.writeFile(wb, `${filename}.xlsx`);
+            // Generar el archivo como un Buffer
+            const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+            const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
+
+            // Descargar usando FileSaver para mayor compatibilidad
+            saveAs(blob, `${filename}.xlsx`);
         } catch (error) {
             console.error('Error al exportar a Excel:', error);
             throw new Error('Error al exportar a Excel');
@@ -55,14 +61,23 @@ export function useExport() {
             // Preparar datos para la tabla
             const headers = columns.map(col => col.label);
             const rows = data.map(row =>
-                columns.map(col => String(row[col.field] || ''))
+                columns.map(col => String(row[col.field] === 0 ? 0 : (row[col.field] || '')))
             );
+
+            // Determinar alineación por columna
+            const columnStyles: any = {};
+            columns.forEach((col, index) => {
+                if (col.align) {
+                    columnStyles[index] = { halign: col.align };
+                }
+            });
 
             // Generar tabla
             autoTable(doc, {
                 head: [headers],
                 body: rows,
                 startY: 28,
+                columnStyles: columnStyles,
                 styles: {
                     fontSize: 8,
                     cellPadding: 2,
@@ -78,8 +93,9 @@ export function useExport() {
                 margin: { top: 28 },
             });
 
-            // Descargar PDF
-            doc.save(`${filename}.pdf`);
+            // Descargar usando FileSaver para mayor compatibilidad
+            const pdfBlob = doc.output('blob');
+            saveAs(pdfBlob, `${filename}.pdf`);
         } catch (error) {
             console.error('Error al exportar a PDF:', error);
             throw new Error('Error al exportar a PDF');

@@ -33,6 +33,8 @@ export interface Instalacion {
   prefijo?: number;
   orden?: number;
   cliente?: number;
+  latitud?: number;
+  longitud?: number;
 }
 
 export const instalacionesService = {

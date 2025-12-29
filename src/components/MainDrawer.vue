@@ -234,6 +234,12 @@ const instalacionesItems = [
     label: 'Listado Instalaciones',
     route: '/instalaciones',
     closable: true,
+  },
+  {
+    icon: 'account_balance_wallet',
+    label: 'Saldos a Favor',
+    route: '/instalaciones/saldos-a-favor',
+    closable: true,
   }
 ];
 
@@ -242,6 +248,24 @@ const diferidoItems = [
     icon: 'schedule',
     label: 'Listado Diferidos',
     route: '/diferidos',
+    closable: true,
+  },
+  {
+    icon: 'handshake',
+    label: 'Cuotas Conexión',
+    route: '/diferidos/cuotas-conexion',
+    closable: true,
+  },
+  {
+    icon: 'speed',
+    label: 'Cuotas Medidor',
+    route: '/diferidos/cuotas-medidor',
+    closable: true,
+  },
+  {
+    icon: 'assignment',
+    label: 'Acuerdos de Pago',
+    route: '/diferidos/acuerdos-pago',
     closable: true,
   }
 ];
@@ -764,34 +788,6 @@ const handleSync = async () => {
           </q-item-section>
           <q-item-section>
             {{ item.label }}
-          </q-item-section>
-        </q-item>
-      </q-expansion-item>
-
-      <q-separator class="elegant-separator" v-if="!isFontanero" />
-
-      <!-- Instalaciones Section -->
-      <q-expansion-item
-        v-if="!isFontanero"
-        v-model="instalacionesExpanded"
-        icon="home"
-        label="Instalaciones"
-        header-class="text-weight-bold expansion-header"
-        class="menu-expansion"
-      >
-        <q-item
-          clickable
-          v-ripple
-          :active="router.currentRoute.value.path === '/instalaciones/saldos-a-favor'"
-          active-class="text-primary"
-          @click="navigateTo({ label: 'Saldos a Favor', route: '/instalaciones/saldos-a-favor', icon: 'account_balance_wallet', closable: true })"
-          class="menu-item q-pl-lg"
-        >
-          <q-item-section avatar>
-            <q-icon name="account_balance_wallet" />
-          </q-item-section>
-          <q-item-section>
-            Saldos a Favor
           </q-item-section>
         </q-item>
       </q-expansion-item>

@@ -1,10 +1,27 @@
 import { apiClient } from './client';
 import type { Diferido, CreateDiferidoDto, UpdateDiferidoDto } from '../../types/diferido';
+import type { CuotaConexion } from '../../types/cuotas-conexion';
+import type { AcuerdoPago } from '../../types/acuerdo-pago';
 
 export const diferidosService = {
     async getAll(empresaId?: number): Promise<Diferido[]> {
         const params = empresaId ? { empresaId } : {};
         const response = await apiClient.get<Diferido[]>('/diferidos', { params });
+        return response.data;
+    },
+
+    async getCuotasConexion(): Promise<CuotaConexion[]> {
+        const response = await apiClient.get<CuotaConexion[]>('/diferidos/cuotas-conexion');
+        return response.data;
+    },
+
+    async getCuotasMedidor(): Promise<CuotaConexion[]> {
+        const response = await apiClient.get<CuotaConexion[]>('/diferidos/cuotas-medidor');
+        return response.data;
+    },
+
+    async getAcuerdosPago(): Promise<AcuerdoPago[]> {
+        const response = await apiClient.get<AcuerdoPago[]>('/diferidos/acuerdos-pago');
         return response.data;
     },
 

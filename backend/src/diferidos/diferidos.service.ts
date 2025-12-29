@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { Diferido } from './entities/diferido.entity';
 import { CreateDiferidoDto } from './dto/create-diferido.dto';
 import { UpdateDiferidoDto } from './dto/update-diferido.dto';
@@ -10,7 +10,29 @@ export class DiferidosService {
     constructor(
         @InjectRepository(Diferido)
         private readonly diferidoRepository: Repository<Diferido>,
+        private readonly dataSource: DataSource,
     ) { }
+
+    async getCuotasConexion(empresaId: number): Promise<any[]> {
+        return this.dataSource.query(
+            `SELECT * FROM view_cuotas_conexion WHERE empresa_id = $1`,
+            [empresaId]
+        );
+    }
+
+    async getCuotasMedidor(empresaId: number): Promise<any[]> {
+        return this.dataSource.query(
+            `SELECT * FROM view_cuotas_medidor WHERE empresa_id = $1`,
+            [empresaId]
+        );
+    }
+
+    async getAcuerdosPago(empresaId: number): Promise<any[]> {
+        return this.dataSource.query(
+            `SELECT * FROM cuotas_diferidos WHERE empresa_id = $1`,
+            [empresaId]
+        );
+    }
 
     async create(createDto: CreateDiferidoDto): Promise<Diferido> {
         const diferido = this.diferidoRepository.create({

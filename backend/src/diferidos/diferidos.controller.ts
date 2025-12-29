@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Request, UseGuards } from '@nestjs/common';
 import { DiferidosService } from './diferidos.service';
 import { CreateDiferidoDto } from './dto/create-diferido.dto';
 import { UpdateDiferidoDto } from './dto/update-diferido.dto';
@@ -12,6 +12,24 @@ export class DiferidosController {
     @Post()
     create(@Body() createDto: CreateDiferidoDto) {
         return this.service.create(createDto);
+    }
+
+    @Get('cuotas-conexion')
+    async getCuotasConexion(@Request() req: any) {
+        const empresaId = req.user?.empresaId || req.user?.empresa_id;
+        return this.service.getCuotasConexion(empresaId);
+    }
+
+    @Get('cuotas-medidor')
+    async getCuotasMedidor(@Request() req: any) {
+        const empresaId = req.user?.empresaId || req.user?.empresa_id;
+        return this.service.getCuotasMedidor(empresaId);
+    }
+
+    @Get('acuerdos-pago')
+    async getAcuerdosPago(@Request() req: any) {
+        const empresaId = req.user?.empresaId || req.user?.empresa_id;
+        return this.service.getAcuerdosPago(empresaId);
     }
 
     @Get()

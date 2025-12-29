@@ -524,6 +524,21 @@ const routes = [
         component: () => import('../pages/EditDiferidoPage.vue'),
         props: true
       },
+      {
+        path: '/diferidos/cuotas-conexion',
+        name: 'cuotas-conexion',
+        component: () => import('../pages/CuotasConexionPage.vue')
+      },
+      {
+        path: '/diferidos/cuotas-medidor',
+        name: 'cuotas-medidor',
+        component: () => import('../pages/CuotasMedidorPage.vue')
+      },
+      {
+        path: '/diferidos/acuerdos-pago',
+        name: 'acuerdos-pago',
+        component: () => import('../pages/AcuerdosPagoPage.vue')
+      },
       // Estratos Routes
       {
         path: '/estratos',
@@ -754,7 +769,10 @@ router.beforeEach((to, from, next) => {
         { icon: 'badge', label: 'Empleados', route: '/empleados', closable: true },
         { icon: 'event', label: 'Períodos de Nómina', route: '/periodos-nomina', closable: true },
         { icon: 'description', label: 'Conceptos de Nómina', route: '/conceptos-nomina', closable: true },
-        { icon: 'payments', label: 'Nóminas', route: '/nominas', closable: true }
+        { icon: 'payments', label: 'Nóminas', route: '/nominas', closable: true },
+        { icon: 'handshake', label: 'Cuotas Conexión', route: '/diferidos/cuotas-conexion', closable: true },
+        { icon: 'speed', label: 'Cuotas Medidor', route: '/diferidos/cuotas-medidor', closable: true },
+        { icon: 'assignment', label: 'Acuerdos de Pago', route: '/diferidos/acuerdos-pago', closable: true }
       ];
 
       const menuItem = menuItems.find(item => item.route === to.path);

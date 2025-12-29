@@ -156,7 +156,8 @@ export class InstalacionesService {
         estrato_codigo, estrato_nombre, sector_codigo, sector_nombre, activo, marca_codigo, marca_nombre,
         uso_codigo, uso_nombre, prefijo, nombres, primer_apellido, segundo_apellido, factura_fisica, orden,
         email, dv, regimen, n_regimen, tipo_persona, n_tipo_persona, tipo_impuesto, n_tipo_impuesto, cliente, sector,
-        suscriptor, centro_costos, n_centro_costos, saldo_a_favor, empresa_id, enviar_factura_email, enviar_factura_whatsapp
+        suscriptor, centro_costos, n_centro_costos, saldo_a_favor, empresa_id, enviar_factura_email, enviar_factura_whatsapp,
+        latitud, longitud
         FROM view_instalaciones
         WHERE empresa_id = $1
       `;

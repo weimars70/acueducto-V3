@@ -201,21 +201,41 @@
                   @update:model-value="applyFilters"
                 />
 
-                <!-- Sin filtro para acciones -->
-                <div v-else-if="col.name === 'actions'" style="min-height: 40px;"></div>
-
-                <!-- Filtros deshabilitados para otras columnas -->
+                <!-- Filtro para Latitud -->
                 <q-input
-                  v-else
+                  v-else-if="col.name === 'latitud'"
+                  v-model="filters.latitud"
                   dense
                   outlined
                   placeholder="Buscar..."
-                  disable
+                  @keyup.enter="applyFilters"
+                  clearable
                 >
                   <template v-slot:append>
                     <q-icon name="search" />
                   </template>
                 </q-input>
+
+                <!-- Filtro para Longitud -->
+                <q-input
+                  v-else-if="col.name === 'longitud'"
+                  v-model="filters.longitud"
+                  dense
+                  outlined
+                  placeholder="Buscar..."
+                  @keyup.enter="applyFilters"
+                  clearable
+                >
+                  <template v-slot:append>
+                    <q-icon name="search" />
+                  </template>
+                </q-input>
+
+                <!-- Sin filtro para acciones -->
+                <div v-else-if="col.name === 'actions'" style="min-height: 40px;"></div>
+
+                <!-- Filtros deshabilitados para otras columnas -->
+                <div v-else style="min-height: 40px;"></div>
               </q-th>
             </q-tr>
           </template>
@@ -257,6 +277,18 @@
             </q-td>
           </template>
 
+          <template v-slot:body-cell-latitud="props">
+            <q-td :props="props">
+              {{ props.row.latitud }}
+            </q-td>
+          </template>
+
+          <template v-slot:body-cell-longitud="props">
+            <q-td :props="props">
+              {{ props.row.longitud }}
+            </q-td>
+          </template>
+
           <template v-slot:body-cell-activo="props">
             <q-td :props="props">
               <q-badge
@@ -287,11 +319,32 @@
               >
                 <q-tooltip>Editar instalación</q-tooltip>
               </q-btn>
+              <q-btn
+                v-if="props.row.latitud && props.row.longitud"
+                flat
+                dense
+                round
+                color="secondary"
+                icon="location_on"
+                @click="showMap(props.row)"
+                size="sm"
+                class="q-ml-xs"
+              >
+                <q-tooltip>Ver en mapa</q-tooltip>
+              </q-btn>
             </q-td>
           </template>
         </q-table>
       </div>
     </div>
+
+    <!-- Diálogo de Mapa -->
+    <MapPreviewDialog
+      v-model="mapDialog.show"
+      :latitud="mapDialog.lat"
+      :longitud="mapDialog.lng"
+      :nombre="mapDialog.nombre"
+    />
   </q-page>
 </template>
 
@@ -302,6 +355,7 @@ import { useQuasar } from 'quasar';
 import { apiClient } from '../services/api/client';
 import { useExport, type ExportColumn } from '../composables/useExport';
 import Sortable from 'sortablejs';
+import MapPreviewDialog from '../components/dialogs/MapPreviewDialog.vue';
 
 const router = useRouter();
 const $q = useQuasar();
@@ -316,6 +370,8 @@ const filters = ref({
   ident: '',
   telefono: '',
   direccion: '',
+  latitud: '',
+  longitud: '',
   activo: null as boolean | null
 });
 
@@ -325,6 +381,13 @@ const pagination = ref({
   page: 1,
   rowsPerPage: 10,
   rowsNumber: 0
+});
+
+const mapDialog = ref({
+  show: false,
+  lat: 0,
+  lng: 0,
+  nombre: ''
 });
 
 const activoOptions = [
@@ -403,6 +466,22 @@ const defaultColumns = [
     field: 'direccion',
     sortable: true,
     style: 'width: 13%;'
+  },
+  {
+    name: 'latitud',
+    label: 'Latitud',
+    align: 'left' as const,
+    field: 'latitud',
+    sortable: true,
+    style: 'width: 8%;'
+  },
+  {
+    name: 'longitud',
+    label: 'Longitud',
+    align: 'left' as const,
+    field: 'longitud',
+    sortable: true,
+    style: 'width: 8%;'
   },
   {
     name: 'activo',
@@ -486,6 +565,8 @@ const loadInstalaciones = async () => {
         nombre: filters.value.nombre || undefined,
         ident: filters.value.ident || undefined,
         direccion: filters.value.direccion || undefined,
+        latitud: filters.value.latitud || undefined,
+        longitud: filters.value.longitud || undefined,
         activo: filters.value.activo !== null ? filters.value.activo : undefined
       }
     });
@@ -627,6 +708,8 @@ const exportColumns: ExportColumn[] = [
   { field: 'telefono', label: 'Teléfono' },
   { field: 'estrato_nombre', label: 'Estrato' },
   { field: 'direccion', label: 'Dirección' },
+  { field: 'latitud', label: 'Latitud' },
+  { field: 'longitud', label: 'Longitud' },
   { field: 'activo', label: 'Activo' },
   { field: 'n_centro_costos', label: 'Centro Costos' },
   { field: 'saldo_a_favor', label: 'Saldo A Favor' }
@@ -708,6 +791,15 @@ const handleNew = () => {
 
 const handleEdit = (codigo: number) => {
   router.push(`/instalaciones/edit/${codigo}`);
+};
+
+const showMap = (row: any) => {
+  mapDialog.value = {
+    show: true,
+    lat: parseFloat(row.latitud),
+    lng: parseFloat(row.longitud),
+    nombre: row.nombre
+  };
 };
 
 onMounted(async () => {
