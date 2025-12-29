@@ -180,7 +180,7 @@ const handleViewImage = async (row: Consumption) => {
 };
 
 const setupSocketConnection = () => {
-  socket.value = io('http://108.181.193.178:3007', {
+  socket.value = io('http://2.58.80.90:3007', {
     transports: ['websocket'],
     autoConnect: true
   });
