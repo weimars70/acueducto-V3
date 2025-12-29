@@ -15,22 +15,17 @@ export const consumptionService = {
   }): Promise<PaginatedResponse<Consumption>> {
     try {
       const { page, limit, ...filters } = params;
-      const queryParams = new URLSearchParams();
+      const queryParams: Record<string, any> = {};
 
-      if (page !== undefined) {
-        queryParams.append('page', page.toString());
-      }
-
-      if (limit !== undefined) {
-        queryParams.append('limit', limit.toString());
-      }
+      if (page !== undefined) queryParams.page = page;
+      if (limit !== undefined) queryParams.limit = limit;
 
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== null && value !== undefined && value !== '') {
-          queryParams.append(key, value.toString());
+          queryParams[key] = value;
         }
       });
-      console.log('📋 Antes de hacer GET /consumo/view con queryParams:', queryParams.toString());
+      console.log('📋 Antes de hacer GET /consumo/view con queryParams:', queryParams);
 
       const { data } = await apiClient.get<PaginatedResponse<Consumption>>('/consumo/view', {
         params: queryParams
@@ -69,8 +64,8 @@ export const consumptionService = {
       };
 
       return normalizedData;
-    } catch (error) {
-      if (error.isConnectionError) {
+    } catch (error: any) {
+      if (error?.isConnectionError) {
         const localData = await storageService.getConsumptionById(id);
         if (localData) {
           return localData;
@@ -88,8 +83,8 @@ export const consumptionService = {
 
       const { data } = await apiClient.post<Consumption>('/consumo', consumption);
       return data;
-    } catch (error) {
-      if (error.isConnectionError) {
+    } catch (error: any) {
+      if (error?.isConnectionError) {
         await storageService.saveOfflineConsumption(consumption);
         return consumption as Consumption;
       }
@@ -121,23 +116,40 @@ export const consumptionService = {
       }
       const { data } = await apiClient.put<Consumption>(`/consumo/${id}`, {
 
-        instalacion: parseInt(consumption.instalacion.toString()),
-        lectura: parseFloat(consumption.lectura),
+        instalacion: parseInt((consumption.instalacion || 0).toString()),
+        lectura: parseFloat((consumption.lectura || 0).toString()),
         fecha: consumption.fecha,
-        consumo: parseFloat(consumption.consumo),
+        consumo: parseFloat((consumption.consumo || 0).toString()),
         mes: consumption.mes,
-        year: parseInt(consumption.year),
+        year: parseInt((consumption.year || 0).toString()),
         medidor: consumption.medidor,
-        otros_cobros: parseFloat(consumption.otros_cobros),
-        reconexion: parseFloat(consumption.reconexion),
-        usuario: consumption.usuario,
+        otros_cobros: parseFloat((consumption.otros_cobros || 0).toString()),
+        reconexion: parseFloat((consumption.reconexion || 0).toString()),
+        usuario: (consumption as any).usuario,
         latitud: consumption.latitud as number,
         longitud: consumption.longitud as number
       });
 
       return data;
 
-    } catch (error) {
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  async getImage(id: number): Promise<string> {
+    try {
+      if (!id || isNaN(id)) {
+        throw new Error('ID de consumo inválido para obtener imagen');
+      }
+      const response = await apiClient.get(`/consumo/${id}/image`, {
+        responseType: 'blob'
+      });
+      return URL.createObjectURL(response.data);
+    } catch (error: any) {
+      if (error?.response?.status === 404) {
+        return ''; // No image found is okay
+      }
       throw error;
     }
   }

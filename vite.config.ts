@@ -12,7 +12,7 @@ export default defineConfig({
       sassVariables: path.resolve(__dirname, './src/styles/quasar-variables.sass')
     })
   ],
-  base: '',
+  base: '/',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src')

@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, ConflictException } from '@nestjs/common';
+import { Injectable, OnModuleInit, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Connection } from 'typeorm';
 import { Consumption } from '../entities/consumption.entity';
@@ -54,8 +54,8 @@ export class ConsumoService implements OnModuleInit {
 
     try {
       if (isNaN(id) || !Number.isInteger(id)) {
-        console.error('❌ ID inválido:', id);
-        throw new Error('El ID debe ser un número entero válido');
+        console.error(`❌ ConsumoService.findOne - ID inválido recibido: "${id}" (Type: ${typeof id})`);
+        throw new BadRequestException('El ID debe ser un número entero válido');
       }
 
       console.log('🔎 Ejecutando consulta SQL...');
@@ -253,17 +253,30 @@ export class ConsumoService implements OnModuleInit {
     }
   }
 
-  async getLecturasMes(month: number, year: number, empresaId: number) {
+  async getLecturasMes(month: number, year: number, empresaId: number, sectorId?: number) {
     try {
-      const result = await this.consumoRepository.query(
-        ` SELECT a.codigo as Instalacion,a.nombre,c.nombre as sector,B.lectura, CASE WHEN B.lectura IS NULL THEN 'NO' ELSE 'SI' END AS REGISTRADA
-          FROM instalaciones a
-          JOIN SECTOR C ON C.CODIGO=a.sector_codigo
-          LEFT JOIN CONSUMO B ON A.codigo=B.instalacion AND B.MES=$1 AND B.year=$2 AND B.empresa_id=$3
-          WHERE a.empresa_id = $3
-          order by a.codigo`,
-        [month, year, empresaId],
-      );
+      console.log('🔍 Executing getLecturasMes query with params:', { month, year, empresaId, sectorId });
+
+      let query = `
+        SELECT a.codigo as Instalacion, a.nombre, c.nombre as sector, B.lectura, 
+               CASE WHEN B.lectura IS NULL THEN 'NO' ELSE 'SI' END AS REGISTRADA
+        FROM instalaciones a
+        JOIN SECTOR C ON C.CODIGO = a.sector_codigo and a.empresa_id = c.empresa_id
+        LEFT JOIN CONSUMO B ON A.codigo = B.instalacion AND B.MES = $1 AND B.year = $2 AND B.empresa_id = $3 and a.empresa_id = b.empresa_id
+        WHERE a.empresa_id = $3
+      `;
+
+      const queryParams: any[] = [month, year, empresaId];
+
+      if (sectorId) {
+        query += ` AND c.codigo = $4`;
+        queryParams.push(sectorId);
+      }
+
+      query += ` ORDER BY a.codigo`;
+
+      const result = await this.consumoRepository.query(query, queryParams);
+      console.log(`✅ Query returned ${result.length} rows`);
       return result;
     } catch (error) {
       throw new Error(`Error al obtener lectura anterior: ${error.message}`);
@@ -277,6 +290,7 @@ export class ConsumoService implements OnModuleInit {
         `SELECT * FROM consumo where year=$1 and mes =$2 and empresa_id=$3`,
         [year, month, empresaId],
       );
+      console.log('result::', result);
 
       const latestReadings = new Map();
       result.forEach((reading) => {
@@ -297,12 +311,11 @@ export class ConsumoService implements OnModuleInit {
 
     const sql = `SELECT COALESCE(count(*),0) AS registros
                  FROM public.consumo
-                 WHERE instalacion=$1 AND mes=$2 AND year=$3 AND medidor=$4 AND empresa_id=$5`;
+                 WHERE instalacion=$1 AND mes=$2 AND year=$3 AND empresa_id=$4`;
     const params = [
       createConsumoDto.instalacion,
       createConsumoDto.mes,
       createConsumoDto.year,
-      createConsumoDto.medidor,
       empresaId,
     ];
     const result = await this.consumoRepository.query(sql, params);

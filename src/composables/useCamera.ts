@@ -17,7 +17,9 @@ export function useCamera() {
         resultType: CameraResultType.Base64,
         source: CameraSource.Camera,
         saveToGallery: false,
-        correctOrientation: true
+        correctOrientation: true,
+        width: 1024,
+        height: 1024
       });
 
       if (!image.base64String) {

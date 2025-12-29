@@ -2,14 +2,14 @@
 import { ref, onMounted, watch, onUnmounted } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
-import { io } from 'socket.io-client';
+import { useConsumptionRealtime } from '../composables/useConsumptionRealtime';
 import { consumptionService } from '../services/api';
 import { useExport } from '../composables/useExport';
 import { useScreenSize } from '../composables/useScreenSize';
-import ViewToggle from '../components/ViewToggle.vue';
-import ConsumptionGrid from '../components/ConsumptionGrid.vue';
 import ConsumptionTable from '../components/table/ConsumptionTable.vue';
+import ConsumptionGrid from '../components/ConsumptionGrid.vue';
 import ConsumptionFilters from '../components/filters/ConsumptionFilters.vue';
+import ViewToggle from '../components/ViewToggle.vue';
 import type { Consumption } from '../types/consumption';
 
 const $q = useQuasar();
@@ -20,7 +20,6 @@ const view = ref<'grid' | 'list'>(isMobile.value ? 'grid' : 'list');
 const consumptions = ref<Consumption[]>([]);
 const loading = ref(true);
 const currentFilters = ref({});
-const socket = ref<any>(null);
 const pagination = ref({
   sortBy: 'codigo',
   descending: false,
@@ -40,7 +39,7 @@ watch(isMobile, (newValue) => {
 });
 
 const loadData = async () => {
-   
+  // ... (existing loadData logic)
   console.log('🚀 Cargando datos...');
   try {
     loading.value = true;
@@ -62,6 +61,7 @@ const loadData = async () => {
       });
       
       consumptions.value = response.data;
+      console.log('🏗️ consumptions.value asignado:', consumptions.value);
       
       // CAMBIO IMPORTANTE: Usar el total del servidor, no la longitud local
       if (response.total !== undefined) {
@@ -179,51 +179,20 @@ const handleViewImage = async (row: Consumption) => {
   }
 };
 
-const setupSocketConnection = () => {
-  socket.value = io('http://2.58.80.90:3007', {
-    transports: ['websocket'],
-    autoConnect: true
-  });
-
-  socket.value.on('connect', () => {
-    console.log('Conectado al servidor de Socket.IO');
-  });
-
-  socket.value.on('consumo_update', (data: any) => {
-    console.log('Actualización de consumo recibida:', data);
-    if (data.type === 'consumo_update' && data.operation === 'INSERT') {
-      // Agregar el nuevo consumo al inicio de la lista
-      consumptions.value.unshift(data.record);
-      
-      // Actualizar el contador total
-      pagination.value.rowsNumber += 1;
-      
-      $q.notify({
-        type: 'positive',
-        message: 'Nuevo consumo registrado',
-        position: 'top'
-      });
-    }
-  });
-
-  socket.value.on('disconnect', () => {
-    console.log('Desconectado del servidor de Socket.IO');
-  });
-
-  socket.value.on('error', (error: any) => {
-    console.error('Error de Socket.IO:', error);
-  });
-};
-
-onMounted(() => {
-  setupSocketConnection();
+// Setup SSE Realtime updates
+useConsumptionRealtime(() => {
+  console.log('🔄 Actualizando lista de consumos por evento en tiempo real');
   loadData();
+  $q.notify({
+    type: 'positive',
+    message: 'Lista actualizada (Nuevo consumo o cambio detectado)',
+    position: 'top',
+    timeout: 3000
+  });
 });
 
-onUnmounted(() => {
-  if (socket.value) {
-    socket.value.disconnect();
-  }
+onMounted(() => {
+  loadData();
 });
 </script>
 

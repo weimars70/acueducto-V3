@@ -31,7 +31,7 @@ import { join } from 'path';
 @Controller('consumo')
 @UseGuards(JwtAuthGuard)
 export class ConsumoController {
-  constructor(private readonly consumoService: ConsumoService) {}
+  constructor(private readonly consumoService: ConsumoService) { }
 
   @Get('previous-reading/:instalacion/:codigo')
   async getPreviousReading(
@@ -84,15 +84,17 @@ export class ConsumoController {
 
   @Get('last-lecturas')
   async getLastLecturas(
-    @Query('month') month: number,
-    @Query('year') year: number,
+    @Query('month') month: string,
+    @Query('year') year: string,
+    @Query('sector') sector: string,
     @Request() req: any,
   ) {
     const empresaId = req.user.empresaId;
-    return this.consumoService.getLecturasMes(month, year, empresaId);
+    console.log('📶 GET /last-lecturas params:', { month, year, sector, empresaId });
+    return this.consumoService.getLecturasMes(parseInt(month, 10), parseInt(year, 10), empresaId, sector ? parseInt(sector, 10) : undefined);
   }
 
-  @Get(':id')
+  @Get(':id(\\d+)')
   async findOne(@Param('id') id: string, @Request() req: any) {
     console.log('🎯 Controller - GET /consumo/:id llamado');
     console.log('📥 Parámetros:', {

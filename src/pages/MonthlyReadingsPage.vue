@@ -5,6 +5,22 @@
         <!-- Primera fila en móvil: Mes, Año, Registrada -->
         <div :class="isMobile ? 'col-4' : 'col-auto'">
           <q-select
+            v-model="filters.year"
+            :options="yearOptions"
+            label="Año"
+            outlined
+            dense
+            class="filter-field"
+            :style="isMobile ? undefined : 'width: 120px'"
+          >
+            <template v-slot:prepend>
+              <q-icon name="calendar_today" color="primary" size="xs" />
+            </template>
+          </q-select>
+        </div>
+
+        <div :class="isMobile ? 'col-4' : 'col-auto'">
+          <q-select
             v-model="filters.month"
             :options="months"
             label="Mes"
@@ -22,19 +38,23 @@
             </template>
           </q-select>
         </div>
-        
+
         <div :class="isMobile ? 'col-4' : 'col-auto'">
           <q-select
-            v-model="filters.year"
-            :options="years"
-            label="Año"
+            v-model="filters.sector"
+            :options="sectors"
+            label="Sector"
             outlined
             dense
             class="filter-field"
-            :style="isMobile ? undefined : 'width: 120px'"
+            option-value="codigo"
+            option-label="nombre"
+            emit-value
+            map-options
+            :style="isMobile ? undefined : 'width: 150px'"
           >
             <template v-slot:prepend>
-              <q-icon name="calendar_today" color="primary" size="xs" />
+              <q-icon name="place" color="primary" size="xs" />
             </template>
           </q-select>
         </div>
@@ -221,12 +241,16 @@ import { useQuasar } from 'quasar';
 import { apiClient } from '../services/api/client';
 import { months } from '../utils/dates';
 import { useScreenSize } from '../composables/useScreenSize';
+import { useConsumptionRealtime } from '../composables/useConsumptionRealtime';
 import ViewToggle from '../components/ViewToggle.vue';
+
+import { sectoresService } from '../services/api/sectores.service';
 
 const $q = useQuasar();
 const { isMobile } = useScreenSize();
 const loading = ref(false);
-const readings = ref([]);
+const readings = ref<any[]>([]);
+const sectors = ref<any[]>([]);
 const view = ref<'grid' | 'list'>(isMobile.value ? 'grid' : 'list');
 
 // Watch para cambiar la vista cuando cambia el tamaño de pantalla
@@ -234,18 +258,30 @@ watch(isMobile, (newValue) => {
   view.value = newValue ? 'grid' : 'list';
 });
 
-const currentYear = new Date().getFullYear();
-const years = Array.from({ length: 11 }, (_, i) => currentYear - i);
-
 const filters = ref({
   month: new Date().getMonth() + 1,
-  year: currentYear,
+  year: new Date().getFullYear(),
   instalacion: '',
   nombre: '',
+  sector: null as number | null,
   registrada: null
 });
 
-const columns = [
+const currentYear = new Date().getFullYear();
+const yearOptions = computed(() => {
+  const result = [];
+  // filters.month es number (1-12)
+  const isDecember = filters.value.month === 12;
+  const endYear = isDecember ? currentYear + 1 : currentYear;
+
+  // Mostrar últimos 5 años
+  for (let i = endYear; i >= currentYear - 5; i--) {
+    result.push(i);
+  }
+  return result;
+});
+
+const columns: any[] = [
   { name: 'instalacion', label: 'Instalación', field: 'instalacion', sortable: true, align: 'left' },
   { name: 'nombre', label: 'Nombre', field: 'nombre', sortable: true, align: 'left' },
   { name: 'sector', label: 'Sector', field: 'sector', sortable: true, align: 'left' },
@@ -269,10 +305,22 @@ const filteredReadings = computed(() => {
     
     const matchesRegistrada = !filters.value.registrada || 
       reading.registrada === filters.value.registrada;
+
+    // El filtro de sector ya se aplica en el backend, pero mantenemos filtrado local si es necesario
+    const matchesSector = !filters.value.sector || 
+       sectors.value.find(s => s.codigo === filters.value.sector)?.nombre === reading.sector; // Comparacion aproximada por nombre si no tenemos codigo en lectura
     
     return matchesInstalacion && matchesNombre && matchesRegistrada;
   });
 });
+
+const fetchSectors = async () => {
+  try {
+    sectors.value = await sectoresService.getAll();
+  } catch (error) {
+    console.error('Error al cargar sectores:', error);
+  }
+};
 
 const fetchReadings = async () => {
   try {
@@ -280,7 +328,8 @@ const fetchReadings = async () => {
     const { data } = await apiClient.get('/consumo/last-lecturas', {
       params: {
         month: filters.value.month,
-        year: filters.value.year
+        year: filters.value.year,
+        sector: filters.value.sector
       }
     });
     readings.value = data;
@@ -298,8 +347,18 @@ const fetchReadings = async () => {
 const clearFilters = () => {
   filters.value.instalacion = '';
   filters.value.nombre = '';
+  filters.value.sector = null;
   filters.value.registrada = null;
 };
+
+// Setup SSE Realtime updates
+useConsumptionRealtime(() => {
+  console.log('🔄 Actualizando lecturas por evento en tiempo real');
+  fetchReadings();
+});
+
+// Cargar sectores al montar
+fetchSectors();
 </script>
 
 <style lang="scss">

@@ -101,6 +101,7 @@
       </div>
 
       <!-- Preview de imagen capturada (solo si existe) -->
+      <!--
       <div v-if="capturedImage" class="col-12 q-mb-xs">
         <div class="photo-section">
           <div class="section-header q-mb-sm">
@@ -133,6 +134,7 @@
           </div>
         </div>
       </div>
+      -->
 
       <!-- Lecturas y Consumo -->
       <div class="col-6 col-sm-6 col-md-3 q-mb-xs">
@@ -204,6 +206,7 @@
       <!-- Botones -->
       <div class="col-12 row justify-end q-gutter-sm q-mt-sm">
         <!-- Botón de foto (antes de Cancelar) -->
+        <!--
         <q-btn
           v-if="!capturedImage"
           :loading="isCapturing"
@@ -216,6 +219,7 @@
         >
           <q-tooltip v-if="$q.screen.xs">Tomar Foto</q-tooltip>
         </q-btn>
+        -->
 
         <q-btn
           label="Cancelar"
@@ -231,6 +235,8 @@
           unelevated
           :icon="mode === 'edit' ? 'save' : 'save'"
           class="save-btn"
+          :loading="isSaving"
+          :disable="isSaving"
           @click="handleSave"
         />
       </div>
@@ -259,24 +265,49 @@ const props = defineProps<{
 
 const $q = useQuasar();
 const router = useRouter();
-const codigoRef = ref(null);
-const lecturaActualRef = ref(null);
-const otrosCobrosRef = ref(null);
-const reconexionRef = ref(null);
+const codigoRef = ref<any>(null);
+const lecturaActualRef = ref<any>(null);
+const otrosCobrosRef = ref<any>(null);
+const reconexionRef = ref<any>(null);
+const isSaving = ref(false);
 
 const { formData, updateConsumo, saveConsumption } = useConsumptionForm(props.mode);
 const { status: voiceStatus, isSupported: isVoiceSupported, isListening, toggleListening } = useVoiceInput();
 const { capturedImage, isCapturing, takePhoto, clearPhoto, getDataUrl } = useCamera();
 
+// ... (existing code)
+
+const handleSave = async () => {
+  if (isSaving.value) return;
+  
+  isSaving.value = true;
+  try {
+    const success = await saveConsumption(capturedImage.value);
+    if (success) {
+      if (props.mode !== 'edit') {
+        codigoRef.value?.clear();
+        clearPhoto(); // Limpiar foto después de guardar
+        await nextTick();
+        codigoRef.value?.focus();
+      } else {
+        router.push('/consumptions');
+      }
+    }
+  } finally {
+    isSaving.value = false;
+  }
+};
+
 // Opciones de años - dinámico basado en el mes
 const currentYear = new Date().getFullYear();
 const yearOptions = computed(() => {
   const result = [];
-  const startYear = currentYear;
-
-  // Si el mes es diciembre (12), incluir el año siguiente
-  const mesActual = months.findIndex(m => m.text === formData.value.mes) + 1;
-  const endYear = mesActual === 12 ? currentYear + 1 : currentYear;
+  
+  // Normalizar el mes para comparar sin problemas de mayúsculas/minúsculas
+  const mesActualStr = formData.value.mes ? formData.value.mes.toUpperCase().trim() : '';
+  const isDecember = mesActualStr === 'DICIEMBRE';
+  
+  const endYear = isDecember ? currentYear + 1 : currentYear;
 
   // Agregar años desde el año final hasta 5 años atrás
   for (let i = endYear; i >= currentYear - 5; i--) {
@@ -438,19 +469,7 @@ const onCancel = () => {
   router.push('/consumptions');
 };
 
-const handleSave = async () => {
-  const success = await saveConsumption(capturedImage.value);
-  if (success) {
-    if (props.mode !== 'edit') {
-      codigoRef.value?.clear();
-      clearPhoto(); // Limpiar foto después de guardar
-      await nextTick();
-      codigoRef.value?.focus();
-    } else {
-      router.push('/consumptions');
-    }
-  }
-};
+
 
 onMounted(() => {
   emit('mounted');
