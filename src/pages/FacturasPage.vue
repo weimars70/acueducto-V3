@@ -181,7 +181,7 @@
                   round
                   icon="payments"
                   size="sm"
-                  color="green-7"
+                  :color="props.row.saldo <= 0 ? 'grey-7' : 'green-7'"
                   @click.stop="pagarFactura(props.row)"
                   :disable="props.row.saldo <= 0"
                   class="accion-btn"
@@ -270,7 +270,7 @@
             <q-td :props="props">
               <div>
                 <div style="font-weight: 600; color: #2c3e50;" v-html="highlightText(props.row.suscriptor, 'instalacion')"></div>
-                <div style="font-size: 11px; color: #6b7280;">Inst: <span v-html="highlightText(props.row.instalacion_codigo, 'instalacion')"></span></div>
+                <div style="font-size: 11px; color: #6b7280;" v-html="highlightText(props.row.instalacion_codigo, 'instalacion')"></div>
               </div>
             </q-td>
           </template>
@@ -330,7 +330,6 @@ const filters = ref({
   instalacion_codigo: '',
   direccion: '',
   ciudad_nombre: '',
-  ciudad_nombre: '',
   sector_nombre: '',
   saldo: ''
 });
@@ -354,10 +353,10 @@ const currentYear = new Date().getFullYear();
 const yearsOptions = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
 const pagination = ref({
-  sortBy: 'factura',
-  descending: true,
+  sortBy: 'instalacion_codigo',
+  descending: false,
   page: 1,
-  rowsPerPage: 10,
+  rowsPerPage: 15,
   rowsNumber: 0
 });
 
@@ -449,8 +448,11 @@ const loadFacturas = async () => {
 };
 
 const onRequest = (props: any) => {
-  pagination.value.page = props.pagination.page;
-  pagination.value.rowsPerPage = props.pagination.rowsPerPage;
+  const { page, rowsPerPage, sortBy, descending } = props.pagination;
+  pagination.value.page = page;
+  pagination.value.rowsPerPage = rowsPerPage;
+  pagination.value.sortBy = sortBy;
+  pagination.value.descending = descending;
   loadFacturas();
 };
 
@@ -498,7 +500,7 @@ const pagarFactura = (factura: Factura) => {
       instalacion: factura.instalacion_codigo.toString(),
       nombre: factura.nombre,
       factura: `${factura.prefijo}-${factura.factura}`,
-      valor: factura.total_total.toString(),
+      valor: factura.saldo.toString(),
       tipo_nombre: 'ABONO FACTURA'
     }
   });

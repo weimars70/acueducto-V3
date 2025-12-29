@@ -145,7 +145,7 @@ export class FacturasService {
                 const allowedColumns = {
                     'factura': 'factura',
                     'nombre': 'nombre',
-                    'instalacion_codigo': 'instalacion_codigo',
+                    'instalacion_codigo': 'instalacion_codigo::integer',
                     'saldo': 'saldo',
                     'total_total': 'total_total',
                     'mes': 'mes',
