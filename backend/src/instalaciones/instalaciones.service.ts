@@ -38,6 +38,8 @@ export class InstalacionesService {
 
   async findOne(codigo: number) {
     try {
+      console.log('🔍 InstalacionesService.findOne - Buscando código:', codigo);
+
       const query = `
         SELECT * FROM view_instalaciones
         WHERE codigo = $1
@@ -45,14 +47,62 @@ export class InstalacionesService {
       `;
 
       const result = await this.instalacionRepository.query(query, [codigo]);
+      console.log('📊 Query result from view_instalaciones:', result);
 
       if (!result || result.length === 0) {
         throw new NotFoundException(`Instalación con código ${codigo} no encontrada`);
       }
 
-      return result[0];
+      const instalacion = result[0];
+      console.log('📋 Instalación desde view_instalaciones:', instalacion);
+      console.log('📋 Campos específicos de la vista:', {
+        codigo: instalacion.codigo,
+        nombre: instalacion.nombre,
+        codigo_medidor: instalacion.codigo_medidor,
+        lectura_anterior: instalacion.lectura_anterior,
+        promedio: instalacion.promedio,
+        tiene_lectura_anterior: 'lectura_anterior' in instalacion,
+        tiene_promedio: 'promedio' in instalacion
+      });
+
+      // Verificar si necesitamos obtener lectura_anterior y promedio de otra fuente
+      const needsLectura = !instalacion.lectura_anterior && instalacion.lectura_anterior !== 0;
+      const needsPromedio = !instalacion.promedio && instalacion.promedio !== 0;
+
+      if (needsLectura || needsPromedio) {
+        console.log('⚠️ view_instalaciones no tiene lectura_anterior o promedio, consultando get_previous_reading()');
+        console.log('📊 Parámetros: codigo =', codigo, ', empresa_id =', instalacion.empresa_id);
+
+        // get_previous_reading devuelve un objeto con lectura_anterior y promedio
+        const lecturaQuery = `SELECT * FROM get_previous_reading($1, $2)`;
+        const lecturaResult = await this.instalacionRepository.query(lecturaQuery, [codigo, instalacion.empresa_id]);
+        console.log('📊 Resultado completo de get_previous_reading():', lecturaResult);
+
+        if (lecturaResult && lecturaResult.length > 0) {
+          const datos = lecturaResult[0];
+          instalacion.lectura_anterior = datos.lectura_anterior || 0;
+          instalacion.promedio = datos.promedio || 0;
+          console.log('✅ Datos obtenidos de get_previous_reading():', {
+            lectura_anterior: instalacion.lectura_anterior,
+            promedio: instalacion.promedio
+          });
+        } else {
+          console.warn('⚠️ get_previous_reading() no devolvió datos, usando valores por defecto');
+          instalacion.lectura_anterior = 0;
+          instalacion.promedio = 0;
+        }
+      }
+
+      console.log('✅ Instalación final a devolver:', {
+        codigo: instalacion.codigo,
+        nombre: instalacion.nombre,
+        lectura_anterior: instalacion.lectura_anterior,
+        promedio: instalacion.promedio
+      });
+
+      return instalacion;
     } catch (error) {
-      console.log('Error::.', error);
+      console.log('❌ Error en findOne:', error);
       // Re-throw NotFoundException sin envolverlo
       if (error instanceof NotFoundException) {
         throw error;

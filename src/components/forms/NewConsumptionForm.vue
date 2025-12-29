@@ -268,13 +268,21 @@ const { formData, updateConsumo, saveConsumption } = useConsumptionForm(props.mo
 const { status: voiceStatus, isSupported: isVoiceSupported, isListening, toggleListening } = useVoiceInput();
 const { capturedImage, isCapturing, takePhoto, clearPhoto, getDataUrl } = useCamera();
 
-// Opciones de años
+// Opciones de años - dinámico basado en el mes
 const currentYear = new Date().getFullYear();
 const yearOptions = computed(() => {
   const result = [];
-  for (let i = currentYear; i >= currentYear - 5; i--) {
+  const startYear = currentYear;
+
+  // Si el mes es diciembre (12), incluir el año siguiente
+  const mesActual = months.findIndex(m => m.text === formData.value.mes) + 1;
+  const endYear = mesActual === 12 ? currentYear + 1 : currentYear;
+
+  // Agregar años desde el año final hasta 5 años atrás
+  for (let i = endYear; i >= currentYear - 5; i--) {
     result.push(i);
   }
+
   return result;
 });
 
@@ -385,7 +393,17 @@ const handleOtrosCobrosKeyup = (event: KeyboardEvent) => {
 };
 
 const onInstallationFound = async (installation: any) => {
-  
+  console.log('📥 NewConsumptionForm - onInstallationFound llamado');
+  console.log('📦 Installation recibida:', installation);
+  console.log('📋 Tipo de installation:', typeof installation, 'es null:', installation === null);
+
+  if (!installation) {
+    console.warn('⚠️ Installation es null o undefined, no se actualizará el formulario');
+    return;
+  }
+
+  console.log('📝 formData ANTES de actualizar:', JSON.parse(JSON.stringify(formData.value)));
+
   formData.value = {
     ...formData.value,
     codigo: installation.codigo.toString(),
@@ -396,10 +414,23 @@ const onInstallationFound = async (installation: any) => {
     lectura_anterior: installation.lectura_anterior.toString(),
     promedio: installation.promedio.toString()
   };
-  
+
+  console.log('✅ formData DESPUÉS de actualizar:', JSON.parse(JSON.stringify(formData.value)));
+  console.log('✅ Campos específicos actualizados:', {
+    codigo: formData.value.codigo,
+    medidor: formData.value.medidor,
+    cliente: formData.value.cliente,
+    sector: formData.value.sector,
+    direccion: formData.value.direccion,
+    lectura_anterior: formData.value.lectura_anterior,
+    promedio: formData.value.promedio
+  });
+
   await nextTick();
+  console.log('🎯 Intentando enfocar lecturaActualRef, modo:', props.mode);
   if (props.mode !== 'edit') {
     lecturaActualRef.value?.focus();
+    console.log('✅ Focus aplicado a lectura actual');
   }
 };
 

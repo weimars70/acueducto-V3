@@ -9,10 +9,17 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: number | null): void
 }>();
 
-const currentYear = new Date().getFullYear();
+const currentDate = new Date();
+const currentYear = currentDate.getFullYear();
+const currentMonth = currentDate.getMonth() + 1; // getMonth() devuelve 0-11
+
 const years = computed(() => {
   const result = [];
-  for (let i = currentYear; i >= currentYear - 5; i--) {
+
+  // Si el mes actual es diciembre (12), incluir el año siguiente
+  const maxYear = currentMonth === 12 ? currentYear + 1 : currentYear;
+
+  for (let i = maxYear; i >= currentYear - 5; i--) {
     result.push(i);
   }
   return result;

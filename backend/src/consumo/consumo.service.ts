@@ -129,7 +129,7 @@ export class ConsumoService implements OnModuleInit {
         `SELECT * FROM get_previous_reading($1,$2,$3)`,
         [instalacion, codigo, empresaId],
       );
-
+      console.log('✅ getPreviousReading completado exitosamente', result[0]);
       if (!result || result.length === 0) {
         return {
           lectura_anterior: 0,

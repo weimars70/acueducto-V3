@@ -44,7 +44,7 @@ export class Consumption {
   @Column({ name: 'imagen_url', nullable: true })
   imagenUrl: string;
 
-  @Column({ default: false })
+  @Column({ name: 'facturado', nullable: true, select: false })
   facturada: boolean;
 
   @Column({ name: 'consumo_facturar', type: 'numeric', nullable: true })

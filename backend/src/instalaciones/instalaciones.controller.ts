@@ -17,9 +17,17 @@ export class InstalacionesController {
   @ApiResponse({ status: 200, description: 'Installation found successfully' })
   @ApiResponse({ status: 404, description: 'Installation not found' })
   async getInstalacion(@Query() query: any) {
+    //console.log('🎯 Controller GET /instalaciones - Llamado');
+    //console.log('📊 Query params recibidos:', query);
+    // console.log('📋 Código:', query.codigo, 'tipo:', typeof query.codigo);
+
     try {
-      return await this.instalacionesService.findOne(query.codigo);
+      //console.log('🔄 Llamando a instalacionesService.findOne con código:', query.codigo);
+      const result = await this.instalacionesService.findOne(query.codigo);
+      //console.log('✅ Instalación encontrada:', result);
+      return result;
     } catch (error) {
+      console.error('❌ Error en getInstalacion:', error);
       if (error instanceof NotFoundException) {
         throw error;
       }

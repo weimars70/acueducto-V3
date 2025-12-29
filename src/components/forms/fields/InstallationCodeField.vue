@@ -13,19 +13,37 @@ const codigo = ref('');
 const loading = ref(false);
 
 const handleSearch = async () => {
+  console.log('🔍 InstallationCodeField - Iniciando búsqueda');
+  console.log('📊 Código ingresado:', codigo.value);
+
   if (!codigo.value) {
+    console.warn('⚠️ Código vacío');
     $q.notify({
       type: 'warning',
       message: 'Ingrese un código de instalación'
     });
     return;
   }
-  
+
   loading.value = true;
+  console.log('🔄 Llamando a installationService.getByCode con código:', Number(codigo.value));
+
   try {
     const installation = await installationService.getByCode(Number(codigo.value));
-    console.log('____installation____', installation);
+    console.log('📦 Respuesta del servicio:', installation);
+    console.log('📋 Detalles de la instalación:', {
+      tiene_datos: !!installation,
+      codigo: installation?.codigo,
+      nombre: installation?.nombre,
+      sector: installation?.sector_nombre,
+      direccion: installation?.direccion,
+      medidor: installation?.codigo_medidor,
+      lectura_anterior: installation?.lectura_anterior,
+      promedio: installation?.promedio
+    });
+
     if (!installation) {
+      console.error('❌ Instalación no encontrada - el servicio retornó null/undefined');
       throw new Error('Instalación no encontrada');
     }
 
@@ -36,9 +54,11 @@ const handleSearch = async () => {
       promedio: installation.promedio || 0
     };
 
+    console.log('✅ Emitiendo evento installation-found con datos:', normalizedInstallation);
     emit('installation-found', normalizedInstallation);
-    
+
     if (!syncService.isOnline()) {
+      console.log('📡 Modo sin conexión detectado');
       $q.notify({
         type: 'warning',
         message: 'Trabajando en modo sin conexión',
@@ -46,7 +66,12 @@ const handleSearch = async () => {
       });
     }
   } catch (error) {
-    console.error('Error buscando instalación:', error);
+    console.error('❌ Error buscando instalación:', error);
+    console.error('❌ Detalles del error:', {
+      message: error instanceof Error ? error.message : 'Error desconocido',
+      stack: error instanceof Error ? error.stack : 'No stack',
+      type: typeof error
+    });
     $q.notify({
       type: 'negative',
       message: error instanceof Error ? error.message : 'Error al buscar la instalación',
@@ -55,6 +80,7 @@ const handleSearch = async () => {
     emit('installation-found', null);
   } finally {
     loading.value = false;
+    console.log('🏁 Búsqueda finalizada');
   }
 };
 
