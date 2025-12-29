@@ -15,6 +15,8 @@ export class ConsumoService implements OnModuleInit {
   constructor(
     @InjectRepository(Consumption)
     private readonly consumoRepository: Repository<Consumption>,
+    @InjectRepository(Consumption, 'remoteConnection')
+    private readonly remoteConsumoRepository: Repository<Consumption>,
     private connection: Connection,
   ) {
     this.eventEmitter = new EventEmitter();
@@ -355,7 +357,33 @@ export class ConsumoService implements OnModuleInit {
 
 
       const consumption = this.consumoRepository.create(consumptionData);
-      const saved = await this.consumoRepository.save(consumption);
+
+      // Insertar en paralelo en ambas bases de datos
+      console.log('💾 Guardando consumo en ambas bases de datos...');
+
+      const saveResults = await Promise.allSettled([
+        // Guardar en BD principal
+        this.consumoRepository.save(consumption),
+        // Guardar en BD remota
+        this.remoteConsumoRepository.save(this.remoteConsumoRepository.create(consumptionData))
+      ]);
+
+      // Verificar resultados
+      const [localResult, remoteResult] = saveResults;
+
+      if (localResult.status === 'fulfilled') {
+        console.log('✅ Consumo guardado en BD principal');
+      } else {
+        console.error('❌ Error al guardar en BD principal:', localResult.reason);
+        throw new Error(`Error al guardar en BD principal: ${localResult.reason}`);
+      }
+
+      if (remoteResult.status === 'fulfilled') {
+        console.log('✅ Consumo guardado en BD remota');
+      } else {
+        console.warn('⚠️ Error al guardar en BD remota (continuando):', remoteResult.reason);
+        // No lanzamos error si falla la BD remota, solo advertimos
+      }
 
       const geoOk = consumptionData.latitud != null && consumptionData.longitud != null;
       const status = geoOk ? 'guardado con geolocalizacion' : 'guardado sin geolocalizacion';

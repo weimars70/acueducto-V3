@@ -5,7 +5,12 @@ import { ConsumoController } from './consumo.controller';
 import { Consumption } from '../entities/consumption.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Consumption])],
+  imports: [
+    // Repositorio para la conexión principal
+    TypeOrmModule.forFeature([Consumption]),
+    // Repositorio para la conexión remota
+    TypeOrmModule.forFeature([Consumption], 'remoteConnection'),
+  ],
   controllers: [ConsumoController],
   providers: [ConsumoService],
   exports: [ConsumoService],
