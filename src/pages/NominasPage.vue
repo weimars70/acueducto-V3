@@ -10,7 +10,11 @@ import { useExport } from '../composables/useExport';
 
 const $q = useQuasar();
 const router = useRouter();
-const { exportToExcel, exportToPDF } = useExport();
+const {
+  exportToExcel,
+  exportToPDF,
+  exportNominaVouchers
+} = useExport();
 const nominas = ref<Nomina[]>([]);
 const periodos = ref<PeriodoNomina[]>([]);
 const loading = ref(true);
@@ -30,8 +34,16 @@ const columns = [
   { name: 'empleado_nombre', label: 'Empleado', field: 'empleado_nombre', align: 'left' as const, sortable: true },
   { name: 'periodo_nombre', label: 'Período', field: 'periodo_nombre', align: 'left' as const, sortable: true },
   { name: 'dias_pagados', label: 'Días', field: 'dias_pagados', align: 'center' as const },
-  { name: 'total_devengado', label: 'Devengado', field: 'total_devengado', align: 'right' as const, sortable: true },
-  { name: 'total_deducciones', label: 'Deducciones', field: 'total_deducciones', align: 'right' as const, sortable: true },
+  { name: 'valor_basico', label: 'Basico', field: 'valor_basico', align: 'right' as const, sortable: true },
+  { name: 'valor_he_diurna', label: 'H.E. Diur', field: 'valor_he_diurna', align: 'right' as const, sortable: true },
+  { name: 'valor_he_festiva', label: 'H.E. Fest', field: 'valor_he_festiva', align: 'right' as const, sortable: true },
+  { name: 'valor_auxilio_transporte', label: 'Aux. Transp', field: 'valor_auxilio_transporte', align: 'right' as const, sortable: true },
+  { name: 'valor_otros_devengados', label: 'Otros Dev', field: 'valor_otros_devengados', align: 'right' as const, sortable: true },
+  { name: 'total_devengado', label: 'Total Devengado', field: 'total_devengado', align: 'right' as const, sortable: true },
+  { name: 'valor_salud', label: 'Salud', field: 'valor_salud', align: 'right' as const, sortable: true },
+  { name: 'valor_pension', label: 'Pension', field: 'valor_pension', align: 'right' as const, sortable: true },
+  { name: 'valor_otras_deducciones', label: 'Otros Ded', field: 'valor_otras_deducciones', align: 'right' as const, sortable: true },
+  { name: 'total_deducciones', label: 'Total Deducciones', field: 'total_deducciones', align: 'right' as const, sortable: true },
   { name: 'neto_pagar', label: 'Neto a Pagar', field: 'neto_pagar', align: 'right' as const, sortable: true },
   { name: 'estado', label: 'Estado', field: 'estado', align: 'center' as const, sortable: true },
   { name: 'actions', label: 'Acciones', field: 'actions', align: 'center' as const }
@@ -163,6 +175,55 @@ const handlePagar = async (nomina: Nomina) => {
   });
 };
 
+const handlePrintVoucher = async (nomina: Nomina) => {
+  try {
+    $q.loading.show({ message: 'Preparando volante de pago...' });
+    // Fetch full details to ensure breakdown is included
+    const nominaFull = await nominasService.findOne(nomina.id);
+    await exportNominaVouchers([nominaFull], `volante_pago_${nomina.empleado_nombre?.replace(/\s/g, '_')}_${nomina.periodo_nombre?.replace(/\s/g, '_')}`);
+    $q.notify({
+      type: 'positive',
+      message: 'Volante de pago generado exitosamente'
+    });
+  } catch (error) {
+    console.error('Error al generar volante de pago:', error);
+    $q.notify({
+      type: 'negative',
+      message: 'Error al generar el volante de pago'
+    });
+  } finally {
+    $q.loading.hide();
+  }
+};
+
+const handleDelete = async (nomina: Nomina) => {
+  $q.dialog({
+    title: 'Confirmar Eliminación',
+    message: `¿Está seguro de eliminar la nómina de ${nomina.empleado_nombre || 'empleado'}? Esta acción no se puede deshacer.`,
+    cancel: true,
+    persistent: true,
+    color: 'negative'
+  }).onOk(async () => {
+    try {
+      $q.loading.show({ message: 'Eliminando nómina...' });
+      await nominasService.deleteNomina(nomina.id);
+      $q.notify({
+        type: 'positive',
+        message: 'Nómina eliminada exitosamente'
+      });
+      loadData();
+    } catch (error: any) {
+      console.error('Error al eliminar nómina:', error);
+      $q.notify({
+        type: 'negative',
+        message: error?.response?.data?.message || 'Error al eliminar la nómina'
+      });
+    } finally {
+      $q.loading.hide();
+    }
+  });
+};
+
 const handleGenerarNominas = async () => {
   if (!periodoFiltro.value) {
     $q.notify({
@@ -235,17 +296,33 @@ const handleExportExcel = () => {
       { field: 'empleado_nombre', label: 'Empleado' },
       { field: 'periodo_nombre', label: 'Período' },
       { field: 'dias_pagados', label: 'Días' },
-      { field: 'total_devengado', label: 'Devengado' },
-      { field: 'total_deducciones', label: 'Deducciones' },
+      { field: 'valor_basico', label: 'Sueldo Básico' },
+      { field: 'valor_he_diurna', label: 'H.E. Diurna' },
+      { field: 'valor_he_festiva', label: 'H.E. Festiva' },
+      { field: 'valor_auxilio_transporte', label: 'Auxilio Transporte' },
+      { field: 'valor_otros_devengados', label: 'Otros Devengados' },
+      { field: 'total_devengado', label: 'Total Devengado' },
+      { field: 'valor_salud', label: 'Salud' },
+      { field: 'valor_pension', label: 'Pensión' },
+      { field: 'valor_otras_deducciones', label: 'Otras Deducciones' },
+      { field: 'total_deducciones', label: 'Total Deducciones' },
       { field: 'neto_pagar', label: 'Neto a Pagar' },
       { field: 'estado', label: 'Estado' }
     ];
 
     const dataToExport = filteredNominas.value.map(n => ({
       ...n,
-      total_devengado: formatCurrency(n.total_devengado),
-      total_deducciones: formatCurrency(n.total_deducciones),
-      neto_pagar: formatCurrency(n.neto_pagar)
+      valor_basico: formatCurrency(n.valor_basico || 0),
+      valor_he_diurna: formatCurrency(n.valor_he_diurna || 0),
+      valor_he_festiva: formatCurrency(n.valor_he_festiva || 0),
+      valor_auxilio_transporte: formatCurrency(n.valor_auxilio_transporte || 0),
+      valor_otros_devengados: formatCurrency(n.valor_otros_devengados || 0),
+      total_devengado: formatCurrency(n.total_devengado || 0),
+      valor_salud: formatCurrency(n.valor_salud || 0),
+      valor_pension: formatCurrency(n.valor_pension || 0),
+      valor_otras_deducciones: formatCurrency(n.valor_otras_deducciones || 0),
+      total_deducciones: formatCurrency(n.total_deducciones || 0),
+      neto_pagar: formatCurrency(n.neto_pagar || 0)
     }));
 
     exportToExcel(dataToExport, exportColumns, 'nominas');
@@ -262,20 +339,36 @@ const handleExportPDF = () => {
       { field: 'empleado_nombre', label: 'Empleado' },
       { field: 'periodo_nombre', label: 'Período' },
       { field: 'dias_pagados', label: 'Días' },
-      { field: 'total_devengado', label: 'Devengado' },
-      { field: 'total_deducciones', label: 'Deducciones' },
+      { field: 'valor_basico', label: 'Sueldo Básico' },
+      { field: 'valor_he_diurna', label: 'H.E. Diurna' },
+      { field: 'valor_he_festiva', label: 'H.E. Festiva' },
+      { field: 'valor_auxilio_transporte', label: 'Auxilio Transporte' },
+      { field: 'valor_otros_devengados', label: 'Otros Devengados' },
+      { field: 'total_devengado', label: 'Total Devengado' },
+      { field: 'valor_salud', label: 'Salud' },
+      { field: 'valor_pension', label: 'Pensión' },
+      { field: 'valor_otras_deducciones', label: 'Otras Deducciones' },
+      { field: 'total_deducciones', label: 'Total Deducciones' },
       { field: 'neto_pagar', label: 'Neto a Pagar' },
       { field: 'estado', label: 'Estado' }
     ];
 
     const dataToExport = filteredNominas.value.map(n => ({
       ...n,
-      total_devengado: formatCurrency(n.total_devengado),
-      total_deducciones: formatCurrency(n.total_deducciones),
-      neto_pagar: formatCurrency(n.neto_pagar)
+      valor_basico: formatCurrency(n.valor_basico || 0),
+      valor_he_diurna: formatCurrency(n.valor_he_diurna || 0),
+      valor_he_festiva: formatCurrency(n.valor_he_festiva || 0),
+      valor_auxilio_transporte: formatCurrency(n.valor_auxilio_transporte || 0),
+      valor_otros_devengados: formatCurrency(n.valor_otros_devengados || 0),
+      total_devengado: formatCurrency(n.total_devengado || 0),
+      valor_salud: formatCurrency(n.valor_salud || 0),
+      valor_pension: formatCurrency(n.valor_pension || 0),
+      valor_otras_deducciones: formatCurrency(n.valor_otras_deducciones || 0),
+      total_deducciones: formatCurrency(n.total_deducciones || 0),
+      neto_pagar: formatCurrency(n.neto_pagar || 0)
     }));
 
-    exportToPDF(dataToExport, exportColumns, 'nominas', 'Listado de Nóminas');
+    exportToPDF(dataToExport, exportColumns, 'nominas', 'Listado de Nóminas', 'l');
     $q.notify({ type: 'positive', message: 'Exportado a PDF exitosamente' });
   } catch (error) {
     console.error('Error al exportar a PDF:', error);
@@ -420,12 +513,39 @@ onMounted(() => {
         :rows-per-page-options="[12, 24, 48]"
         binary-state-sort
       >
-        <template v-slot:body-cell-total_devengado="props">
-          <q-td :props="props">{{ formatCurrency(props.row.total_devengado) }}</q-td>
+        <template v-slot:body-cell-valor_basico="props">
+          <q-td :props="props">{{ formatCurrency(props.row.valor_basico || 0) }}</q-td>
         </template>
-
+        <template v-slot:body-cell-valor_he_diurna="props">
+          <q-td :props="props">{{ formatCurrency(props.row.valor_he_diurna || 0) }}</q-td>
+        </template>
+        <template v-slot:body-cell-valor_he_festiva="props">
+          <q-td :props="props">{{ formatCurrency(props.row.valor_he_festiva || 0) }}</q-td>
+        </template>
+        <template v-slot:body-cell-valor_auxilio_transporte="props">
+          <q-td :props="props">{{ formatCurrency(props.row.valor_auxilio_transporte || 0) }}</q-td>
+        </template>
+        <template v-slot:body-cell-valor_otros_devengados="props">
+          <q-td :props="props">{{ formatCurrency(props.row.valor_otros_devengados || 0) }}</q-td>
+        </template>
+        <template v-slot:body-cell-total_devengado="props">
+          <q-td :props="props" class="text-weight-bold text-primary">
+            {{ formatCurrency(props.row.total_devengado) }}
+          </q-td>
+        </template>
+        <template v-slot:body-cell-valor_salud="props">
+          <q-td :props="props">{{ formatCurrency(props.row.valor_salud || 0) }}</q-td>
+        </template>
+        <template v-slot:body-cell-valor_pension="props">
+          <q-td :props="props">{{ formatCurrency(props.row.valor_pension || 0) }}</q-td>
+        </template>
+        <template v-slot:body-cell-valor_otras_deducciones="props">
+          <q-td :props="props">{{ formatCurrency(props.row.valor_otras_deducciones || 0) }}</q-td>
+        </template>
         <template v-slot:body-cell-total_deducciones="props">
-          <q-td :props="props">{{ formatCurrency(props.row.total_deducciones) }}</q-td>
+          <q-td :props="props" class="text-weight-bold text-red">
+            {{ formatCurrency(props.row.total_deducciones) }}
+          </q-td>
         </template>
 
         <template v-slot:body-cell-neto_pagar="props">
@@ -450,6 +570,17 @@ onMounted(() => {
 
         <template v-slot:body-cell-actions="props">
           <q-td :props="props">
+            <q-btn
+              flat
+              dense
+              round
+              icon="print"
+              color="indigo-7"
+              size="sm"
+              @click="handlePrintVoucher(props.row)"
+            >
+              <q-tooltip>Imprimir Volante</q-tooltip>
+            </q-btn>
             <q-btn
               flat
               dense

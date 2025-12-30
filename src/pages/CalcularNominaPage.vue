@@ -7,16 +7,23 @@ import { periodoNominaService } from '../services/api/periodo-nomina.service';
 import { empleadoService } from '../services/api/empleado.service';
 import type { PeriodoNomina } from '../types/periodo-nomina';
 import type { Empleado } from '../types/empleado';
+import { useExport } from '../composables/useExport';
 
 const $q = useQuasar();
 const router = useRouter();
 const route = useRoute();
+const {
+  exportToExcel,
+  exportToPDF,
+  exportNominaVouchers
+} = useExport();
 const loading = ref(false);
 const periodoId = ref<number | null>(null);
 const periodo = ref<PeriodoNomina | null>(null);
 const periodos = ref<PeriodoNomina[]>([]);
 const empleadosData = ref<any[]>([]);
 const empresaId = ref(1); // TODO: obtener del store de auth
+const filter = ref('');
 
 interface EmpleadoNominaRow {
   empleado: Empleado;
@@ -152,7 +159,7 @@ const calcularHEDiurna = (row: EmpleadoNominaRow, valorHora: number) => {
 };
 
 const calcularHEFestiva = (row: EmpleadoNominaRow, valorHora: number) => {
-  return row.horasExtrasFestivas * valorHora * 1.75;
+  return row.horasExtrasFestivas * valorHora * 1.80;
 };
 
 const calcularAuxilioTransporte = (row: EmpleadoNominaRow, diasPeriodo: number) => {
@@ -164,12 +171,12 @@ const calcularAuxilioTransporte = (row: EmpleadoNominaRow, diasPeriodo: number) 
   return (auxilioMensual / 30) * diasPeriodo;
 };
 
-const calcularSalud = (salarioBasico: number) => {
-  return salarioBasico * 0.04;
+const calcularSalud = (baseCotizacion: number) => {
+  return baseCotizacion * 0.04;
 };
 
-const calcularPension = (salarioBasico: number) => {
-  return salarioBasico * 0.04;
+const calcularPension = (baseCotizacion: number) => {
+  return baseCotizacion * 0.04;
 };
 
 const calcularTotales = (row: EmpleadoNominaRow) => {
@@ -179,8 +186,12 @@ const calcularTotales = (row: EmpleadoNominaRow) => {
   const heDiurna = calcularHEDiurna(row, valorHora);
   const heFestiva = calcularHEFestiva(row, valorHora);
   const auxTransporte = calcularAuxilioTransporte(row, diasPeriodo);
-  const salud = calcularSalud(salarioBasico);
-  const pension = calcularPension(salarioBasico);
+  
+  // Base para salud y pensión (IBC)
+  const baseCotizacion = salarioBasico + heDiurna + heFestiva;
+
+  const salud = calcularSalud(baseCotizacion);
+  const pension = calcularPension(baseCotizacion);
 
   const totalDevengado = salarioBasico + heDiurna + heFestiva + auxTransporte + row.otrosPagos;
   const totalDeducciones = salud + pension + row.otrasDeducciones;
@@ -198,6 +209,19 @@ const calcularTotales = (row: EmpleadoNominaRow) => {
     netoPagar,
   };
 };
+
+const isPeriodoAprobado = computed(() => {
+  return empleadosData.value.some(e => e.nomina && e.nomina.estado !== 'BORRADOR');
+});
+
+const filteredEmpleados = computed(() => {
+  if (!filter.value) return empleadosData.value;
+  const search = filter.value.toLowerCase();
+  return empleadosData.value.filter(e =>
+    e.empleado.nombre_completo.toLowerCase().includes(search) ||
+    e.empleado.cedula.includes(search)
+  );
+});
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('es-CO', {
@@ -376,6 +400,267 @@ const handleCalcularTodas = async () => {
   });
 };
 
+const handleCalcularIndividual = async (row: EmpleadoNominaRow) => {
+  if (!row.nomina) return;
+  try {
+    $q.loading.show({ message: 'Calculando nómina...' });
+    await nominasService.calcularNomina(row.nomina.id);
+    $q.notify({
+      type: 'positive',
+      message: 'Nómina calculada exitosamente'
+    });
+    await loadData();
+  } catch (error: any) {
+    console.error('Error al calcular nómina individual:', error);
+    $q.notify({
+      type: 'negative',
+      message: error?.response?.data?.message || 'Error al calcular la nómina'
+    });
+  } finally {
+    $q.loading.hide();
+  }
+};
+
+const handleAprobarTodas = async () => {
+  if (!periodoId.value) return;
+
+  $q.dialog({
+    title: 'Fijar y Aprobar Todas',
+    message: `¿Está seguro de aprobar todas las nóminas del período? Una vez aprobadas, no podrán ser modificadas.`,
+    cancel: true,
+    persistent: true
+  }).onOk(async () => {
+    try {
+      $q.loading.show({ message: 'Aprobando nóminas...' });
+      
+      for (const row of empleadosData.value) {
+        if (row.nomina && row.nomina.estado === 'BORRADOR') {
+          try {
+            await nominasService.aprobarNomina({ nominaId: row.nomina.id });
+          } catch (error) {
+            console.error(`Error al aprobar nómina ${row.nomina.id}:`, error);
+          }
+        }
+      }
+      
+      $q.notify({
+        type: 'positive',
+        message: 'Nóminas aprobadas y fijadas exitosamente'
+      });
+      
+      await loadData();
+    } catch (error: any) {
+      console.error('Error al aprobar nóminas:', error);
+      $q.notify({
+        type: 'negative',
+        message: 'Error al aprobar las nóminas'
+      });
+    } finally {
+      $q.loading.hide();
+    }
+  });
+};
+
+const handleExportExcel = () => {
+  try {
+    const exportColumns = [
+      { field: 'empleado', label: 'Empleado' },
+      { field: 'sueldo_mensual', label: 'Salario Mensual' },
+      { field: 'valor_hora', label: 'Valor Hora' },
+      { field: 'dias', label: 'Días' },
+      { field: 'salario_basico', label: 'Salario Básico' },
+      { field: 'cant_he_diurna', label: 'Cant. H.E. Diurna' },
+      { field: 'valor_he_diurna', label: '$ H.E. Diurna' },
+      { field: 'cant_he_festiva', label: 'Cant. H.E. Festiva' },
+      { field: 'valor_he_festiva', label: '$ H.E. Festiva' },
+      { field: 'aux_transporte', label: 'Aux. Transporte' },
+      { field: 'otros_pagos', label: 'Otros Pagos' },
+      { field: 'total_devengado', label: 'Total Devengado' },
+      { field: 'salud', label: 'Salud (4%)' },
+      { field: 'pension', label: 'Pensión (4%)' },
+      { field: 'otras_deducciones', label: 'Otras Deducciones' },
+      { field: 'total_deducciones', label: 'Total Deducciones' },
+      { field: 'neto_pagar', label: 'Neto a Pagar' }
+    ];
+    const dataToExport = empleadosData.value.map(row => {
+      const totales = calcularTotales(row);
+      return {
+        empleado: row.empleado.nombre_completo,
+        sueldo_mensual: row.empleado.salario_mensual,
+        valor_hora: calcularValorHora(row.empleado.salario_mensual),
+        dias: periodo.value?.dias_periodo || 15,
+        salario_basico: totales.salarioBasico,
+        cant_he_diurna: row.horasExtrasDiurnas,
+        valor_he_diurna: totales.heDiurna,
+        cant_he_festiva: row.horasExtrasFestivas,
+        valor_he_festiva: totales.heFestiva,
+        aux_transporte: totales.auxTransporte,
+        otros_pagos: row.otrosPagos,
+        total_devengado: totales.totalDevengado,
+        salud: totales.salud,
+        pension: totales.pension,
+        otras_deducciones: row.otrasDeducciones,
+        total_deducciones: totales.totalDeducciones,
+        neto_pagar: totales.netoPagar
+      };
+    });
+
+    exportToExcel(dataToExport, exportColumns, `calculo_nomina_${periodo.value?.nombre || 'periodo'}`);
+    $q.notify({ type: 'positive', message: 'Exportado a Excel exitosamente' });
+  } catch (error) {
+    console.error('Error al exportar a Excel:', error);
+    $q.notify({ type: 'negative', message: 'Error al exportar a Excel' });
+  }
+};
+
+const handleExportPDF = () => {
+  try {
+    const exportColumns = [
+      { field: 'empleado', label: 'Empleado' },
+      { field: 'dias', label: 'Días' },
+      { field: 'salario_basico', label: 'Básico' },
+      { field: 'valor_he_diurna', label: 'H.E. Diur' },
+      { field: 'valor_he_festiva', label: 'H.E. Fest' },
+      { field: 'aux_transporte', label: 'Aux. Transp' },
+      { field: 'total_devengado', label: 'Devengado' },
+      { field: 'salud', label: 'Salud' },
+      { field: 'pension', label: 'Pensión' },
+      { field: 'total_deducciones', label: 'Deducciones' },
+      { field: 'neto_pagar', label: 'Neto' }
+    ];
+
+    const dataToExport = empleadosData.value.map(row => {
+      const totales = calcularTotales(row);
+      return {
+        empleado: row.empleado.nombre_completo,
+        dias: periodo.value?.dias_periodo || 15,
+        salario_basico: formatCurrency(totales.salarioBasico),
+        valor_he_diurna: formatCurrency(totales.heDiurna),
+        valor_he_festiva: formatCurrency(totales.heFestiva),
+        aux_transporte: formatCurrency(totales.auxTransporte),
+        total_devengado: formatCurrency(totales.totalDevengado),
+        salud: formatCurrency(totales.salud),
+        pension: formatCurrency(totales.pension),
+        total_deducciones: formatCurrency(totales.totalDeducciones),
+        neto_pagar: formatCurrency(totales.netoPagar)
+      };
+    });
+
+    exportToPDF(dataToExport, exportColumns, `calculo_nomina_${periodo.value?.nombre || 'periodo'}`, `Cáculo de Nómina - ${periodo.value?.nombre || ''}`, 'l');
+    $q.notify({ type: 'positive', message: 'Exportado a PDF exitosamente' });
+  } catch (error) {
+    console.error('Error al exportar a PDF:', error);
+    $q.notify({ type: 'negative', message: 'Error al exportar a PDF' });
+  }
+};
+
+const handlePrintVouchers = async () => {
+  if (!periodoId.value || !empleadosData.value.length || !periodo.value) {
+    $q.notify({
+      type: 'warning',
+      message: 'No hay datos o período seleccionado para generar volantes.'
+    });
+    return;
+  }
+  try {
+    $q.loading.show({ message: 'Generando volantes de pago...' });
+
+    // Construir vouchers con los datos del listado
+    const vouchers = empleadosData.value
+      .filter(row => row.nomina || row.empleado)
+      .map(row => {
+        const totales = calcularTotales(row);
+        return {
+          id: row.nomina?.id,
+          empleado: row.empleado,
+          periodo: periodo.value,
+          salarioMensual: row.empleado.salario_mensual,
+          diasPagados: periodo.value.dias_periodo,
+          totalDevengado: totales.totalDevengado,
+          totalDeducciones: totales.totalDeducciones,
+          netoPagar: totales.netoPagar,
+          valorBasico: totales.salarioBasico,
+          cantidadDiasBasico: periodo.value.dias_periodo,
+          valorAuxTransporte: totales.auxTransporte,
+          cantidadHEDiurna: row.horasExtrasDiurnas,
+          valorHEDiurna: totales.heDiurna,
+          cantidadHEFestiva: row.horasExtrasFestivas,
+          valorHEFestiva: totales.heFestiva,
+          valorSalud: totales.salud,
+          valorPension: totales.pension,
+          otrosPagos: row.otrosPagos,
+          otrasDeducciones: row.otrasDeducciones,
+          horasExtrasData: row.horasExtrasData,
+          otrosPagosData: row.otrosPagosData
+        };
+      });
+
+    if (vouchers.length === 0) {
+      $q.notify({ type: 'warning', message: 'No hay empleados para imprimir' });
+      return;
+    }
+
+    await exportNominaVouchers(vouchers, periodo.value?.nombre || 'Nómina');
+    $q.notify({ type: 'positive', message: 'Volantes de pago generados exitosamente' });
+  } catch (error) {
+    console.error('Error al generar volantes de pago:', error);
+    $q.notify({ type: 'negative', message: 'Error al generar volantes de pago' });
+  } finally {
+    $q.loading.hide();
+  }
+};
+
+const handlePrintIndividualVoucher = async (row: EmpleadoNominaRow) => {
+  if (!periodoId.value || !periodo.value) {
+    $q.notify({
+      type: 'warning',
+      message: 'No hay datos de nómina para generar el volante.'
+    });
+    return;
+  }
+  try {
+    $q.loading.show({ message: `Generando volante para ${row.empleado.nombre_completo}...` });
+
+    // Calcular todos los valores usando las funciones existentes
+    const totales = calcularTotales(row);
+    const valorHora = calcularValorHora(row.empleado.salario_mensual);
+
+    // Construir objeto de nómina con los datos del listado
+    const nominaData = {
+      id: row.nomina?.id,
+      empleado: row.empleado,
+      periodo: periodo.value,
+      salarioMensual: row.empleado.salario_mensual,
+      diasPagados: periodo.value.dias_periodo,
+      totalDevengado: totales.totalDevengado,
+      totalDeducciones: totales.totalDeducciones,
+      netoPagar: totales.netoPagar,
+      // Valores individuales para el detalle
+      valorBasico: totales.salarioBasico,
+      cantidadDiasBasico: periodo.value.dias_periodo,
+      valorAuxTransporte: totales.auxTransporte,
+      cantidadHEDiurna: row.horasExtrasDiurnas,
+      valorHEDiurna: totales.heDiurna,
+      cantidadHEFestiva: row.horasExtrasFestivas,
+      valorHEFestiva: totales.heFestiva,
+      valorSalud: totales.salud,
+      valorPension: totales.pension,
+      otrosPagos: row.otrosPagos,
+      otrasDeducciones: row.otrasDeducciones,
+      horasExtrasData: row.horasExtrasData,
+      otrosPagosData: row.otrosPagosData
+    };
+
+    await exportNominaVouchers([nominaData], periodo.value?.nombre || 'Comprobante de Pago');
+    $q.notify({ type: 'positive', message: 'Volante de pago generado exitosamente' });
+  } catch (error) {
+    console.error('Error al generar volante de pago individual:', error);
+    $q.notify({ type: 'negative', message: 'Error al generar volante de pago' });
+  } finally {
+    $q.loading.hide();
+  }
+};
+
 onMounted(() => {
   loadPeriodos();
 });
@@ -449,14 +734,55 @@ onMounted(() => {
             icon="add"
             label="Generar Nóminas"
             @click="handleGenerarNominas"
-            :disable="loading"
+            :disable="loading || isPeriodoAprobado"
           />
           <q-btn
             unelevated
             color="green-7"
             icon="calculate"
-            label="Calcular Todas"
+            label="Procesar y Guardar Todo"
             @click="handleCalcularTodas"
+            :disable="loading || !empleadosData.length || isPeriodoAprobado"
+          >
+            <q-tooltip>Calcula y guarda permanentemente los resultados en el sistema</q-tooltip>
+          </q-btn>
+          <q-btn
+            unelevated
+            color="deep-orange-7"
+            icon="task_alt"
+            label="Fijar y Aprobar Todo"
+            @click="handleAprobarTodas"
+            :disable="loading || !empleadosData.length || isPeriodoAprobado"
+            class="q-ml-sm"
+          >
+            <q-tooltip>Aprueba todas las nóminas; después de esto no se podrán modificar</q-tooltip>
+          </q-btn>
+          <q-btn
+            unelevated
+            color="indigo-7"
+            icon="description"
+            label="Imprimir Volantes"
+            @click="handlePrintVouchers"
+            :disable="loading || !empleadosData.length"
+            class="q-ml-sm"
+          >
+            <q-tooltip>Genera los comprobantes de pago de todos los empleados</q-tooltip>
+          </q-btn>
+          <q-space />
+          <q-btn
+            outline
+            color="green-8"
+            icon="file_download"
+            label="Excel"
+            @click="handleExportExcel"
+            :disable="loading || !empleadosData.length"
+          />
+          <q-btn
+            outline
+            color="red-8"
+            icon="picture_as_pdf"
+            label="PDF"
+            @click="handleExportPDF"
             :disable="loading || !empleadosData.length"
           />
         </div>
@@ -479,8 +805,10 @@ onMounted(() => {
                 <th>Valor Hora</th>
                 <th>Días</th>
                 <th>Salario Básico</th>
-                <th>H.E. Diurnas</th>
-                <th>H.E. Festivas</th>
+                <th>Cant. H.E. Diurnas</th>
+                <th>$ H.E. Diurnas</th>
+                <th>Cant. H.E. Festivas</th>
+                <th>$ H.E. Festivas</th>
                 <th>Aux. Transporte</th>
                 <th>Otros Pagos</th>
                 <th>Total Devengado</th>
@@ -493,14 +821,14 @@ onMounted(() => {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="row in empleadosData" :key="row.empleado.id">
+              <tr v-for="row in filteredEmpleados" :key="row.empleado.id">
                 <td>{{ row.empleado.nombre_completo }}</td>
                 <td class="text-right">{{ formatCurrency(row.empleado.salario_mensual) }}</td>
                 <td class="text-right">{{ formatCurrency(calcularValorHora(row.empleado.salario_mensual)) }}</td>
                 <td class="text-center">{{ periodo?.dias_periodo || 15 }}</td>
                 <td class="text-right">{{ formatCurrency(calcularTotales(row).salarioBasico) }}</td>
                 <td class="text-center">
-                  <div class="row items-center q-gutter-xs">
+                  <div class="row items-center q-gutter-xs justify-center">
                     <span>{{ row.horasExtrasDiurnas.toFixed(2) }}</span>
                     <q-btn
                       flat
@@ -510,13 +838,17 @@ onMounted(() => {
                       icon="add"
                       color="green-7"
                       @click="handleAgregarHoraExtra(row, 'DIURNA')"
+                      :disable="row.nomina && row.nomina.estado !== 'BORRADOR'"
                     >
                       <q-tooltip>Agregar Hora Extra Diurna</q-tooltip>
                     </q-btn>
                   </div>
                 </td>
+                <td class="text-right">
+                  {{ formatCurrency(calcularTotales(row).heDiurna) }}
+                </td>
                 <td class="text-center">
-                  <div class="row items-center q-gutter-xs">
+                  <div class="row items-center q-gutter-xs justify-center">
                     <span>{{ row.horasExtrasFestivas.toFixed(2) }}</span>
                     <q-btn
                       flat
@@ -526,10 +858,14 @@ onMounted(() => {
                       icon="add"
                       color="orange-7"
                       @click="handleAgregarHoraExtra(row, 'FESTIVA')"
+                      :disable="row.nomina && row.nomina.estado !== 'BORRADOR'"
                     >
                       <q-tooltip>Agregar Hora Extra Festiva</q-tooltip>
                     </q-btn>
                   </div>
+                </td>
+                <td class="text-right">
+                  {{ formatCurrency(calcularTotales(row).heFestiva) }}
                 </td>
                 <td class="text-right">{{ formatCurrency(calcularTotales(row).auxTransporte) }}</td>
                 <td class="text-right">
@@ -543,6 +879,7 @@ onMounted(() => {
                       icon="add"
                       color="blue-7"
                       @click="handleAgregarOtroPago(row, 'INGRESO')"
+                      :disable="row.nomina && row.nomina.estado !== 'BORRADOR'"
                     >
                       <q-tooltip>Agregar Otro Pago</q-tooltip>
                     </q-btn>
@@ -564,6 +901,7 @@ onMounted(() => {
                       icon="add"
                       color="red-7"
                       @click="handleAgregarOtroPago(row, 'DEDUCCION')"
+                      :disable="row.nomina && row.nomina.estado !== 'BORRADOR'"
                     >
                       <q-tooltip>Agregar Deducción</q-tooltip>
                     </q-btn>
@@ -576,6 +914,17 @@ onMounted(() => {
                   {{ formatCurrency(calcularTotales(row).netoPagar) }}
                 </td>
                 <td>
+                  <q-btn
+                    v-if="row.nomina"
+                    flat
+                    dense
+                    round
+                    icon="print"
+                    color="indigo-7"
+                    @click="handlePrintIndividualVoucher(row)"
+                  >
+                    <q-tooltip>Imprimir Volante</q-tooltip>
+                  </q-btn>
                   <q-btn
                     v-if="row.nomina"
                     flat

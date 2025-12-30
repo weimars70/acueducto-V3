@@ -31,6 +31,15 @@ export class NominasController {
     return this.nominasService.findAll(page, limit, { periodoId, empresaId });
   }
 
+  @Get('vouchers')
+  getVouchers(
+    @Query('periodoId') periodoId: number,
+    @Request() req: any,
+  ) {
+    const empresaId = req.user.empresaId;
+    return this.nominasService.getVouchers(periodoId, empresaId);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.nominasService.findOne(+id);

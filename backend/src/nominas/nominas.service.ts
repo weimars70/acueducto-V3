@@ -47,7 +47,15 @@ export class NominasService {
           e.nombre_completo as empleado_nombre,
           p.nombre as periodo_nombre,
           p.fecha_inicio,
-          p.fecha_fin
+          p.fecha_fin,
+          (SELECT SUM(valor_total) FROM public.nomina_detalle nd JOIN public.conceptos_nomina c ON nd.concepto_id = c.id WHERE nd.nomina_id = n.id AND c.subtipo = 'BASICO') as valor_basico,
+          (SELECT SUM(valor_total) FROM public.nomina_detalle nd JOIN public.conceptos_nomina c ON nd.concepto_id = c.id WHERE nd.nomina_id = n.id AND c.subtipo = 'HORA_EXTRA_DIURNA') as valor_he_diurna,
+          (SELECT SUM(valor_total) FROM public.nomina_detalle nd JOIN public.conceptos_nomina c ON nd.concepto_id = c.id WHERE nd.nomina_id = n.id AND c.subtipo = 'HORA_EXTRA_FESTIVA') as valor_he_festiva,
+          (SELECT SUM(valor_total) FROM public.nomina_detalle nd JOIN public.conceptos_nomina c ON nd.concepto_id = c.id WHERE nd.nomina_id = n.id AND c.subtipo = 'AUXILIO_TRANSPORTE') as valor_auxilio_transporte,
+          (SELECT SUM(valor_total) FROM public.nomina_detalle nd JOIN public.conceptos_nomina c ON nd.concepto_id = c.id WHERE nd.nomina_id = n.id AND c.subtipo = 'DEDUCCION_SALUD') as valor_salud,
+          (SELECT SUM(valor_total) FROM public.nomina_detalle nd JOIN public.conceptos_nomina c ON nd.concepto_id = c.id WHERE nd.nomina_id = n.id AND c.subtipo = 'DEDUCCION_PENSION') as valor_pension,
+          (SELECT SUM(valor_total) FROM public.nomina_detalle nd JOIN public.conceptos_nomina c ON nd.concepto_id = c.id WHERE nd.nomina_id = n.id AND c.tipo = 'DEVENGADO' AND c.subtipo NOT IN ('BASICO', 'HORA_EXTRA_DIURNA', 'HORA_EXTRA_FESTIVA', 'AUXILIO_TRANSPORTE')) as valor_otros_devengados,
+          (SELECT SUM(valor_total) FROM public.nomina_detalle nd JOIN public.conceptos_nomina c ON nd.concepto_id = c.id WHERE nd.nomina_id = n.id AND c.tipo = 'DEDUCCION' AND c.subtipo NOT IN ('DEDUCCION_SALUD', 'DEDUCCION_PENSION')) as valor_otras_deducciones
         FROM public.nominas n
         INNER JOIN public.empleados e ON n.empleado_id = e.id
         INNER JOIN public.periodos_nomina p ON n.periodo_id = p.id
@@ -94,11 +102,11 @@ export class NominasService {
     try {
       const nomina = await this.nominaRepository.findOne({
         where: { id },
-        relations: ['empleado', 'periodo', 'detalles', 'detalles.concepto'],
+        relations: ['empleado', 'periodo', 'detalles', 'detalles.concepto']
       });
 
       if (!nomina) {
-        throw new Error(`Nómina con ID ${id} no encontrada`);
+        throw new Error('Nómina no encontrada');
       }
 
       return nomina;
@@ -209,6 +217,15 @@ export class NominasService {
         });
 
         const savedNomina = await queryRunner.manager.save(nomina);
+
+        // Calcular automáticamente al generar para persistir valores iniciales
+        // Nota: esto ya guarda en nomina_detalle
+        try {
+          await this.calcularNominaInternal(savedNomina.id, queryRunner);
+        } catch (calcError) {
+          console.error(`Error al calcular nómina inicial para empleado ${empleado.id}:`, calcError);
+        }
+
         nominasCreadas.push(savedNomina);
       }
 
@@ -228,9 +245,30 @@ export class NominasService {
     await queryRunner.startTransaction();
 
     try {
-      const nomina = await this.findOne(nominaId);
+      const result = await this.calcularNominaInternal(nominaId, queryRunner);
+      await queryRunner.commitTransaction();
+      return result;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw new Error(`Error al calcular nómina: ${error.message}`);
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  async calcularNominaInternal(nominaId: number, queryRunner: any) {
+    try {
+      const nomina = await queryRunner.manager.findOne(Nomina, {
+        where: { id: nominaId },
+        relations: ['empleado', 'periodo'],
+      });
+
       if (!nomina) {
         throw new Error('Nómina no encontrada');
+      }
+
+      if (nomina.estado !== 'BORRADOR') {
+        throw new Error('Solo se pueden calcular nóminas en estado BORRADOR');
       }
 
       // Obtener conceptos activos
@@ -241,14 +279,15 @@ export class NominasService {
 
       let totalDevengado = 0;
       let totalDeducciones = 0;
+      let totalHorasExtras = 0;
 
       // Calcular salario básico del período
       // Para períodos de 15 días: salario_mensual / 2
       // Para otros períodos: (salario_mensual / 30) * dias_pagados
-      const salarioBasico = nomina.diasPagados === 15
+      const salarioBasico = Math.round(nomina.diasPagados === 15
         ? Number(nomina.salarioMensual) / 2
-        : (Number(nomina.salarioMensual) / 30) * nomina.diasPagados;
-      
+        : (Number(nomina.salarioMensual) / 30) * nomina.diasPagados);
+
       // Buscar concepto de salario básico
       const conceptoBasico = conceptos.data.find(c => c.subtipo === 'BASICO' && c.tipo === 'DEVENGADO');
       if (conceptoBasico) {
@@ -272,7 +311,7 @@ export class NominasService {
       );
 
       for (const he of horasExtras) {
-        const conceptoHE = conceptos.data.find(c => 
+        const conceptoHE = conceptos.data.find(c =>
           (c.subtipo === 'HORA_EXTRA_DIURNA' && he.tipo === 'DIURNA') ||
           (c.subtipo === 'HORA_EXTRA_FESTIVA' && he.tipo === 'FESTIVA')
         );
@@ -289,6 +328,7 @@ export class NominasService {
           });
           await queryRunner.manager.save(detalleHE);
           totalDevengado += Number(he.valor_total);
+          totalHorasExtras += Number(he.valor_total);
         }
       }
 
@@ -301,16 +341,16 @@ export class NominasService {
           const anio = new Date().getFullYear();
           const paramAux = await queryRunner.query(
             `SELECT valor FROM parametros_nomina
-             WHERE codigo LIKE 'AUX_TRANSPORTE%' AND empresa_id = $1 AND anio = $2
-             ORDER BY anio DESC LIMIT 1`,
+               WHERE codigo LIKE 'AUX_TRANSPORTE%' AND empresa_id = $1 AND anio = $2
+               ORDER BY anio DESC LIMIT 1`,
             [nomina.empresaId, anio]
           );
           const valorAuxMensual = paramAux.length > 0 ? Number(paramAux[0].valor) : 200000;
           // Para períodos de 15 días: auxilio / 2
           // Para otros períodos: (auxilio / 30) * dias_pagados
-          const valorAuxPeriodo = nomina.diasPagados === 15
+          const valorAuxPeriodo = Math.round(nomina.diasPagados === 15
             ? Number(valorAuxMensual) / 2
-            : (Number(valorAuxMensual) / 30) * nomina.diasPagados;
+            : (Number(valorAuxMensual) / 30) * nomina.diasPagados);
 
           const detalleAux = this.detalleRepository.create({
             nominaId: nominaId,
@@ -330,7 +370,12 @@ export class NominasService {
       const deducciones = conceptos.data.filter(c => c.tipo === 'DEDUCCION');
       for (const ded of deducciones) {
         if (ded.porcentaje) {
-          const valorDeduccion = salarioBasico * (Number(ded.porcentaje) / 100);
+          // La base para salud y pensión incluye Básico + Horas Extras
+          const baseCalculo = (ded.subtipo === 'DEDUCCION_SALUD' || ded.subtipo === 'DEDUCCION_PENSION')
+            ? salarioBasico + totalHorasExtras
+            : salarioBasico;
+
+          const valorDeduccion = Math.round(baseCalculo * (Number(ded.porcentaje) / 100));
           const detalleDed = this.detalleRepository.create({
             nominaId: nominaId,
             conceptoId: ded.id,
@@ -365,7 +410,7 @@ export class NominasService {
             usuarioCreacion: nomina.usuarioCreacion,
           });
           await queryRunner.manager.save(detalleOP);
-          
+
           if (op.tipo === 'INGRESO') {
             totalDevengado += Number(op.valor);
           } else {
@@ -375,28 +420,29 @@ export class NominasService {
       }
 
       // Actualizar totales
-      const netoPagar = totalDevengado - totalDeducciones;
+      const netoPagar = Math.round(totalDevengado - totalDeducciones);
+      totalDevengado = Math.round(totalDevengado);
+      totalDeducciones = Math.round(totalDeducciones);
 
-      await queryRunner.query(
+      await queryRunner.manager.query(
         `UPDATE nominas SET 
-          total_devengado = $1, 
-          total_deducciones = $2, 
-          neto_pagar = $3 
-        WHERE id = $4`,
+            total_devengado = $1, 
+            total_deducciones = $2, 
+            neto_pagar = $3 
+          WHERE id = $4`,
         [totalDevengado, totalDeducciones, netoPagar, nominaId]
       );
 
-      await queryRunner.commitTransaction();
-      return await this.findOne(nominaId);
+      return await queryRunner.manager.findOne(Nomina, {
+        where: { id: nominaId },
+        relations: ['empleado', 'periodo', 'detalles', 'detalles.concepto']
+      });
     } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw new Error(`Error al calcular nómina: ${error.message}`);
-    } finally {
-      await queryRunner.release();
+      throw error;
     }
-  }
+}
 
-  async aprobarNomina(nominaId: number, userId: number, observaciones?: string) {
+  async aprobarNomina(nominaId: number, userId: number, observaciones ?: string) {
     try {
       const nomina = await this.findOne(nominaId);
       if (nomina.estado !== 'BORRADOR') {
@@ -414,7 +460,7 @@ export class NominasService {
     } catch (error) {
       throw new Error(`Error al aprobar nómina: ${error.message}`);
     }
-  }
+}
 
   async marcarComoPagado(nominaId: number) {
     try {
@@ -431,50 +477,64 @@ export class NominasService {
     } catch (error) {
       throw new Error(`Error al marcar nómina como pagada: ${error.message}`);
     }
-  }
+}
 
   async update(id: number, updateNominaDto: UpdateNominaDto) {
     try {
+      const nomina = await this.findOne(id);
+      if (nomina.estado !== 'BORRADOR') {
+        throw new Error('No se puede actualizar una nómina aprobada o pagada');
+      }
       await this.nominaRepository.update(id, updateNominaDto);
       return await this.findOne(id);
     } catch (error) {
       throw new Error(`Error al actualizar nómina: ${error.message}`);
     }
-  }
+}
 
   async remove(id: number) {
     try {
       const nomina = await this.findOne(id);
-      if (nomina.estado === 'PAGADO') {
-        throw new Error('No se puede eliminar una nómina pagada');
+      if (nomina.estado !== 'BORRADOR') {
+        throw new Error('No se puede eliminar una nómina aprobada o pagada');
       }
       await this.nominaRepository.delete(id);
       return { message: 'Nómina eliminada exitosamente' };
     } catch (error) {
       throw new Error(`Error al eliminar nómina: ${error.message}`);
     }
-  }
+}
 
   async crearHoraExtra(dto: any) {
     try {
+      // Verificar si existe una nómina para este empleado y periodo que ya esté aprobada
+      const nominaExistente = await this.dataSource.query(
+        'SELECT estado FROM nominas WHERE empleado_id = $1 AND periodo_id = $2',
+        [dto.empleadoId, dto.periodoId]
+      );
+
+      if (nominaExistente.length > 0 && nominaExistente[0].estado !== 'BORRADOR') {
+        throw new Error('No se pueden adicionar horas extras a una nómina aprobada o pagada');
+      }
+
       const empleado = await this.empleadosService.findOne(dto.empleadoId);
       const valorHora = Number(empleado.salario_mensual) / 220;
-      
+
       let valorHoraExtra = valorHora;
       if (dto.tipo === 'DIURNA') {
         valorHoraExtra = valorHora * 1.25; // 25% recargo
       } else if (dto.tipo === 'FESTIVA') {
-        valorHoraExtra = valorHora * 1.75; // 75% recargo
+        valorHoraExtra = valorHora * 1.80; // 80% recargo (Ajustado a solicitud del usuario)
       }
 
-      const valorTotal = valorHoraExtra * Number(dto.cantidadHoras);
+      const valorTotal = Math.round(valorHoraExtra * Number(dto.cantidadHoras));
 
       const query = `
-        INSERT INTO horas_extras (empleado_id, periodo_id, fecha, tipo, cantidad_horas, valor_hora, valor_total, aprobado, empresa_id, usuario_creacion)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        RETURNING *
-      `;
-      
+          INSERT INTO horas_extras (empleado_id, periodo_id, fecha, tipo, cantidad_horas, valor_hora, valor_total, aprobado, empresa_id, usuario_creacion)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          RETURNING *
+        `;
+
       const result = await this.dataSource.query(query, [
         dto.empleadoId,
         dto.periodoId,
@@ -492,16 +552,26 @@ export class NominasService {
     } catch (error) {
       throw new Error(`Error al crear hora extra: ${error.message}`);
     }
-  }
+}
 
   async crearOtroPago(dto: any) {
     try {
+      // Verificar si existe una nómina para este empleado y periodo que ya esté aprobada
+      const nominaExistente = await this.dataSource.query(
+        'SELECT estado FROM nominas WHERE empleado_id = $1 AND periodo_id = $2',
+        [dto.empleadoId, dto.periodoId]
+      );
+
+      if (nominaExistente.length > 0 && nominaExistente[0].estado !== 'BORRADOR') {
+        throw new Error('No se pueden adicionar otros pagos a una nómina aprobada o pagada');
+      }
+
       const query = `
-        INSERT INTO otros_pagos (empleado_id, periodo_id, concepto, descripcion, valor, tipo, aprobado, empresa_id, usuario_creacion)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        RETURNING *
-      `;
-      
+          INSERT INTO otros_pagos (empleado_id, periodo_id, concepto, descripcion, valor, tipo, aprobado, empresa_id, usuario_creacion)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          RETURNING *
+        `;
+
       const result = await this.dataSource.query(query, [
         dto.empleadoId,
         dto.periodoId,
@@ -518,13 +588,13 @@ export class NominasService {
     } catch (error) {
       throw new Error(`Error al crear otro pago: ${error.message}`);
     }
-  }
+}
 
   async getEmpleadosConNominasParaPeriodo(periodoId: number, empresaId: number) {
     try {
       // Obtener período
       const periodo = await this.periodosService.findOne(periodoId);
-      
+
       // Obtener empleados activos
       const empleados = await this.dataSource.query(
         `SELECT * FROM empleados WHERE activo = true AND empresa_id = $1 ORDER BY nombre_completo`,
@@ -577,6 +647,38 @@ export class NominasService {
       return resultado;
     } catch (error) {
       throw new Error(`Error al obtener empleados con nóminas: ${error.message}`);
+    }
+  }
+
+  async getVouchers(periodoId: number, empresaId: number) {
+    try {
+      const nominas = await this.nominaRepository.find({
+        where: {
+          periodoId: periodoId,
+          empresaId: empresaId,
+          estado: 'APROBADO'
+        },
+        relations: ['empleado', 'periodo', 'detalles', 'detalles.concepto'],
+        order: {
+          empleadoId: 'ASC'
+        }
+      });
+
+      return nominas.map(nomina => ({
+        id: nomina.id,
+        empleado: nomina.empleado,
+        periodo: nomina.periodo,
+        salarioMensual: nomina.salarioMensual,
+        diasPagados: nomina.diasPagados,
+        totalDevengado: nomina.totalDevengado,
+        totalDeducciones: nomina.totalDeducciones,
+        netoPagar: nomina.netoPagar,
+        detalles: nomina.detalles,
+        estado: nomina.estado,
+        fechaAprobacion: nomina.fechaAprobacion
+      }));
+    } catch (error) {
+      throw new Error(`Error al obtener vouchers: ${error.message}`);
     }
   }
 }

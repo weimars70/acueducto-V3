@@ -63,7 +63,11 @@ function handleLogout() {
     <MainDrawer v-model="leftDrawerOpen" />
 
     <q-page-container>
-      <router-view />
+      <router-view v-slot="{ Component }">
+        <keep-alive>
+          <component :is="Component" :key="$route.path" />
+        </keep-alive>
+      </router-view>
     </q-page-container>
   </q-layout>
 </template>

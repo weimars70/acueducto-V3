@@ -8,13 +8,25 @@ export interface Nomina {
   total_devengado: number;
   total_deducciones: number;
   neto_pagar: number;
-  estado: string; // BORRADOR, APROBADO, PAGADO
+  estado: string;
+  // BORRADOR, APROBADO, PAGADO
   observaciones?: string;
   empresa_id: number;
   fecha_creacion?: string | Date;
   usuario_creacion?: number;
   fecha_aprobacion?: string | Date;
   usuario_aprobacion?: number;
+  // Campos calculados/virtuales del backend
+  empleado_nombre?: string;
+  periodo_nombre?: string;
+  valor_basico?: number;
+  valor_he_diurna?: number;
+  valor_he_festiva?: number;
+  valor_auxilio_transporte?: number;
+  valor_salud?: number;
+  valor_pension?: number;
+  valor_otros_devengados?: number;
+  valor_otras_deducciones?: number;
   // Relaciones
   empleado?: {
     id: number;

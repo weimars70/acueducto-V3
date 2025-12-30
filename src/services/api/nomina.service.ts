@@ -23,9 +23,24 @@ class NominasService {
     return response.data;
   }
 
+  async findOne(id: number): Promise<Nomina> {
+    return this.getNomina(id);
+  }
+
   async getNomina(id: number): Promise<Nomina> {
     const response = await apiClient.get<Nomina>(`${this.basePath}/${id}`);
     return response.data;
+  }
+
+  async getVouchers(periodoId: number, empresaId: number): Promise<Nomina[]> {
+    const response = await apiClient.get<Nomina[]>(`${this.basePath}/vouchers`, {
+      params: { periodoId, empresaId }
+    });
+    return response.data;
+  }
+
+  async deleteNomina(id: number): Promise<void> {
+    return this.delete(id);
   }
 
   async create(nomina: CreateNominaDto): Promise<Nomina> {

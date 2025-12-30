@@ -45,9 +45,9 @@ export function useExport() {
         }
     };
 
-    const exportToPDF = (data: any[], columns: ExportColumn[], filename: string, title: string) => {
+    const exportToPDF = (data: any[], columns: ExportColumn[], filename: string, title: string, orientation: 'p' | 'l' = 'p') => {
         try {
-            const doc = new jsPDF();
+            const doc = new jsPDF({ orientation: orientation });
 
             // Título
             doc.setFontSize(16);
@@ -102,8 +102,313 @@ export function useExport() {
         }
     };
 
+    const exportNominaVouchers = (nominas: any[], title: string = 'Comprobante de Pago de Nómina') => {
+        try {
+            const doc = new jsPDF();
+            const formatCurrency = (val: number) =>
+                new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(val);
+
+            nominas.forEach((nomina, index) => {
+                if (index > 0) doc.addPage();
+
+                // Debug: verificar estructura de datos
+                console.log('=== DEBUG NOMINA ===');
+                console.log('Nómina completa:', nomina);
+
+                // --- MARCA DE AGUA / WATERMARK ---
+                try {
+                    // Guardar estado actual
+                    doc.saveGraphicsState();
+
+                    // Establecer opacidad para la marca de agua (0.1 = 10% opacidad)
+                    doc.setGState(new (doc as any).GState({ opacity: 0.1 }));
+
+                    // Agregar la imagen de marca de agua centrada en la página
+                    const watermarkUrl = '/mg_socorro.png';
+                    // Posición centrada (105 = centro horizontal de página A4)
+                    // Tamaño ajustado para cubrir la zona del detalle
+                    doc.addImage(watermarkUrl, 'PNG', 30, 90, 130, 130);
+
+                    // Restaurar estado (opacidad normal)
+                    doc.restoreGraphicsState();
+                } catch (error) {
+                    console.warn('No se pudo cargar la marca de agua:', error);
+                }
+
+                // --- HEADER SECTION ---
+                doc.setDrawColor(0);
+                doc.setLineWidth(0.5);
+
+                // Logo en la esquina superior derecha
+                try {
+                    // Agregar el logo (ajustar posición y tamaño según necesites)
+                    const logoUrl = '/logo_socorro.png';
+                    doc.addImage(logoUrl, 'PNG', 170, 5, 25, 25);
+                } catch (error) {
+                    console.warn('No se pudo cargar el logo:', error);
+                }
+
+                // Centered Header Text
+                doc.setFontSize(14);
+                doc.setFont('helvetica', 'bold');
+                doc.text('ACUEDUCTO COMUNITARIO EL SOCORRO', 105, 15, { align: 'center' });
+
+                doc.setFontSize(10);
+                doc.text('NIT: 811.012.202-5', 105, 20, { align: 'center' });
+                doc.setFont('helvetica', 'normal');
+                doc.text('CL 40 SUR N 24 E 19 - TEL: 3216230655', 105, 25, { align: 'center' });
+
+                // Period Row
+                doc.setDrawColor(200);
+                doc.setLineWidth(0.1);
+                doc.rect(14, 32, 182, 10);
+                doc.setFont('helvetica', 'bold');
+                doc.text('Periodo', 16, 38.5);
+                doc.text('Entre', 45, 38.5);
+                doc.setFont('helvetica', 'normal');
+
+                const fechaInicio = nomina.periodo?.fechaInicio || nomina.periodo?.fecha_inicio;
+                const fechaFin = nomina.periodo?.fechaFin || nomina.periodo?.fecha_fin;
+                const fechaInicioStr = fechaInicio ? new Date(fechaInicio).toLocaleDateString() : '';
+                const fechaFinStr = fechaFin ? new Date(fechaFin).toLocaleDateString() : '';
+                doc.text(`${nomina.periodo?.nombre || ''}  (${fechaInicioStr} al ${fechaFinStr})`, 70, 38.5);
+
+                // Employee Info Grid
+                doc.rect(14, 42, 182, 18);
+                doc.setFont('helvetica', 'bold');
+                doc.text('EMPLEADO', 16, 48);
+                doc.setFont('helvetica', 'normal');
+                doc.text(`${nomina.empleado?.cedula || ''}`, 45, 48);
+                doc.text(`${nomina.empleado_nombre || nomina.empleado?.nombre_completo || ''}`, 80, 48);
+
+                doc.setFont('helvetica', 'bold');
+                doc.text('SALARIO', 150, 48);
+                doc.setFont('helvetica', 'normal');
+                const salarioMensual = Number(
+                    nomina.empleado?.salarioMensual ||
+                    nomina.empleado?.salario_mensual ||
+                    nomina.salarioMensual ||
+                    nomina.salario_mensual
+                ) || 0;
+                doc.text(formatCurrency(salarioMensual), 170, 48);
+
+                doc.setFont('helvetica', 'bold');
+                doc.text('CARGO', 16, 55);
+                doc.setFont('helvetica', 'normal');
+                doc.text(`${nomina.empleado?.cargo || 'OPERARIO'}`, 45, 55);
+
+                // --- TABLE SECTION ---
+                const tableHeaders = [['CODIGO', 'DESCRIPCION', 'CANT', 'DEVENGADO', 'DEDUCCION', 'SALDO']];
+                const tableData: any[] = [];
+
+                // Función helper para formatear cantidad
+                const formatCantidad = (cantidad: number | undefined | null) => {
+                    if (cantidad === undefined || cantidad === null) return '';
+                    const num = Number(cantidad);
+                    if (isNaN(num) || num === 0) return '';
+                    return num.toFixed(2);
+                };
+
+                // Helper para obtener valor numérico seguro
+                const getValor = (valor: any) => {
+                    return Number(valor) || 0;
+                };
+
+                // 1. SALARIO BASICO
+                tableData.push([
+                    '1',
+                    'SALARIO BASICO',
+                    formatCantidad(nomina.cantidadDiasBasico || nomina.diasPagados || nomina.dias_pagados),
+                    formatCurrency(getValor(nomina.valorBasico || nomina.valor_basico)),
+                    '',
+                    ''
+                ]);
+
+                // 2. AUXILIO DE TRANSPORTE
+                const valorAux = getValor(nomina.valorAuxTransporte || nomina.valor_auxilio_transporte);
+                tableData.push([
+                    '2',
+                    'AUXILIO DE TRANSPORTE',
+                    formatCantidad(valorAux > 0 ? (nomina.diasPagados || nomina.dias_pagados) : null),
+                    formatCurrency(valorAux),
+                    '',
+                    ''
+                ]);
+
+                // 3. HORA EXTRA DIURNA
+                tableData.push([
+                    '3',
+                    'HORA EXTRA DIURNA',
+                    formatCantidad(nomina.cantidadHEDiurna),
+                    formatCurrency(getValor(nomina.valorHEDiurna)),
+                    '',
+                    ''
+                ]);
+
+                // 4. HORA DOMINICALES O FESTIVAS
+                tableData.push([
+                    '4',
+                    'HORA DOMINICALES O FESTIVAS',
+                    formatCantidad(nomina.cantidadHEFestiva),
+                    formatCurrency(getValor(nomina.valorHEFestiva)),
+                    '',
+                    ''
+                ]);
+
+                // 5. OTRO DEVENGADO (Otros Pagos tipo INGRESO)
+                const otrosPagosVal = getValor(nomina.otrosPagos);
+                let descripcionOtros = 'OTRO DEVENGADO-';
+                if (nomina.otrosPagosData && nomina.otrosPagosData.length > 0) {
+                    const ingresos = nomina.otrosPagosData.filter((op: any) => op.tipo === 'INGRESO');
+                    if (ingresos.length > 0) {
+                        descripcionOtros = `OTRO DEVENGADO- ${ingresos[0].concepto || ''}`;
+                    }
+                }
+                tableData.push([
+                    '5',
+                    descripcionOtros,
+                    '',
+                    formatCurrency(otrosPagosVal),
+                    '',
+                    ''
+                ]);
+
+                // 6. OTRO DEVENGADO (vacío o segundo concepto)
+                tableData.push([
+                    '6',
+                    'OTRO DEVENGADO-',
+                    '',
+                    formatCurrency(0),
+                    '',
+                    ''
+                ]);
+
+                // 7. APORTE A SALUD
+                tableData.push([
+                    '7',
+                    'APORTE A SALUD',
+                    '',
+                    '',
+                    formatCurrency(getValor(nomina.valorSalud || nomina.valor_salud)),
+                    ''
+                ]);
+
+                // 8. APORTE A PENSION
+                tableData.push([
+                    '8',
+                    'APORTE A PENSION',
+                    '',
+                    '',
+                    formatCurrency(getValor(nomina.valorPension || nomina.valor_pension)),
+                    ''
+                ]);
+
+                // 9. OTRAS DEDUCCIONES
+                const otrasDedVal = getValor(nomina.otrasDeducciones || nomina.otras_deducciones);
+                let descripcionDed = 'ABONO PRESTAMO';
+                if (nomina.otrosPagosData && nomina.otrosPagosData.length > 0) {
+                    const deducciones = nomina.otrosPagosData.filter((op: any) => op.tipo === 'DEDUCCION');
+                    if (deducciones.length > 0) {
+                        descripcionDed = deducciones[0].concepto || 'ABONO PRESTAMO';
+                    }
+                }
+                tableData.push([
+                    '9',
+                    descripcionDed,
+                    '',
+                    '',
+                    formatCurrency(otrasDedVal),
+                    ''
+                ]);
+
+                // 10. OTRA DEDUCCION
+                tableData.push([
+                    '10',
+                    'OTRA DEDUCCION:',
+                    '',
+                    '',
+                    formatCurrency(0),
+                    ''
+                ]);
+
+                autoTable(doc, {
+                    startY: 65,
+                    head: tableHeaders,
+                    body: tableData,
+                    theme: 'grid',
+                    headStyles: {
+                        fillColor: [245, 245, 245],
+                        textColor: [0, 0, 0],
+                        fontStyle: 'bold',
+                        fontSize: 8,
+                        lineWidth: 0.1,
+                        lineColor: [200, 200, 200]
+                    },
+                    styles: {
+                        fontSize: 8,
+                        cellPadding: 2,
+                        lineColor: [200, 200, 200],
+                        lineWidth: 0.1
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 15, halign: 'center' },
+                        1: { cellWidth: 85 },
+                        2: { cellWidth: 15, halign: 'center' },
+                        3: { cellWidth: 28, halign: 'right' },
+                        4: { cellWidth: 28, halign: 'right' },
+                        5: { cellWidth: 11, halign: 'right' }
+                    }
+                });
+
+                let finalY = (doc as any).lastAutoTable.finalY;
+
+                // --- TOTALS SECTION ---
+                doc.setDrawColor(200);
+                doc.rect(14, finalY, 182, 8);
+                doc.setFont('helvetica', 'bold');
+                doc.text('TOTALES', 100, finalY + 5.5, { align: 'right' });
+                const totalDevengado = Number(nomina.totalDevengado || nomina.total_devengado) || 0;
+                const totalDeducciones = Number(nomina.totalDeducciones || nomina.total_deducciones) || 0;
+                doc.text(formatCurrency(totalDevengado), 156, finalY + 5.5, { align: 'right' });
+                doc.text(formatCurrency(totalDeducciones), 181, finalY + 5.5, { align: 'right' });
+
+                finalY += 12;
+
+                // Neto a Pagar Box
+                doc.setFillColor(240, 245, 255);
+                doc.rect(110, finalY, 86, 10, 'F');
+                doc.rect(110, finalY, 86, 10);
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.text('NETO A PAGAR', 115, finalY + 6.5);
+                const netoPagar = Number(nomina.netoPagar || nomina.neto_pagar) || 0;
+                doc.text(formatCurrency(netoPagar), 194, finalY + 6.5, { align: 'right' });
+
+                // --- FOOTER / SIGNATURES ---
+                const footerY = finalY + 30;
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'bold');
+                doc.line(14, footerY, 90, footerY);
+                doc.text('FIRMA RECIBIDO / EMPLEADO', 14, footerY + 5);
+                doc.line(14, footerY, 90, footerY + 0);
+                doc.text(`${nomina.empleado_nombre || nomina.empleado?.nombre_completo || nomina.empleado?.nombreCompleto || ''}`, 14, footerY + 10);
+                doc.setFont('helvetica', 'normal');
+                doc.text(`C,C   ${nomina.empleado?.cedula || ''}`, 14, footerY + 15);
+
+                doc.text('Declaro que he recibido a satisfacción los valores aquí expresados.', 14, footerY + 20);
+
+            });
+
+            doc.save(`comprobante_nomina_${new Date().toISOString().split('T')[0]}.pdf`);
+        } catch (error) {
+            console.error('Error exporting vouchers:', error);
+            throw error;
+        }
+    };
+
     return {
         exportToExcel,
         exportToPDF,
+        exportNominaVouchers
     };
 }

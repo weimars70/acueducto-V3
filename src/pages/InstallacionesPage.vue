@@ -294,6 +294,7 @@
               <q-badge
                 :color="props.row.activo ? 'positive' : 'negative'"
                 :label="props.row.activo ? 'Activo' : 'Inactivo'"
+                size="sm"
               />
             </q-td>
           </template>
@@ -940,12 +941,14 @@ onMounted(async () => {
 :deep(.q-table thead th) {
   font-weight: 600;
   color: #374151;
-  font-size: 13px;
+  font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   cursor: grab;
   user-select: none;
   position: relative;
+  padding: 4px 8px;
+  height: 32px;
 }
 
 :deep(.q-table thead th:hover) {
@@ -957,10 +960,12 @@ onMounted(async () => {
 }
 
 :deep(.q-table tbody td) {
-  font-size: 14px;
+  font-size: 10px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  padding: 4px 8px;
+  height: 32px;
 }
 
 :deep(.q-table thead th) {
