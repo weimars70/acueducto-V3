@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRouter, useRoute } from 'vue-router';
 import { nominasService } from '../services/api/nomina.service';
@@ -15,9 +15,21 @@ const route = useRoute();
 const {
   exportToExcel,
   exportToPDF,
-  exportNominaVouchers
+  exportNominaVouchers,
+  generateNominaVouchers
 } = useExport();
 const loading = ref(false);
+const showPreviewModal = ref(false);
+const showCreatePeriodModal = ref(false);
+const previewPdfUrl = ref('');
+const currentVouchers = ref<any[]>([]);
+const previewFilename = ref('');
+const newPeriod = ref({
+  nombre: '',
+  fecha_inicio: '',
+  fecha_fin: '',
+  dias_periodo: 15
+});
 const periodoId = ref<number | null>(null);
 const periodo = ref<PeriodoNomina | null>(null);
 const periodos = ref<PeriodoNomina[]>([]);
@@ -565,6 +577,7 @@ const handlePrintVouchers = async () => {
   try {
     $q.loading.show({ message: 'Generando volantes de pago...' });
 
+    const p = periodo.value;
     // Construir vouchers con los datos del listado
     const vouchers = empleadosData.value
       .filter(row => row.nomina || row.empleado)
@@ -573,14 +586,14 @@ const handlePrintVouchers = async () => {
         return {
           id: row.nomina?.id,
           empleado: row.empleado,
-          periodo: periodo.value,
+          periodo: p,
           salarioMensual: row.empleado.salario_mensual,
-          diasPagados: periodo.value.dias_periodo,
+          diasPagados: p.dias_periodo,
           totalDevengado: totales.totalDevengado,
           totalDeducciones: totales.totalDeducciones,
           netoPagar: totales.netoPagar,
           valorBasico: totales.salarioBasico,
-          cantidadDiasBasico: periodo.value.dias_periodo,
+          cantidadDiasBasico: p.dias_periodo,
           valorAuxTransporte: totales.auxTransporte,
           cantidadHEDiurna: row.horasExtrasDiurnas,
           valorHEDiurna: totales.heDiurna,
@@ -600,8 +613,14 @@ const handlePrintVouchers = async () => {
       return;
     }
 
-    await exportNominaVouchers(vouchers, periodo.value?.nombre || 'Nómina');
-    $q.notify({ type: 'positive', message: 'Volantes de pago generados exitosamente' });
+    currentVouchers.value = vouchers;
+    previewFilename.value = `vouchers_${periodo.value?.nombre || 'nomina'}`;
+    const doc = generateNominaVouchers(vouchers);
+    const blob = doc.output('blob');
+    if (previewPdfUrl.value) URL.revokeObjectURL(previewPdfUrl.value);
+    previewPdfUrl.value = URL.createObjectURL(blob);
+    showPreviewModal.value = true;
+
   } catch (error) {
     console.error('Error al generar volantes de pago:', error);
     $q.notify({ type: 'negative', message: 'Error al generar volantes de pago' });
@@ -625,19 +644,20 @@ const handlePrintIndividualVoucher = async (row: EmpleadoNominaRow) => {
     const totales = calcularTotales(row);
     const valorHora = calcularValorHora(row.empleado.salario_mensual);
 
+    const p = periodo.value;
     // Construir objeto de nómina con los datos del listado
     const nominaData = {
       id: row.nomina?.id,
       empleado: row.empleado,
-      periodo: periodo.value,
+      periodo: p,
       salarioMensual: row.empleado.salario_mensual,
-      diasPagados: periodo.value.dias_periodo,
+      diasPagados: p.dias_periodo,
       totalDevengado: totales.totalDevengado,
       totalDeducciones: totales.totalDeducciones,
       netoPagar: totales.netoPagar,
       // Valores individuales para el detalle
       valorBasico: totales.salarioBasico,
-      cantidadDiasBasico: periodo.value.dias_periodo,
+      cantidadDiasBasico: p.dias_periodo,
       valorAuxTransporte: totales.auxTransporte,
       cantidadHEDiurna: row.horasExtrasDiurnas,
       valorHEDiurna: totales.heDiurna,
@@ -651,8 +671,14 @@ const handlePrintIndividualVoucher = async (row: EmpleadoNominaRow) => {
       otrosPagosData: row.otrosPagosData
     };
 
-    await exportNominaVouchers([nominaData], periodo.value?.nombre || 'Comprobante de Pago');
-    $q.notify({ type: 'positive', message: 'Volante de pago generado exitosamente' });
+    currentVouchers.value = [nominaData];
+    previewFilename.value = `volante_${row.empleado.cedula}`;
+    const doc = generateNominaVouchers([nominaData]);
+    const blob = doc.output('blob');
+    if (previewPdfUrl.value) URL.revokeObjectURL(previewPdfUrl.value);
+    previewPdfUrl.value = URL.createObjectURL(blob);
+    showPreviewModal.value = true;
+
   } catch (error) {
     console.error('Error al generar volante de pago individual:', error);
     $q.notify({ type: 'negative', message: 'Error al generar volante de pago' });
@@ -661,8 +687,66 @@ const handlePrintIndividualVoucher = async (row: EmpleadoNominaRow) => {
   }
 };
 
+const handleDownloadFromPreview = () => {
+  exportNominaVouchers(currentVouchers.value, previewFilename.value);
+};
+
+const handlePrintFromPreview = () => {
+  const doc = generateNominaVouchers(currentVouchers.value);
+  doc.autoPrint();
+  const hUWA = doc.output('bloburl');
+  window.open(hUWA, '_blank');
+};
+
+// Calcluar días cuando cambian las fechas
+watch([() => newPeriod.value.fecha_inicio, () => newPeriod.value.fecha_fin], ([start, end]) => {
+  if (start && end) {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    newPeriod.value.dias_periodo = diffDays;
+  }
+});
+
+const handleCreatePeriod = async () => {
+  try {
+    $q.loading.show({ message: 'Creando período...' });
+    const created = await periodoNominaService.create(newPeriod.value);
+    $q.notify({
+      type: 'positive',
+      message: 'Período creado exitosamente'
+    });
+    showCreatePeriodModal.value = false;
+    await loadPeriodos();
+    periodoId.value = created.id;
+    await loadData();
+    // Reset form
+    newPeriod.value = {
+      nombre: '',
+      fecha_inicio: '',
+      fecha_fin: '',
+      dias_periodo: 15
+    };
+  } catch (error: any) {
+    console.error('Error al crear período:', error);
+    $q.notify({
+      type: 'negative',
+      message: error?.response?.data?.message || 'Error al crear el período'
+    });
+  } finally {
+    $q.loading.hide();
+  }
+};
+
 onMounted(() => {
   loadPeriodos();
+});
+
+onUnmounted(() => {
+  if (previewPdfUrl.value) {
+    URL.revokeObjectURL(previewPdfUrl.value);
+  }
 });
 </script>
 
@@ -681,7 +765,16 @@ onMounted(() => {
               Gestión de nóminas tipo Excel
             </div>
           </div>
-          <div class="col-auto">
+          <div class="col-auto row q-gutter-sm items-center">
+            <q-btn
+              unelevated
+              color="white"
+              text-color="primary"
+              icon="add"
+              label="Nuevo Período"
+              @click="showCreatePeriodModal = true"
+              class="text-weight-bold"
+            />
             <q-select
               v-model="periodoId"
               :options="periodos"
@@ -691,7 +784,7 @@ onMounted(() => {
               map-options
               outlined
               dense
-              :placeholder="periodos.length === 0 ? 'No hay períodos disponibles' : 'Seleccionar período...'"
+              :placeholder="periodos.length === 0 ? 'No hay períodos' : 'Seleccionar período...'"
               :disable="periodos.length === 0"
               class="bg-white"
               style="min-width: 250px"
@@ -728,6 +821,16 @@ onMounted(() => {
     <q-card flat class="q-mb-md shadow-1" v-if="periodoId">
       <q-card-section>
         <div class="row q-gutter-sm">
+          <q-btn
+            unelevated
+            color="secondary"
+            icon="view_agenda"
+            label="Versión Vertical (V2)"
+            @click="router.push('/nominas/nuevo-calculo')"
+            class="q-mr-sm"
+          >
+             <q-tooltip>Nueva interfaz vertical detallada</q-tooltip>
+          </q-btn>
           <q-btn
             unelevated
             color="primary"
@@ -788,6 +891,121 @@ onMounted(() => {
         </div>
       </q-card-section>
     </q-card>
+
+    <!-- Preview Modal -->
+    <q-dialog v-model="showPreviewModal" maximized transition-show="slide-up" transition-hide="slide-down">
+      <q-card class="column full-height">
+        <q-card-section class="row items-center q-pb-none bg-primary text-white">
+          <div class="text-h6">
+            <q-icon name="visibility" size="sm" class="q-mr-sm" />
+            Previsualización de Comprobantes
+          </div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+
+        <q-card-section class="col q-pa-none bg-grey-3">
+          <iframe
+            v-if="previewPdfUrl"
+            :src="previewPdfUrl"
+            style="width: 100%; height: 100%; border: none;"
+          ></iframe>
+          <div v-else class="flex flex-center full-height">
+            <q-spinner color="primary" size="3em" />
+            <div class="q-ml-md">Generando previsualización...</div>
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right" class="bg-white q-pa-md shadow-2">
+          <q-btn
+            flat
+            label="Cerrar"
+            color="grey-7"
+            v-close-popup
+            padding="sm lg"
+          />
+          <q-btn
+            unelevated
+            color="primary"
+            icon="print"
+            label="Imprimir"
+            @click="handlePrintFromPreview"
+            padding="sm lg"
+          />
+          <q-btn
+            unelevated
+            color="green-7"
+            icon="download"
+            label="Descargar PDF"
+            @click="handleDownloadFromPreview"
+            padding="sm lg"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Create Period Modal -->
+    <q-dialog v-model="showCreatePeriodModal" persistent>
+      <q-card style="min-width: 400px; border-radius: 12px;">
+        <q-card-section class="row items-center bg-primary text-white">
+          <div class="text-h6">Crear Nuevo Período</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+
+        <q-card-section class="q-pa-md">
+          <q-form @submit="handleCreatePeriod" class="q-gutter-md">
+            <q-input
+              v-model="newPeriod.nombre"
+              label="Nombre del Período"
+              outlined
+              dense
+              placeholder="Ej: Nomina Diciembre 2023 - Primera Quincena"
+              :rules="[val => !!val || 'El nombre es requerido']"
+            />
+            
+            <div class="row q-col-gutter-sm">
+              <div class="col-12 col-sm-6">
+                <q-input
+                  v-model="newPeriod.fecha_inicio"
+                  label="Fecha Inicio"
+                  type="date"
+                  outlined
+                  dense
+                  stack-label
+                  :rules="[val => !!val || 'Requerido']"
+                />
+              </div>
+              <div class="col-12 col-sm-6">
+                <q-input
+                  v-model="newPeriod.fecha_fin"
+                  label="Fecha Fin"
+                  type="date"
+                  outlined
+                  dense
+                  stack-label
+                  :rules="[val => !!val || 'Requerido']"
+                />
+              </div>
+            </div>
+
+            <q-input
+              v-model.number="newPeriod.dias_periodo"
+              label="Días del Período"
+              type="number"
+              outlined
+              dense
+              :rules="[val => !!val || 'Requerido', val => val > 0 || 'Debe ser mayor a 0']"
+            />
+
+            <div class="row justify-end q-gutter-sm q-mt-md">
+              <q-btn label="Cancelar" flat color="grey-7" v-close-popup />
+              <q-btn label="Crear Período" type="submit" color="primary" unelevated />
+            </div>
+          </q-form>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
 
     <!-- Table -->
     <q-card flat class="shadow-1" v-if="periodoId">

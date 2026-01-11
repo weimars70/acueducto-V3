@@ -822,6 +822,31 @@ const handleSync = async () => {
         </q-item>
       </q-expansion-item>
 
+      <q-separator class="elegant-separator" v-if="!isFontanero" />
+
+      <!-- Nómina Vertical (Top Level) -->
+      <q-item
+        v-if="!isFontanero"
+        clickable
+        v-ripple
+        :active="router.currentRoute.value.path === '/nominas/nuevo-calculo'"
+        active-class="text-primary bg-blue-1"
+        @click="navigateTo({
+          icon: 'view_agenda',
+          label: 'Nómina Vertical',
+          route: '/nominas/nuevo-calculo',
+          closable: true
+        })"
+        class="menu-expansion"
+      >
+        <q-item-section avatar>
+          <q-icon name="view_agenda" size="24px" />
+        </q-item-section>
+        <q-item-section class="text-weight-bold">
+          Nómina Vertical
+        </q-item-section>
+      </q-item>
+
       <!-- Sync Button -->
     </q-list>
   </q-drawer>

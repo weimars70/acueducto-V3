@@ -697,6 +697,11 @@ const routes = [
         component: () => import('../pages/CalcularNominaPage.vue')
       },
       {
+        path: '/nominas/nuevo-calculo',
+        name: 'nuevo-calculo-nomina',
+        component: () => import('../pages/NuevoCalculoNominaPage.vue')
+      },
+      {
         path: '/nominas/:id',
         name: 'view-nomina',
         component: () => import('../pages/ViewNominaPage.vue'),
@@ -770,6 +775,7 @@ router.beforeEach((to, from, next) => {
         { icon: 'event', label: 'Períodos de Nómina', route: '/periodos-nomina', closable: true },
         { icon: 'description', label: 'Conceptos de Nómina', route: '/conceptos-nomina', closable: true },
         { icon: 'payments', label: 'Nóminas', route: '/nominas', closable: true },
+        { icon: 'calculate', label: 'Calcular Nómina V2', route: '/nominas/nuevo-calculo', closable: true },
         { icon: 'handshake', label: 'Cuotas Conexión', route: '/diferidos/cuotas-conexion', closable: true },
         { icon: 'speed', label: 'Cuotas Medidor', route: '/diferidos/cuotas-medidor', closable: true },
         { icon: 'assignment', label: 'Acuerdos de Pago', route: '/diferidos/acuerdos-pago', closable: true }

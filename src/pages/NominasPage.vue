@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
 import { nominasService } from '../services/api/nomina.service';
@@ -13,11 +13,16 @@ const router = useRouter();
 const {
   exportToExcel,
   exportToPDF,
-  exportNominaVouchers
+  exportNominaVouchers,
+  generateNominaVouchers
 } = useExport();
 const nominas = ref<Nomina[]>([]);
 const periodos = ref<PeriodoNomina[]>([]);
 const loading = ref(true);
+const showPreviewModal = ref(false);
+const previewPdfUrl = ref('');
+const currentVouchers = ref<any[]>([]);
+const previewFilename = ref('');
 const filter = ref('');
 const periodoFiltro = ref<number | null>(null);
 const estadoFiltro = ref<string>('');
@@ -180,11 +185,13 @@ const handlePrintVoucher = async (nomina: Nomina) => {
     $q.loading.show({ message: 'Preparando volante de pago...' });
     // Fetch full details to ensure breakdown is included
     const nominaFull = await nominasService.findOne(nomina.id);
-    await exportNominaVouchers([nominaFull], `volante_pago_${nomina.empleado_nombre?.replace(/\s/g, '_')}_${nomina.periodo_nombre?.replace(/\s/g, '_')}`);
-    $q.notify({
-      type: 'positive',
-      message: 'Volante de pago generado exitosamente'
-    });
+    currentVouchers.value = [nominaFull];
+    previewFilename.value = `volante_pago_${nomina.empleado_nombre?.replace(/\s/g, '_')}_${nomina.periodo_nombre?.replace(/\s/g, '_')}`;
+    const doc = generateNominaVouchers([nominaFull]);
+    const blob = doc.output('blob');
+    if (previewPdfUrl.value) URL.revokeObjectURL(previewPdfUrl.value);
+    previewPdfUrl.value = URL.createObjectURL(blob);
+    showPreviewModal.value = true;
   } catch (error) {
     console.error('Error al generar volante de pago:', error);
     $q.notify({
@@ -194,6 +201,17 @@ const handlePrintVoucher = async (nomina: Nomina) => {
   } finally {
     $q.loading.hide();
   }
+};
+
+const handleDownloadFromPreview = () => {
+  exportNominaVouchers(currentVouchers.value, previewFilename.value);
+};
+
+const handlePrintFromPreview = () => {
+  const doc = generateNominaVouchers(currentVouchers.value);
+  doc.autoPrint();
+  const hUWA = doc.output('bloburl');
+  window.open(hUWA, '_blank');
 };
 
 const handleDelete = async (nomina: Nomina) => {
@@ -379,6 +397,12 @@ const handleExportPDF = () => {
 onMounted(() => {
   loadPeriodos();
   loadData();
+});
+
+onUnmounted(() => {
+  if (previewPdfUrl.value) {
+    URL.revokeObjectURL(previewPdfUrl.value);
+  }
 });
 </script>
 
@@ -641,6 +665,58 @@ onMounted(() => {
         </template>
       </q-table>
     </q-card>
+
+    <!-- Preview Modal -->
+    <q-dialog v-model="showPreviewModal" maximized transition-show="slide-up" transition-hide="slide-down">
+      <q-card class="column full-height">
+        <q-card-section class="row items-center q-pb-none bg-primary text-white">
+          <div class="text-h6">
+            <q-icon name="visibility" size="sm" class="q-mr-sm" />
+            Previsualización de Comprobante
+          </div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+
+        <q-card-section class="col q-pa-none bg-grey-3">
+          <iframe
+            v-if="previewPdfUrl"
+            :src="previewPdfUrl"
+            style="width: 100%; height: 100%; border: none;"
+          ></iframe>
+          <div v-else class="flex flex-center full-height">
+            <q-spinner color="primary" size="3em" />
+            <div class="q-ml-md">Generando previsualización...</div>
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right" class="bg-white q-pa-md shadow-2">
+          <q-btn
+            flat
+            label="Cerrar"
+            color="grey-7"
+            v-close-popup
+            padding="sm lg"
+          />
+          <q-btn
+            unelevated
+            color="primary"
+            icon="print"
+            label="Imprimir"
+            @click="handlePrintFromPreview"
+            padding="sm lg"
+          />
+          <q-btn
+            unelevated
+            color="green-7"
+            icon="download"
+            label="Descargar PDF"
+            @click="handleDownloadFromPreview"
+            padding="sm lg"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
