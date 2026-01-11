@@ -23,6 +23,7 @@ export interface ItemCatalogo {
     por_iva: number;
     precio_total: number;
     precio_venta: number;
+    inventario_actual: number;
 }
 
 export interface CreateSalidaDto {

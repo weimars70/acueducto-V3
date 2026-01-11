@@ -111,12 +111,26 @@ const filterItems = async (val: string, update: (callback: () => void) => void) 
   }
 };
 
-const onItemChange = () => {
-  if (itemForm.value.item) {
-    const selectedItem = itemsFiltered.value.find(i => i.id === itemForm.value.item);
+const onItemChange = (val: any) => {
+  console.log('onItemChange triggered', val);
+  const itemId = val || itemForm.value.item;
+  console.log('itemId to find:', itemId);
+  
+  if (itemId) {
+    console.log('Searching in itemsFiltered:', itemsFiltered.value);
+    const selectedItem = itemsFiltered.value.find(i => i.id === itemId);
+    console.log('Selected Item found:', selectedItem);
+    
     if (selectedItem) {
-      itemForm.value.psalida = selectedItem.precio_venta || selectedItem.precio_sin_iva;
-      itemForm.value.por_iva = selectedItem.por_iva;
+      // Usar precio_venta si existe, sino precio_sin_iva
+      const precio = Number(selectedItem.precio_venta) || Number(selectedItem.precio_sin_iva) || 0;
+      console.log('Setting prices - Psalida:', precio, 'IVA:', selectedItem.por_iva);
+      
+      itemForm.value.psalida = precio;
+      itemForm.value.por_iva = Number(selectedItem.por_iva) || 0;
+      
+      // Also reset quantity if needed or keep default
+      // itemForm.value.cantidad = 1; 
     }
   }
 };

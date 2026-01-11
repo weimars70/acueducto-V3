@@ -66,7 +66,7 @@ export class SalidasService {
     async getItems(empresaId: number) {
         try {
             const query = `
-                SELECT id,codigo, nombre, precio_sin_iva, por_iva, precio_total, precio_venta
+                SELECT id,codigo, nombre, precio_sin_iva, por_iva, precio_total, precio_venta, inventario_actual
                 FROM public.items
                 WHERE empresa_id = $1
                 ORDER BY nombre
@@ -86,7 +86,7 @@ export class SalidasService {
             }
 
             const query = `
-                SELECT id, codigo, nombre, precio_sin_iva, por_iva, precio_total, precio_venta
+                SELECT id, codigo, nombre, precio_sin_iva, por_iva, precio_total, precio_venta, inventario_actual
                 FROM public.items
                 WHERE empresa_id = $1
                   AND (
