@@ -19,12 +19,12 @@ const viewMode = ref<'table' | 'grid'>('table');
 const columns: QTableColumn[] = [
   { name: 'codigo', label: 'Código', field: 'codigo', align: 'left', sortable: true },
   {
-    name: 'fechahora',
+    name: 'fechaFactura',
     label: 'Fecha',
-    field: 'fechahora',
+    field: 'fechaFactura',
     align: 'left',
     sortable: true,
-    format: (val: string) => val ? new Date(val).toLocaleDateString('es-CO') : '-'
+    format: (val: string) => val ? new Date(val).toLocaleDateString('es-CO', { timeZone: 'UTC' }) : '-'
   },
   { name: 'clienteNombre', label: 'Cliente', field: 'clienteNombre', align: 'left', sortable: true },
   {
@@ -61,7 +61,7 @@ const columns: QTableColumn[] = [
   }
 ];
 
-const visibleColumns = ref(['codigo', 'fechahora', 'clienteNombre', 'subtotal', 'descuento', 'iva', 'total']);
+const visibleColumns = ref(['codigo', 'fechaFactura', 'clienteNombre', 'subtotal', 'descuento', 'iva', 'total']);
 const columnFilters = ref<Record<string, string>>({});
 
 const filteredData = computed(() => {
@@ -96,7 +96,7 @@ const handleExportExcel = () => {
   try {
     const exportColumns = [
       { field: 'codigo', label: 'Código' },
-      { field: 'fechahora', label: 'Fecha' },
+      { field: 'fechaFactura', label: 'Fecha' },
       { field: 'clienteNombre', label: 'Cliente' },
       { field: 'subtotal', label: 'Subtotal' },
       { field: 'descuento', label: 'Descuento' },
@@ -114,7 +114,7 @@ const handleExportPDF = () => {
   try {
     const exportColumns = [
       { field: 'codigo', label: 'Código' },
-      { field: 'fechahora', label: 'Fecha' },
+      { field: 'fechaFactura', label: 'Fecha' },
       { field: 'clienteNombre', label: 'Cliente' },
       { field: 'subtotal', label: 'Subtotal' },
       { field: 'descuento', label: 'Descuento' },
@@ -138,7 +138,7 @@ const formatCurrency = (value: number) => {
 
 const formatDate = (date: string | Date) => {
   if (!date) return 'N/A';
-  return new Date(date).toLocaleDateString('es-CO');
+  return new Date(date).toLocaleDateString('es-CO', { timeZone: 'UTC' });
 };
 
 const detailsLoading = ref<Record<string, boolean>>({});
