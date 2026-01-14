@@ -300,4 +300,15 @@ export class SalidasService {
             throw new Error(`Error al obtener detalles de la salida: ${error.message}`);
         }
     }
+    async updateObservacion(codigo: string, observacion: string, empresaId: number) {
+        try {
+            await this.dataSource.query(
+                'UPDATE salidas SET observacion = $1 WHERE codigo = $2 AND empresa_id = $3',
+                [observacion, codigo, empresaId]
+            );
+            return { ok: true, mensaje: 'Observación actualizada' };
+        } catch (error) {
+            throw new Error(`Error al actualizar observación: ${error.message}`);
+        }
+    }
 }

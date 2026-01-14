@@ -14,6 +14,7 @@ export interface Salida {
     saldo: number;
     totalUnidades: number;
     anulado: boolean;
+    observacion?: string;
     cliente: number;
     empresaId: number;
 }

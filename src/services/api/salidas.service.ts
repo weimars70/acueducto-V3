@@ -42,5 +42,9 @@ export const salidasService = {
     async getDetalles(codigo: string): Promise<any[]> {
         const response = await apiClient.get<any[]>(`/salidas/${codigo}/detalles`);
         return response.data;
+    },
+
+    async updateObservacion(codigo: string, observacion: string): Promise<void> {
+        await apiClient.patch(`/salidas/${codigo}/observacion`, { observacion });
     }
 };

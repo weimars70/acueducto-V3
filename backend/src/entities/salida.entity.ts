@@ -47,6 +47,9 @@ export class Salida {
     @Column({ type: 'boolean', default: false })
     anulado: boolean;
 
+    @Column({ type: 'text', nullable: true })
+    observacion: string;
+
     @Column({ type: 'int4', nullable: true })
     cliente: number;
 

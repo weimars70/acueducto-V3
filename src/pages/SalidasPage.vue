@@ -58,10 +58,11 @@ const columns: QTableColumn[] = [
     align: 'right',
     sortable: true,
     format: (val: number) => `$ ${val?.toLocaleString('es-CO') || '0'}`
-  }
+  },
+  { name: 'observacion', label: 'Observación', field: 'observacion', align: 'left', sortable: true }
 ];
 
-const visibleColumns = ref(['codigo', 'fechaFactura', 'clienteNombre', 'subtotal', 'descuento', 'iva', 'total']);
+const visibleColumns = ref(['codigo', 'fechaFactura', 'clienteNombre', 'observacion', 'subtotal', 'descuento', 'iva', 'total']);
 const columnFilters = ref<Record<string, string>>({});
 
 const filteredData = computed(() => {
@@ -98,6 +99,7 @@ const handleExportExcel = () => {
       { field: 'codigo', label: 'Código' },
       { field: 'fechaFactura', label: 'Fecha' },
       { field: 'clienteNombre', label: 'Cliente' },
+      { field: 'observacion', label: 'Observación' },
       { field: 'subtotal', label: 'Subtotal' },
       { field: 'descuento', label: 'Descuento' },
       { field: 'iva', label: 'IVA' },
@@ -116,6 +118,7 @@ const handleExportPDF = () => {
       { field: 'codigo', label: 'Código' },
       { field: 'fechaFactura', label: 'Fecha' },
       { field: 'clienteNombre', label: 'Cliente' },
+      { field: 'observacion', label: 'Observación' },
       { field: 'subtotal', label: 'Subtotal' },
       { field: 'descuento', label: 'Descuento' },
       { field: 'iva', label: 'IVA' },
@@ -177,6 +180,25 @@ const toggleDetails = async (props: any) => {
   }
 };
 
+const handleUpdateObservacion = async (row: Salida, val: string) => {
+  try {
+    await salidasService.updateObservacion(row.codigo, val);
+    $q.notify({
+      type: 'positive',
+      message: 'Observación actualizada',
+      position: 'top-right'
+    });
+    // Update local state if needed (already updated by v-model but good to ensure sync)
+    row.observacion = val; 
+  } catch (error) {
+    console.error('Error updating observacion:', error);
+    $q.notify({
+      type: 'negative',
+      message: 'Error al actualizar observación'
+    });
+  }
+};
+
 onMounted(() => {
   loadData();
 });
@@ -187,90 +209,82 @@ onActivated(() => {
 </script>
 
 <template>
-  <q-page class="q-pa-lg bg-grey-1">
-    <div class="row items-center justify-between q-mb-lg">
+  <q-page class="q-pa-md bg-grey-1">
+    <div class="row items-center justify-between q-mb-md">
       <div class="row items-center">
         <div class="q-mr-md bg-white q-pa-sm rounded-borders shadow-1">
           <q-icon name="exit_to_app" color="primary" size="md" />
         </div>
         <div>
-          <div class="text-h5 text-weight-bold text-grey-9">Salidas</div>
-          <div class="text-caption text-grey-7">Listado de salidas de inventario</div>
+          <div class="text-h6 text-weight-bold text-grey-9">Salidas</div>
         </div>
       </div>
-      <div class="row q-gutter-sm">
+      <div class="row items-center q-gutter-sm">
+        <!-- Search Input -->
+        <q-input
+          outlined
+          dense
+          debounce="300"
+          v-model="filter"
+          placeholder="Buscar..."
+          class="search-input bg-white"
+          rounded
+        >
+          <template v-slot:prepend>
+            <q-icon name="search" color="grey-5" />
+          </template>
+        </q-input>
+
+        <!-- View Toggle -->
+        <q-btn-toggle
+          v-model="viewMode"
+          unelevated
+          toggle-color="primary"
+          :options="[
+            { value: 'table', icon: 'view_list' },
+            { value: 'grid', icon: 'grid_view' }
+          ]"
+          class="bg-white border-grey-3"
+          style="border: 1px solid #e0e0e0; border-radius: 8px;"
+        />
+
+        <q-separator vertical class="q-mx-sm" />
+
         <q-btn
           outline
           color="positive"
           icon="description"
-          label="Excel"
           @click="handleExportExcel"
-          no-caps
-          class="export-btn"
+          class="bg-white"
+          round
         >
-          <q-tooltip>Exportar a Excel</q-tooltip>
+          <q-tooltip>Excel</q-tooltip>
         </q-btn>
         <q-btn
           outline
           color="negative"
           icon="picture_as_pdf"
-          label="PDF"
           @click="handleExportPDF"
-          no-caps
-          class="export-btn"
+          class="bg-white"
+          round
         >
-          <q-tooltip>Exportar a PDF</q-tooltip>
+          <q-tooltip>PDF</q-tooltip>
         </q-btn>
         <q-btn
           unelevated
           color="primary"
           icon="add"
-          label="Nueva Salida"
-          no-caps
-          class="export-btn"
+          class="q-ml-sm"
+          round
           @click="$router.push('/salidas/new')"
         >
-          <q-tooltip>Crear nueva salida</q-tooltip>
+          <q-tooltip>Nueva Salida</q-tooltip>
         </q-btn>
       </div>
     </div>
 
-    <!-- Filtros y toggle de vista -->
-    <q-card flat class="q-mb-lg bg-white rounded-borders shadow-1">
-      <q-card-section>
-        <div class="row items-center q-col-gutter-md">
-          <div class="col-12 col-sm-6">
-            <q-input
-              outlined
-              dense
-              debounce="300"
-              v-model="filter"
-              placeholder="Buscar..."
-              class="search-input bg-grey-1"
-              rounded
-            >
-              <template v-slot:prepend>
-                <q-icon name="search" color="grey-5" />
-              </template>
-            </q-input>
-          </div>
-          <div class="col-12 col-sm-6 text-right">
-            <q-btn-toggle
-              v-model="viewMode"
-              unelevated
-              toggle-color="primary"
-              :options="[
-                { label: 'Tabla', value: 'table', icon: 'view_list' },
-                { label: 'Tarjetas', value: 'grid', icon: 'grid_view' }
-              ]"
-            />
-          </div>
-        </div>
-      </q-card-section>
-    </q-card>
-
     <!-- Vista de Tabla -->
-    <q-card v-if="viewMode === 'table'" class="shadow-2 rounded-xl bg-white">
+    <q-card v-if="viewMode === 'table'" class="shadow-1 rounded-borders bg-white">
       <q-table
         :rows="filteredData"
         :columns="columns"
@@ -279,32 +293,28 @@ onActivated(() => {
         :filter="filter"
         :visible-columns="visibleColumns"
         flat
+        dense
         class="no-border"
-        :pagination="{ rowsPerPage: 10 }"
+        :pagination="{ rowsPerPage: 15 }"
       >
         <template v-slot:top>
-          <div class="row full-width items-center q-py-sm q-col-gutter-md">
-            <div class="col-12 col-sm-auto text-h6 text-weight-medium text-primary">Detalle</div>
-            <q-space />
-
-            <div class="col-12 col-sm-auto">
-              <q-select
-                v-model="visibleColumns"
-                multiple
-                outlined
-                dense
-                options-dense
-                :display-value="$q.lang.table.columns"
-                emit-value
-                map-options
-                :options="columns"
-                option-value="name"
-                options-cover
-                style="min-width: 150px"
-                bg-color="white"
-                rounded
-              />
-            </div>
+          <div class="row full-width items-center justify-end q-py-xs">
+            <q-select
+              v-model="visibleColumns"
+              multiple
+              outlined
+              dense
+              options-dense
+              :display-value="$q.lang.table.columns"
+              emit-value
+              map-options
+              :options="columns"
+              option-value="name"
+              options-cover
+              style="min-width: 150px"
+              bg-color="white"
+              rounded
+            />
           </div>
         </template>
 
@@ -344,6 +354,18 @@ onActivated(() => {
             </q-td>
             <q-td v-for="col in props.cols" :key="col.name" :props="props">
               {{ col.value }}
+              <q-popup-edit
+                v-if="col.name === 'observacion'"
+                v-model="props.row.observacion"
+                title="Editar Observación"
+                buttons
+                label-set="Guardar"
+                label-cancel="Cancelar"
+                @save="(val) => handleUpdateObservacion(props.row, val)"
+                v-slot="scope"
+              >
+                <q-input v-model="scope.value" dense autofocus counter @keyup.enter="scope.set" />
+              </q-popup-edit>
             </q-td>
           </q-tr>
           <q-tr v-show="props.expand" :props="props">

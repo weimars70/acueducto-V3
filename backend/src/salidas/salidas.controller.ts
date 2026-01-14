@@ -8,6 +8,7 @@ import {
     ParseIntPipe,
     Req,
     Param,
+    Patch,
 } from '@nestjs/common';
 import { SalidasService } from './salidas.service';
 import { CreateSalidaDto } from './dto/create-salida.dto';
@@ -58,5 +59,15 @@ export class SalidasController {
     async getDetalles(@Param('codigo') codigo: string, @Req() req) {
         const empresaId = req.user.empresaId;
         return this.salidasService.getDetalles(codigo, empresaId);
+    }
+
+    @Patch(':codigo/observacion')
+    async updateObservacion(
+        @Param('codigo') codigo: string,
+        @Body('observacion') observacion: string,
+        @Req() req
+    ) {
+        const empresaId = req.user.empresaId;
+        return this.salidasService.updateObservacion(codigo, observacion, empresaId);
     }
 }
