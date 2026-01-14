@@ -21,3 +21,4 @@ import { ConceptosNominaModule } from '../conceptos-nomina/conceptos-nomina.modu
 })
 export class NominasModule { }
 
+

@@ -7,6 +7,7 @@ import {
     UseGuards,
     ParseIntPipe,
     Req,
+    Param,
 } from '@nestjs/common';
 import { SalidasService } from './salidas.service';
 import { CreateSalidaDto } from './dto/create-salida.dto';
@@ -51,5 +52,11 @@ export class SalidasController {
         const userId = req.user.userId;
         const empresaId = req.user.empresaId;
         return this.salidasService.create(createSalidaDto, userId, empresaId);
+    }
+
+    @Get(':codigo/detalles')
+    async getDetalles(@Param('codigo') codigo: string, @Req() req) {
+        const empresaId = req.user.empresaId;
+        return this.salidasService.getDetalles(codigo, empresaId);
     }
 }

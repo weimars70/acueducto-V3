@@ -26,3 +26,4 @@ export class AprobarNominaDto {
   observaciones?: string;
 }
 
+

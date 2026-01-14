@@ -278,4 +278,26 @@ export class SalidasService {
             await queryRunner.release();
         }
     }
+    async getDetalles(codigo: string, empresaId: number) {
+        try {
+            const query = `
+                SELECT 
+                    id, 
+                    item as codigo_item, 
+                    item_descripcion, 
+                    cantidad, 
+                    precio as valor_unitario, 
+                    iva, 
+                    descuento, 
+                    subtotal 
+                FROM salidas_detalle
+                WHERE codigo_salida = $1 
+                  AND empresa_id = $2
+            `;
+            const detalles = await this.dataSource.query(query, [codigo, empresaId]);
+            return detalles;
+        } catch (error) {
+            throw new Error(`Error al obtener detalles de la salida: ${error.message}`);
+        }
+    }
 }

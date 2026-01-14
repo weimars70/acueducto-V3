@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, onActivated } from 'vue';
 import { useQuasar, type QTableColumn } from 'quasar';
 import { useRouter } from 'vue-router';
 import { salidasService } from '../services/api/salidas.service';
@@ -141,7 +141,47 @@ const formatDate = (date: string | Date) => {
   return new Date(date).toLocaleDateString('es-CO');
 };
 
+const detailsLoading = ref<Record<string, boolean>>({});
+const salidaDetails = ref<Record<string, any[]>>({});
+
+const detailColumns: QTableColumn[] = [
+  { name: 'codigo_item', label: 'Item', field: 'codigo_item', align: 'left' },
+  { name: 'item_descripcion', label: 'Descripción', field: 'item_descripcion', align: 'left' },
+  { name: 'cantidad', label: 'Cant.', field: 'cantidad', align: 'right' },
+  { name: 'valor_unitario', label: 'V. Unit.', field: 'valor_unitario', align: 'right' },
+  { name: 'descuento', label: 'Desc %', field: 'descuento', align: 'right' },
+  { name: 'iva', label: 'IVA %', field: 'iva', align: 'right' },
+  { name: 'subtotal', label: 'Subtotal', field: 'subtotal', align: 'right' }
+];
+
+const toggleDetails = async (props: any) => {
+  const row = props.row;
+  props.expand = !props.expand;
+  
+  if (props.expand && !salidaDetails.value[row.codigo]) {
+    try {
+      detailsLoading.value[row.codigo] = true;
+      const details = await salidasService.getDetalles(row.codigo);
+      salidaDetails.value[row.codigo] = details;
+    } catch (error) {
+      console.error('Error loading details:', error);
+      $q.notify({
+        type: 'negative',
+        message: 'Error al cargar detalles'
+      });
+      // Close if error
+      props.expand = false;
+    } finally {
+      detailsLoading.value[row.codigo] = false;
+    }
+  }
+};
+
 onMounted(() => {
+  loadData();
+});
+
+onActivated(() => {
   loadData();
 });
 </script>
@@ -270,11 +310,13 @@ onMounted(() => {
 
         <template v-slot:header="props">
           <q-tr :props="props">
+            <q-th auto-width />
             <q-th v-for="col in props.cols" :key="col.name" :props="props">
               {{ col.label }}
             </q-th>
           </q-tr>
           <q-tr :props="props">
+            <q-th auto-width />
             <q-th v-for="col in props.cols" :key="col.name">
               <q-input
                 v-model="columnFilters[col.name]"
@@ -285,6 +327,60 @@ onMounted(() => {
                 style="min-width: 60px"
               />
             </q-th>
+          </q-tr>
+        </template>
+
+        <template v-slot:body="props">
+          <q-tr :props="props">
+            <q-td auto-width>
+              <q-btn
+                size="sm"
+                color="primary"
+                round
+                dense
+                @click="toggleDetails(props)"
+                :icon="props.expand ? 'remove' : 'add'"
+              />
+            </q-td>
+            <q-td v-for="col in props.cols" :key="col.name" :props="props">
+              {{ col.value }}
+            </q-td>
+          </q-tr>
+          <q-tr v-show="props.expand" :props="props">
+            <q-td colspan="100%">
+              <div class="q-pa-md">
+                <div v-if="detailsLoading[props.row.codigo]" class="text-center">
+                  <q-spinner color="primary" size="2em" />
+                  <div class="q-mt-sm">Cargando detalles...</div>
+                </div>
+                <div v-else-if="salidaDetails[props.row.codigo]">
+                  <q-table
+                    :rows="salidaDetails[props.row.codigo]"
+                    :columns="detailColumns"
+                    row-key="id"
+                    dense
+                    flat
+                    bordered
+                    hide-bottom
+                    class="bg-grey-1"
+                  >
+                     <template v-slot:body-cell-subtotal="detailProps">
+                        <q-td :props="detailProps" class="text-right">
+                           {{ formatCurrency(detailProps.row.subtotal) }}
+                        </q-td>
+                     </template>
+                     <template v-slot:body-cell-valor_unitario="detailProps">
+                        <q-td :props="detailProps" class="text-right">
+                           {{ formatCurrency(detailProps.row.valor_unitario) }}
+                        </q-td>
+                     </template>
+                  </q-table>
+                </div>
+                <div v-else class="text-grey-7 q-pa-sm">
+                  No se pudieron cargar los detalles.
+                </div>
+              </div>
+            </q-td>
           </q-tr>
         </template>
 

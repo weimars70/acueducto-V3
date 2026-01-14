@@ -75,3 +75,4 @@ export interface AprobarNominaDto {
   observaciones?: string;
 }
 
+

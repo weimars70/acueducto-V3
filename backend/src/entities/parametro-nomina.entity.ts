@@ -30,3 +30,4 @@ export class ParametroNomina {
   usuarioCreacion: number;
 }
 
+

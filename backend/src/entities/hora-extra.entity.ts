@@ -52,3 +52,4 @@ export class HoraExtra {
   periodo: PeriodoNomina;
 }
 
+

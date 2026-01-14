@@ -38,4 +38,9 @@ export const salidasService = {
         const response = await apiClient.post('/salidas', data);
         return response.data;
     },
+
+    async getDetalles(codigo: string): Promise<any[]> {
+        const response = await apiClient.get<any[]>(`/salidas/${codigo}/detalles`);
+        return response.data;
+    }
 };

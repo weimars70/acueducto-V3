@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 .qodo
 NUL
+
+# Environment
+.env

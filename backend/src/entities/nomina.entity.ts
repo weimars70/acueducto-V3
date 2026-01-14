@@ -65,3 +65,4 @@ export class Nomina {
   detalles: NominaDetalle[];
 }
 
+
