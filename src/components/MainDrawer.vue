@@ -225,6 +225,12 @@ const facturacionItems = [
     label: 'Envío Email Whatsapp',
     route: '/enviar-facturas-masivo',
     closable: true,
+  },
+  {
+    icon: 'sync_alt',
+    label: 'Migración Contable',
+    route: '/migracion-contabilidad',
+    closable: true,
   }
 ];
 

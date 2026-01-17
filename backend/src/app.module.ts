@@ -52,6 +52,7 @@ import { RecibosCajaModule } from './recibos-caja/recibos-caja.module';
 import { WhatsappModule } from './whatsapp/whatsapp.module';
 import { EmailModule } from './email/email.module';
 import { DianModule } from './dian/dian.module';
+import { MigracionContabilidadModule } from './facturacion/migracion-contabilidad/migracion-contabilidad.module';
 
 @Module({
   imports: [
@@ -111,6 +112,7 @@ import { DianModule } from './dian/dian.module';
     WhatsappModule,
     EmailModule,
     DianModule,
+    MigracionContabilidadModule,
   ],
 })
 export class AppModule { }

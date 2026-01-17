@@ -232,6 +232,11 @@ const routes = [
         name: 'recibos-caja-list',
         component: () => import('../pages/ReciboCajaListPage.vue')
       },
+      {
+        path: '/migracion-contabilidad',
+        name: 'migracion-contabilidad',
+        component: () => import('../pages/MigracionContabilidadPage.vue')
+      },
       // Instalaciones Routes
       {
         path: '/instalaciones/saldos-a-favor',
@@ -778,7 +783,8 @@ router.beforeEach((to, from, next) => {
         { icon: 'calculate', label: 'Calcular Nómina V2', route: '/nominas/nuevo-calculo', closable: true },
         { icon: 'handshake', label: 'Cuotas Conexión', route: '/diferidos/cuotas-conexion', closable: true },
         { icon: 'speed', label: 'Cuotas Medidor', route: '/diferidos/cuotas-medidor', closable: true },
-        { icon: 'assignment', label: 'Acuerdos de Pago', route: '/diferidos/acuerdos-pago', closable: true }
+        { icon: 'assignment', label: 'Acuerdos de Pago', route: '/diferidos/acuerdos-pago', closable: true },
+        { icon: 'sync_alt', label: 'Migración Contable', route: '/migracion-contabilidad', closable: true }
       ];
 
       const menuItem = menuItems.find(item => item.route === to.path);

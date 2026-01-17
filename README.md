@@ -17,3 +17,5 @@ compilar app mobile
 npm run build
 npx cap sync android
 npx cap open android
+
+#Asomielr2025*
