@@ -14,6 +14,7 @@ const $q = useQuasar();
 const router = useRouter();
 const authStore = useAuthStore();
 const loading = ref(false);
+const tab = ref('personal');
 
 // Opciones de catálogos
 interface Option {
@@ -179,294 +180,304 @@ onMounted(async () => {
 
       <!-- Form Card -->
       <q-card flat class="form-card">
-        <q-form @submit="handleSubmit" class="form-content">
-          <!-- Sección: Información Personal -->
-          <div class="form-section">
-            <div class="section-header">
-              <q-icon name="person" size="24px" color="primary" />
-              <h2 class="section-title">Información Personal</h2>
-            </div>
+        <q-form @submit="handleSubmit">
+          <q-tabs
+            v-model="tab"
+            dense
+            class="text-grey"
+            active-color="primary"
+            indicator-color="primary"
+            align="justify"
+            narrow-indicator
+          >
+            <q-tab name="personal" icon="person" label="Información Personal" />
+            <q-tab name="laboral" icon="work" label="Información Laboral" />
+            <q-tab name="pago" icon="payments" label="Información de Pago" />
+          </q-tabs>
 
-            <div class="row q-col-gutter-md">
-              <div class="col-12 col-md-3">
-                <div class="input-wrapper">
-                  <label class="input-label">Tipo Documento <span class="required">*</span></label>
-                  <q-select
-                    v-model="formData.tipo_documento_id"
-                    :options="tipoIdentOptions"
-                    outlined
-                    emit-value
-                    map-options
-                    class="modern-input"
-                  />
-                </div>
-              </div>
-              <div class="col-12 col-md-3">
-                <div class="input-wrapper">
-                  <label class="input-label">Cédula <span class="required">*</span></label>
-                  <q-input
-                    v-model="formData.cedula"
-                    placeholder="12345678"
-                    outlined
-                    :rules="[val => !!val || 'Campo requerido']"
-                    class="modern-input"
-                  />
-                </div>
-              </div>
-              <div class="col-12 col-md-6">
-                <div class="input-wrapper">
-                  <label class="input-label">Nombre Completo (Automático)</label>
-                  <q-input
-                    v-model="formData.nombre_completo"
-                    readonly
-                    outlined
-                    class="modern-input bg-grey-2"
-                  />
-                </div>
-              </div>
-            </div>
+          <q-separator />
 
-            <div class="row q-col-gutter-md q-mt-sm">
-              <div class="col-12 col-md-3">
-                <div class="input-wrapper">
-                  <label class="input-label">Primer Nombre <span class="required">*</span></label>
-                  <q-input
-                    v-model="formData.primer_nombre"
-                    @update:model-value="updateFullName"
-                    outlined
-                    class="modern-input"
-                  />
+          <q-tab-panels v-model="tab" animated class="form-content">
+            <!-- Pestaña: Información Personal -->
+            <q-tab-panel name="personal" class="q-pa-none">
+              <div class="form-section no-margin">
+                <div class="row q-col-gutter-md">
+                  <div class="col-12 col-md-3">
+                    <div class="input-wrapper">
+                      <label class="input-label">Tipo Documento <span class="required">*</span></label>
+                      <q-select
+                        v-model="formData.tipo_documento_id"
+                        :options="tipoIdentOptions"
+                        outlined
+                        emit-value
+                        map-options
+                        class="modern-input"
+                      />
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-3">
+                    <div class="input-wrapper">
+                      <label class="input-label">Cédula <span class="required">*</span></label>
+                      <q-input
+                        v-model="formData.cedula"
+                        placeholder="12345678"
+                        outlined
+                        :rules="[val => !!val || 'Campo requerido']"
+                        class="modern-input"
+                      />
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <div class="input-wrapper">
+                      <label class="input-label">Nombre Completo (Automático)</label>
+                      <q-input
+                        v-model="formData.nombre_completo"
+                        readonly
+                        outlined
+                        class="modern-input bg-grey-2"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div class="col-12 col-md-3">
-                <div class="input-wrapper">
-                  <label class="input-label">Otros Nombres</label>
-                  <q-input
-                    v-model="formData.otros_nombres"
-                    @update:model-value="updateFullName"
-                    outlined
-                    class="modern-input"
-                  />
-                </div>
-              </div>
-              <div class="col-12 col-md-3">
-                <div class="input-wrapper">
-                  <label class="input-label">Primer Apellido <span class="required">*</span></label>
-                  <q-input
-                    v-model="formData.primer_apellido"
-                    @update:model-value="updateFullName"
-                    outlined
-                    class="modern-input"
-                  />
-                </div>
-              </div>
-              <div class="col-12 col-md-3">
-                <div class="input-wrapper">
-                  <label class="input-label">Segundo Apellido</label>
-                  <q-input
-                    v-model="formData.segundo_apellido"
-                    @update:model-value="updateFullName"
-                    outlined
-                    class="modern-input"
-                  />
-                </div>
-              </div>
-            </div>
 
-            <div class="row q-col-gutter-md q-mt-sm">
-              <div class="col-12 col-md-4">
-                <div class="input-wrapper">
-                  <label class="input-label">Email <span class="required">*</span></label>
-                  <q-input
-                    v-model="formData.email"
-                    type="email"
-                    outlined
-                    placeholder="ejemplo@correo.com"
-                    class="modern-input"
-                  />
+                <div class="row q-col-gutter-md q-mt-sm">
+                  <div class="col-12 col-md-3">
+                    <div class="input-wrapper">
+                      <label class="input-label">Primer Nombre <span class="required">*</span></label>
+                      <q-input
+                        v-model="formData.primer_nombre"
+                        @update:model-value="updateFullName"
+                        outlined
+                        class="modern-input"
+                      />
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-3">
+                    <div class="input-wrapper">
+                      <label class="input-label">Otros Nombres</label>
+                      <q-input
+                        v-model="formData.otros_nombres"
+                        @update:model-value="updateFullName"
+                        outlined
+                        class="modern-input"
+                      />
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-3">
+                    <div class="input-wrapper">
+                      <label class="input-label">Primer Apellido <span class="required">*</span></label>
+                      <q-input
+                        v-model="formData.primer_apellido"
+                        @update:model-value="updateFullName"
+                        outlined
+                        class="modern-input"
+                      />
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-3">
+                    <div class="input-wrapper">
+                      <label class="input-label">Segundo Apellido</label>
+                      <q-input
+                        v-model="formData.segundo_apellido"
+                        @update:model-value="updateFullName"
+                        outlined
+                        class="modern-input"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div class="col-12 col-md-4">
-                <div class="input-wrapper">
-                  <label class="input-label">Dirección <span class="required">*</span></label>
-                  <q-input
-                    v-model="formData.direccion"
-                    outlined
-                    class="modern-input"
-                  />
-                </div>
-              </div>
-              <div class="col-12 col-md-4">
-                <div class="input-wrapper">
-                  <label class="input-label">Municipio/Ciudad <span class="required">*</span></label>
-                  <q-select
-                    v-model="formData.municipio_id"
-                    :options="ciudadOptions"
-                    outlined
-                    emit-value
-                    map-options
-                    class="modern-input"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
 
-          <!-- Sección: Información Laboral -->
-          <div class="form-section">
-            <div class="section-header">
-              <q-icon name="work" size="24px" color="primary" />
-              <h2 class="section-title">Información Laboral</h2>
-            </div>
+                <div class="row q-col-gutter-md q-mt-sm">
+                  <div class="col-12 col-md-4">
+                    <div class="input-wrapper">
+                      <label class="input-label">Email <span class="required">*</span></label>
+                      <q-input
+                        v-model="formData.email"
+                        type="email"
+                        outlined
+                        placeholder="ejemplo@correo.com"
+                        class="modern-input"
+                      />
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <div class="input-wrapper">
+                      <label class="input-label">Dirección <span class="required">*</span></label>
+                      <q-input
+                        v-model="formData.direccion"
+                        outlined
+                        class="modern-input"
+                      />
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <div class="input-wrapper">
+                      <label class="input-label">Municipio/Ciudad <span class="required">*</span></label>
+                      <q-select
+                        v-model="formData.municipio_id"
+                        :options="ciudadOptions"
+                        outlined
+                        emit-value
+                        map-options
+                        class="modern-input"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </q-tab-panel>
 
-            <div class="row q-col-gutter-md">
-              <div class="col-12 col-md-3">
-                <div class="input-wrapper">
-                  <label class="input-label">Cargo</label>
-                  <q-input v-model="formData.cargo" outlined class="modern-input" />
+            <!-- Pestaña: Información Laboral -->
+            <q-tab-panel name="laboral" class="q-pa-none">
+              <div class="form-section no-margin">
+                <div class="row q-col-gutter-md">
+                  <div class="col-12 col-md-3">
+                    <div class="input-wrapper">
+                      <label class="input-label">Cargo</label>
+                      <q-input v-model="formData.cargo" outlined class="modern-input" />
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-3">
+                    <div class="input-wrapper">
+                      <label class="input-label">Salario Mensual <span class="required">*</span></label>
+                      <q-input
+                        v-model.number="formData.salario_mensual"
+                        type="number"
+                        outlined
+                        prefix="$"
+                        class="modern-input"
+                      />
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-3">
+                    <div class="input-wrapper">
+                      <label class="input-label">Fecha Ingreso <span class="required">*</span></label>
+                      <q-input v-model="formData.fecha_ingreso" type="date" outlined class="modern-input" />
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-3">
+                    <div class="input-wrapper">
+                      <label class="input-label">Fecha Retiro</label>
+                      <q-input v-model="formData.fecha_retiro" type="date" outlined class="modern-input" />
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div class="col-12 col-md-3">
-                <div class="input-wrapper">
-                  <label class="input-label">Salario Mensual <span class="required">*</span></label>
-                  <q-input
-                    v-model.number="formData.salario_mensual"
-                    type="number"
-                    outlined
-                    prefix="$"
-                    class="modern-input"
-                  />
-                </div>
-              </div>
-              <div class="col-12 col-md-3">
-                <div class="input-wrapper">
-                  <label class="input-label">Fecha Ingreso <span class="required">*</span></label>
-                  <q-input v-model="formData.fecha_ingreso" type="date" outlined class="modern-input" />
-                </div>
-              </div>
-              <div class="col-12 col-md-3">
-                <div class="input-wrapper">
-                  <label class="input-label">Fecha Retiro</label>
-                  <q-input v-model="formData.fecha_retiro" type="date" outlined class="modern-input" />
-                </div>
-              </div>
-            </div>
 
-            <div class="row q-col-gutter-md q-mt-sm">
-              <div class="col-12 col-md-4">
-                <div class="input-wrapper">
-                  <label class="input-label">Tipo Trabajador</label>
-                  <q-select
-                    v-model="formData.tipo_trabajador_id"
-                    :options="tipoTrabajadorOptions"
-                    outlined
-                    emit-value
-                    map-options
-                    class="modern-input"
-                  />
+                <div class="row q-col-gutter-md q-mt-sm">
+                  <div class="col-12 col-md-4">
+                    <div class="input-wrapper">
+                      <label class="input-label">Tipo Trabajador</label>
+                      <q-select
+                        v-model="formData.tipo_trabajador_id"
+                        :options="tipoTrabajadorOptions"
+                        outlined
+                        emit-value
+                        map-options
+                        class="modern-input"
+                      />
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <div class="input-wrapper">
+                      <label class="input-label">Subtipo Trabajador</label>
+                      <q-select
+                        v-model="formData.subtipo_trabajador_id"
+                        :options="subtipoTrabajadorOptions"
+                        outlined
+                        emit-value
+                        map-options
+                        class="modern-input"
+                      />
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <div class="input-wrapper">
+                      <label class="input-label">Tipo Contrato</label>
+                      <q-select
+                        v-model="formData.tipo_contrato_id"
+                        :options="tipoContratoOptions"
+                        outlined
+                        emit-value
+                        map-options
+                        class="modern-input"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div class="col-12 col-md-4">
-                <div class="input-wrapper">
-                  <label class="input-label">Subtipo Trabajador</label>
-                  <q-select
-                    v-model="formData.subtipo_trabajador_id"
-                    :options="subtipoTrabajadorOptions"
-                    outlined
-                    emit-value
-                    map-options
-                    class="modern-input"
-                  />
-                </div>
-              </div>
-              <div class="col-12 col-md-4">
-                <div class="input-wrapper">
-                  <label class="input-label">Tipo Contrato</label>
-                  <q-select
-                    v-model="formData.tipo_contrato_id"
-                    :options="tipoContratoOptions"
-                    outlined
-                    emit-value
-                    map-options
-                    class="modern-input"
-                  />
-                </div>
-              </div>
-            </div>
 
-            <div class="row q-mt-md items-center">
-              <div class="col-12 col-md-3">
-                <q-toggle v-model="formData.auxilio_transporte" label="Auxilio Transporte" color="primary" />
+                <div class="row q-mt-md items-center q-col-gutter-sm">
+                  <div class="col-12 col-md-3">
+                    <q-toggle v-model="formData.auxilio_transporte" label="Auxilio Transporte" color="primary" />
+                  </div>
+                  <div class="col-12 col-md-3">
+                    <q-toggle v-model="formData.alto_riesgo_pension" label="Alto Riesgo Pensión" color="primary" />
+                  </div>
+                  <div class="col-12 col-md-3">
+                    <q-toggle v-model="formData.salario_integral" label="Salario Integral" color="primary" />
+                  </div>
+                  <div class="col-12 col-md-3">
+                    <q-toggle v-model="formData.activo" label="Activo" color="positive" />
+                  </div>
+                </div>
               </div>
-              <div class="col-12 col-md-3">
-                <q-toggle v-model="formData.alto_riesgo_pension" label="Alto Riesgo Pensión" color="primary" />
-              </div>
-              <div class="col-12 col-md-3">
-                <q-toggle v-model="formData.salario_integral" label="Salario Integral" color="primary" />
-              </div>
-              <div class="col-12 col-md-3">
-                <q-toggle v-model="formData.activo" label="Activo" color="positive" />
-              </div>
-            </div>
-          </div>
+            </q-tab-panel>
 
-          <!-- Sección: Información de Pago -->
-          <div class="form-section">
-            <div class="section-header">
-              <q-icon name="payments" size="24px" color="primary" />
-              <h2 class="section-title">Información de Pago</h2>
-            </div>
-            <div class="row q-col-gutter-md">
-              <div class="col-12 col-md-3">
-                <div class="input-wrapper">
-                  <label class="input-label">Método de Pago</label>
-                  <q-select
-                    v-model="formData.metodo_pago_id"
-                    :options="formasPagosOptions"
-                    outlined
-                    emit-value
-                    map-options
-                    class="modern-input"
-                  />
+            <!-- Pestaña: Información de Pago -->
+            <q-tab-panel name="pago" class="q-pa-none">
+              <div class="form-section no-margin">
+                <div class="row q-col-gutter-md">
+                  <div class="col-12 col-md-3">
+                    <div class="input-wrapper">
+                      <label class="input-label">Método de Pago</label>
+                      <q-select
+                        v-model="formData.metodo_pago_id"
+                        :options="formasPagosOptions"
+                        outlined
+                        emit-value
+                        map-options
+                        class="modern-input"
+                      />
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-3">
+                    <div class="input-wrapper">
+                      <label class="input-label">Banco</label>
+                      <q-select
+                        v-model="formData.banco"
+                        :options="bancoOptions"
+                        outlined
+                        emit-value
+                        map-options
+                        class="modern-input"
+                      />
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-3">
+                    <div class="input-wrapper">
+                      <label class="input-label">Tipo Cuenta</label>
+                      <q-select
+                        v-model="formData.tipo_cuenta"
+                        :options="tipoCuentaOptions"
+                        outlined
+                        emit-value
+                        map-options
+                        class="modern-input"
+                      />
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-3">
+                    <div class="input-wrapper">
+                      <label class="input-label">Número de Cuenta</label>
+                      <q-input v-model="formData.numero_cuenta" outlined class="modern-input" />
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div class="col-12 col-md-3">
-                <div class="input-wrapper">
-                  <label class="input-label">Banco</label>
-                  <q-select
-                    v-model="formData.banco"
-                    :options="bancoOptions"
-                    outlined
-                    emit-value
-                    map-options
-                    class="modern-input"
-                  />
-                </div>
-              </div>
-              <div class="col-12 col-md-3">
-                <div class="input-wrapper">
-                  <label class="input-label">Tipo Cuenta</label>
-                  <q-select
-                    v-model="formData.tipo_cuenta"
-                    :options="tipoCuentaOptions"
-                    outlined
-                    emit-value
-                    map-options
-                    class="modern-input"
-                  />
-                </div>
-              </div>
-              <div class="col-12 col-md-3">
-                <div class="input-wrapper">
-                  <label class="input-label">Número de Cuenta</label>
-                  <q-input v-model="formData.numero_cuenta" outlined class="modern-input" />
-                </div>
-              </div>
-            </div>
-          </div>
+            </q-tab-panel>
+          </q-tab-panels>
 
           <!-- Actions -->
-          <div class="form-actions">
+          <div class="form-actions q-mx-lg q-mb-lg">
             <q-btn
               outline
               color="grey-7"
@@ -552,9 +563,9 @@ onMounted(async () => {
 }
 
 .form-section {
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 
-  &:last-of-type {
+  &.no-margin {
     margin-bottom: 0;
   }
 }
