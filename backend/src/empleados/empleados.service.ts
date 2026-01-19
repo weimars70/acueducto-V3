@@ -14,66 +14,30 @@ export class EmpleadosService {
 
   async findAll(page: number, limit: number, filters: Record<string, any>) {
     try {
-      let query = `
-        SELECT
-          id,
-          cedula,
-          nombre_completo,
-          nombre_corto,
-          salario_mensual,
-          auxilio_transporte,
-          activo,
-          fecha_ingreso,
-          fecha_retiro,
-          cargo,
-          empresa_id,
-          fecha_creacion,
-          usuario_creacion
-        FROM public.empleados
-        WHERE 1=1
-      `;
+      const queryBuilder = this.empleadoRepository.createQueryBuilder('empleado');
 
-      const queryParams: any[] = [];
-      let paramCount = 1;
-
-      // FILTRO OBLIGATORIO POR EMPRESA
-      if (filters.empresaId) {
-        query += ` AND empresa_id = $${paramCount}`;
-        queryParams.push(filters.empresaId);
-        paramCount++;
-      }
+      // Filtro obligatorio por empresa
+      queryBuilder.where('empleado.empresaId = :empresaId', { empresaId: filters.empresaId });
 
       if (filters.cedula) {
-        query += ` AND cedula ILIKE $${paramCount}`;
-        queryParams.push(`%${filters.cedula}%`);
-        paramCount++;
+        queryBuilder.andWhere('empleado.cedula ILIKE :cedula', { cedula: `%${filters.cedula}%` });
       }
 
       if (filters.nombre_completo) {
-        query += ` AND nombre_completo ILIKE $${paramCount}`;
-        queryParams.push(`%${filters.nombre_completo}%`);
-        paramCount++;
+        queryBuilder.andWhere('empleado.nombre_completo ILIKE :nombre_completo', {
+          nombre_completo: `%${filters.nombre_completo}%`,
+        });
       }
 
-      if (filters.activo !== undefined) {
-        query += ` AND activo = $${paramCount}`;
-        queryParams.push(filters.activo);
-        paramCount++;
+      if (filters.activo !== undefined && filters.activo !== '') {
+        queryBuilder.andWhere('empleado.activo = :activo', { activo: filters.activo === 'true' || filters.activo === true });
       }
 
-      // Obtener el total de registros
-      const countQuery = `SELECT COUNT(*) FROM (${query}) as count_query`;
-      const totalResult = await this.empleadoRepository.query(
-        countQuery,
-        queryParams,
-      );
-      const total = parseInt(totalResult[0].count);
-
-      // Agregar paginación
-      query += ` ORDER BY id DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
-      queryParams.push(limit, (page - 1) * limit);
-
-      const data = await this.empleadoRepository.query(query, queryParams);
+      const [data, total] = await queryBuilder
+        .orderBy('empleado.id', 'DESC')
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getManyAndCount();
 
       return {
         data,

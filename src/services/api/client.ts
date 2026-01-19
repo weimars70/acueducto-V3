@@ -6,7 +6,7 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 5000,
+  timeout: 300000, // Aumentado a 5 minutos (300,000 ms) para consultas pesadas
 });
 
 apiClient.interceptors.request.use((config) => {

@@ -4,7 +4,13 @@ import { MigracionContabilidadController } from './migracion-contabilidad.contro
 import { MigracionContabilidadService } from './migracion-contabilidad.service';
 
 @Module({
-    imports: [HttpModule],
+    imports: [
+        HttpModule.register({
+            timeout: 300000, // 5 minutos para llamadas a la API de contabilidad
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity,
+        })
+    ],
     controllers: [MigracionContabilidadController],
     providers: [MigracionContabilidadService],
     exports: [MigracionContabilidadService],

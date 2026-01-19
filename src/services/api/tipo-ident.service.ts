@@ -6,6 +6,7 @@ export const tipoIdentService = {
     async getTipoIdents(params: {
         nombre?: string;
         codigo?: number;
+        empresaId?: number;
         page?: number;
         limit?: number;
     }): Promise<PaginatedResponse<TipoIdent>> {

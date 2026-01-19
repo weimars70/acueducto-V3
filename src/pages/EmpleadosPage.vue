@@ -275,7 +275,6 @@ onMounted(() => {
                 <q-icon name="person" size="20px" color="grey-6" class="q-mr-sm" />
                 <div>
                   <div class="text-weight-medium">{{ props.row.nombre_completo }}</div>
-                  <div v-if="props.row.nombre_corto" class="text-caption text-grey-6">{{ props.row.nombre_corto }}</div>
                 </div>
               </div>
             </q-td>

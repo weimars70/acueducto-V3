@@ -7,7 +7,6 @@
 INSERT INTO empleados (
     cedula,
     nombre_completo,
-    nombre_corto,
     salario_mensual,
     auxilio_transporte,
     activo,
@@ -20,7 +19,6 @@ VALUES
     (
         '1000000001',
         'Juan Carlos Rodríguez Pérez',
-        'Juan Rodríguez',
         2500000.00,
         true,
         true,
@@ -32,7 +30,6 @@ VALUES
     (
         '1000000002',
         'María Elena López García',
-        'María López',
         1950000.00,
         true,
         true,
@@ -44,7 +41,6 @@ VALUES
     (
         '1000000003',
         'Carlos Andrés Martínez Silva',
-        'Carlos Martínez',
         2250000.00,
         true,
         true,
@@ -56,7 +52,6 @@ VALUES
     (
         '1000000004',
         'Ana Patricia Gómez Torres',
-        'Ana Gómez',
         1650000.00,
         true,
         true,
@@ -68,7 +63,6 @@ VALUES
     (
         '1000000005',
         'Pedro Luis Sánchez Ramírez',
-        'Pedro Sánchez',
         1950000.00,
         true,
         true,
@@ -80,7 +74,6 @@ VALUES
     (
         '1000000006',
         'Laura Cristina Hernández Castro',
-        'Laura Hernández',
         1800000.00,
         true,
         true,

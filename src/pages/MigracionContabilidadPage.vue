@@ -12,7 +12,7 @@ const optionsMeses = ref<any[]>([]);
 const form = ref({
   mes: new Date().getMonth() + 1, // Mes actual (1-12)
   year: new Date().getFullYear(),
-  tipo: 'facturas' // 'facturas' o 'cartera'
+  tipo: 'facturas' // 'facturas', 'cartera', 'detalles' o 'all'
 });
 
 // Progress state
@@ -58,47 +58,18 @@ const handleMigrar = async () => {
   try {
     loading.value = true;
     resetProgress();
-    currentAction.value = 'Obteniendo listado de facturas...';
     
-    const empresaId = authStore.user?.empresaId || 1;
     const mes = typeof form.value.mes === 'object' ? (form.value.mes as any).value : form.value.mes;
     const year = form.value.year;
 
-    // 1. Obtener facturas
-    const facturas = form.value.tipo === 'facturas' 
-        ? await migracionContabilidadService.getFacturasPeriodo(mes, year, empresaId)
-        : await migracionContabilidadService.getFacturasCarteraPeriodo(mes, year, empresaId);
-    
-    if (!facturas || facturas.length === 0) {
-        $q.notify({ type: 'warning', message: 'No se encontraron registros para el periodo seleccionado' });
-        loading.value = false;
-        return;
-    }
-
-    totalToMigrate.value = facturas.length;
-    currentAction.value = `Migrando ${totalToMigrate.value} ${form.value.tipo}...`;
-
-    // 2. Loop de migración individual
-    for (const factura of facturas) {
-        processedCount.value++;
-        progress.value = processedCount.value / totalToMigrate.value;
-        progressLabel.value = `${Math.round(progress.value * 100)}% (${processedCount.value}/${totalToMigrate.value})`;
-        
-        try {
-            if (form.value.tipo === 'facturas') {
-                await migracionContabilidadService.migrarIndividual(factura);
-            } else {
-                await migracionContabilidadService.migrarCarteraIndividual(factura);
-            }
-            exitosasCount.value++;
-        } catch (error: any) {
-            fallidasCount.value++;
-            const errorMsg = error.response?.data?.message || error.message;
-            detallesErrores.value.push({
-                factura: `${factura.prefijo}${factura.consecutivo}`,
-                error: errorMsg
-            });
-        }
+    if (form.value.tipo === 'all') {
+        // Migración secuencial de todo
+        await procesarMigracionTipo('facturas', mes, year);
+        await procesarMigracionTipo('cartera', mes, year);
+        await procesarMigracionTipo('detalles', mes, year);
+    } else {
+        // Migración individual
+        await procesarMigracionTipo(form.value.tipo, mes, year);
     }
 
     currentAction.value = 'Proceso completado';
@@ -106,7 +77,7 @@ const handleMigrar = async () => {
     if (exitosasCount.value > 0) {
         $q.notify({ 
             type: 'positive', 
-            message: `${exitosasCount.value} facturas migradas correctamente`,
+            message: `${exitosasCount.value} registros migrados correctamente en total`,
             icon: 'check_circle'
         });
     }
@@ -114,13 +85,129 @@ const handleMigrar = async () => {
   } catch (error: any) {
     console.error(error);
     $q.notify({ 
-        type: 'negative', 
-        message: error.response?.data?.message || 'Error durante el proceso de migración',
-        icon: 'error'
+      type: 'negative', 
+      message: error.response?.data?.message || 'Error durante el proceso de migración',
+      icon: 'error'
     });
   } finally {
     loading.value = false;
   }
+};
+
+const procesarMigracionTipo = async (tipo: string, mes: number, year: number) => {
+    const tipoLabel = tipo === 'facturas' ? 'Facturas' : (tipo === 'cartera' ? 'Cartera' : 'Detalles de Factura');
+    currentAction.value = `Consultando ${tipoLabel}...`;
+    
+    let registros = [];
+    try {
+        if (tipo === 'facturas') {
+            registros = await migracionContabilidadService.getFacturasPeriodo(mes, year);
+        } else if (tipo === 'cartera') {
+            registros = await migracionContabilidadService.getFacturasCarteraPeriodo(mes, year);
+        } else {
+            registros = await migracionContabilidadService.getFacturasDetallePeriodo(mes, year);
+        }
+    } catch (e) {
+        console.error(`Error consultando ${tipo}:`, e);
+        $q.notify({ type: 'negative', message: `Error al obtener ${tipoLabel}` });
+        return;
+    }
+
+    if (!registros || registros.length === 0) {
+        $q.notify({ type: 'info', message: `No se encontraron ${tipoLabel} para migrar` });
+        return;
+    }
+
+    totalToMigrate.value = registros.length;
+    processedCount.value = 0;
+    const errorsToRetry = [];
+
+    // 1. Proceso principal
+    for (const item of registros) {
+        processedCount.value++;
+        progress.value = processedCount.value / totalToMigrate.value;
+        currentAction.value = `Procesando ${tipoLabel}: registro ${processedCount.value} de ${totalToMigrate.value}`;
+        progressLabel.value = `${Math.round(progress.value * 100)}% (${processedCount.value}/${totalToMigrate.value})`;
+        
+        try {
+            await ejecutarMigracionIndividualPorTipo(tipo, item);
+            exitosasCount.value++;
+        } catch (error: any) {
+            errorsToRetry.push({ item, tipo });
+        }
+    }
+
+    // 2. Reintento automático
+    if (errorsToRetry.length > 0) {
+        const totalRetry = errorsToRetry.length;
+        let processedRetry = 0;
+        
+        for (const errorObj of errorsToRetry) {
+            processedRetry++;
+            currentAction.value = `Reintentando ${tipoLabel} fallidos: ${processedRetry} de ${totalRetry}`;
+            try {
+                await ejecutarMigracionIndividualPorTipo(errorObj.tipo, errorObj.item);
+                exitosasCount.value++;
+            } catch (retryError: any) {
+                fallidasCount.value++;
+                const errorMsg = retryError.response?.data?.message || retryError.message;
+                let refLabel = `${errorObj.item.prefijo}${errorObj.item.consecutivo}`;
+                if (errorObj.tipo === 'detalles') {
+                    refLabel += ` - L${errorObj.item.linea}`;
+                }
+                detallesErrores.value.push({
+                    factura: `[${tipoLabel}] ${refLabel}`,
+                    error: errorMsg,
+                    data: errorObj.item,
+                    tipo: errorObj.tipo
+                });
+            }
+        }
+    }
+};
+
+const ejecutarMigracionIndividualPorTipo = async (tipo: string, item: any) => {
+    if (tipo === 'facturas') {
+        return await migracionContabilidadService.migrarIndividual(item);
+    } else if (tipo === 'cartera') {
+        return await migracionContabilidadService.migrarCarteraIndividual(item);
+    } else {
+        return await migracionContabilidadService.migrarDetalleIndividual(item);
+    }
+};
+
+const handleRetryAllFailures = async () => {
+    if (detallesErrores.value.length === 0) return;
+    
+    try {
+        loading.value = true;
+        const toRetry = [...detallesErrores.value];
+        detallesErrores.value = [];
+        fallidasCount.value = 0;
+        
+        totalToMigrate.value = toRetry.length;
+        processedCount.value = 0;
+        
+        for (const errorObj of toRetry) {
+            processedCount.value++;
+            progress.value = processedCount.value / totalToMigrate.value;
+            currentAction.value = `Reintento manual: ${processedCount.value} de ${totalToMigrate.value}`;
+            
+            try {
+                await ejecutarMigracionIndividualPorTipo(errorObj.tipo, errorObj.data);
+                exitosasCount.value++;
+            } catch (error: any) {
+                fallidasCount.value++;
+                detallesErrores.value.push(errorObj);
+            }
+        }
+        
+    } catch (e) {
+        console.error(e);
+    } finally {
+        loading.value = false;
+        currentAction.value = 'Reintento finalizado';
+    }
 };
 
 const resetProgress = () => {
@@ -169,8 +256,10 @@ onMounted(() => {
                   unelevated
                   rounded
                   :options="[
+                    {label: 'Migrar Todo', value: 'all', icon: 'auto_mode'},
                     {label: 'Migrar Facturas', value: 'facturas', icon: 'description'},
-                    {label: 'Migrar Cartera', value: 'cartera', icon: 'account_balance_wallet'}
+                    {label: 'Migrar Cartera', value: 'cartera', icon: 'account_balance_wallet'},
+                    {label: 'Migrar Detalles', value: 'detalles', icon: 'list_alt'}
                   ]"
                   :disable="loading"
                   class="modern-toggle"
@@ -217,7 +306,7 @@ onMounted(() => {
 
               <div class="row justify-center q-pt-md">
                 <q-btn
-                  :label="form.tipo === 'facturas' ? 'Empezar Migración de Facturas' : 'Empezar Migración de Cartera'"
+                  :label="form.tipo === 'all' ? 'Empezar Migración Completa' : (form.tipo === 'facturas' ? 'Empezar Migración de Facturas' : (form.tipo === 'cartera' ? 'Empezar Migración de Cartera' : 'Empezar Migración de Detalles'))"
                   type="submit"
                   color="primary"
                   unelevated
@@ -227,7 +316,7 @@ onMounted(() => {
                   size="1.1rem"
                   :disable="loading"
                 >
-                  <q-icon :name="form.tipo === 'facturas' ? 'rocket_launch' : 'account_balance'" class="q-ml-sm" />
+                  <q-icon :name="form.tipo === 'all' ? 'auto_mode' : (form.tipo === 'facturas' ? 'rocket_launch' : (form.tipo === 'cartera' ? 'account_balance' : 'list_alt'))" class="q-ml-sm" />
                   <template v-slot:loading>
                     <q-spinner-dots size="2.5rem" />
                   </template>
@@ -287,9 +376,21 @@ onMounted(() => {
         <transition appear enter-active-class="animated slideInUp">
           <q-card v-if="detallesErrores.length > 0" class="shadow-10 rounded-borders q-mb-xl overflow-hidden">
             <q-card-section class="bg-red-7 text-white q-py-md">
-              <div class="text-h6 text-weight-bold flex items-center">
-                <q-icon name="warning" class="q-mr-sm" />
-                Facturas con Errores ({{ detallesErrores.length }})
+              <div class="row items-center justify-between no-wrap">
+                <div class="text-h6 text-weight-bold flex items-center">
+                  <q-icon name="warning" class="q-mr-sm" />
+                  Registros con Errores ({{ detallesErrores.length }})
+                </div>
+                <q-btn 
+                  flat 
+                  round 
+                  icon="refresh" 
+                  color="white" 
+                  @click="handleRetryAllFailures"
+                  :loading="loading"
+                >
+                  <q-tooltip>Reintentar todos los errores</q-tooltip>
+                </q-btn>
               </div>
             </q-card-section>
             <q-list bordered separator class="max-height-errors">

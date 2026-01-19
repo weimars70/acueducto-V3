@@ -7,10 +7,6 @@ export class CreateEmpleadoDto {
   @IsString()
   nombre_completo: string;
 
-  @IsString()
-  @IsOptional()
-  nombre_corto?: string;
-
   @IsNumber()
   salario_mensual: number;
 
@@ -32,6 +28,78 @@ export class CreateEmpleadoDto {
   @IsString()
   @IsOptional()
   cargo?: string;
+
+  @IsString()
+  @IsOptional()
+  primer_apellido?: string;
+
+  @IsString()
+  @IsOptional()
+  segundo_apellido?: string;
+
+  @IsString()
+  @IsOptional()
+  primer_nombre?: string;
+
+  @IsString()
+  @IsOptional()
+  otros_nombres?: string;
+
+  @IsString()
+  @IsOptional()
+  email?: string;
+
+  @IsString()
+  @IsOptional()
+  usuario?: string;
+
+  @IsString()
+  @IsOptional()
+  direccion?: string;
+
+  @IsString()
+  @IsOptional()
+  municipio_id?: string;
+
+  @IsNumber()
+  @IsOptional()
+  tipo_documento_id?: number;
+
+  @IsNumber()
+  @IsOptional()
+  tipo_contrato_id?: number;
+
+  @IsNumber()
+  @IsOptional()
+  tipo_trabajador_id?: number;
+
+  @IsNumber()
+  @IsOptional()
+  subtipo_trabajador_id?: number;
+
+  @IsNumber()
+  @IsOptional()
+  metodo_pago_id?: number;
+
+  @IsNumber()
+  @IsOptional()
+  banco?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  alto_riesgo_pension?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  salario_integral?: boolean;
+
+  @IsNumber()
+  @IsOptional()
+  tipo_cuenta?: number;
+
+  @IsString()
+  @IsOptional()
+  numero_cuenta?: string;
 
   @IsNumber()
   empresaId: number;

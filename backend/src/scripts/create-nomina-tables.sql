@@ -9,7 +9,6 @@ CREATE TABLE IF NOT EXISTS empleados (
     id SERIAL PRIMARY KEY,
     cedula VARCHAR(20) UNIQUE NOT NULL,
     nombre_completo VARCHAR(255) NOT NULL,
-    nombre_corto VARCHAR(100),
     salario_mensual DECIMAL(12, 2) NOT NULL,
     auxilio_transporte BOOLEAN DEFAULT FALSE,
     activo BOOLEAN DEFAULT TRUE,

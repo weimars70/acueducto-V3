@@ -1,38 +1,132 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
 import { empleadoService } from '../services/api/empleado.service';
+import { tipoIdentService } from '../services/api/tipo-ident.service';
+import { ciudadService } from '../services/api/ciudad.service';
+import { bancoService } from '../services/api/banco.service';
+import { nominaCatalogsService } from '../services/api/nomina-catalogs.service';
+import { useAuthStore } from '../stores/auth';
 import type { CreateEmpleadoDto } from '../types/empleado';
 
 const $q = useQuasar();
 const router = useRouter();
+const authStore = useAuthStore();
 const loading = ref(false);
+
+// Opciones de catálogos
+interface Option {
+  label: string;
+  value: string | number;
+}
+
+const tipoIdentOptions = ref<Option[]>([]);
+const ciudadOptions = ref<Option[]>([]);
+const bancoOptions = ref<Option[]>([]);
+const tipoTrabajadorOptions = ref<Option[]>([]);
+const subtipoTrabajadorOptions = ref<Option[]>([]);
+const tipoContratoOptions = ref<Option[]>([]);
+const formasPagosOptions = ref<Option[]>([]);
+const tipoCuentaOptions = ref<Option[]>([]);
 
 const formData = ref<CreateEmpleadoDto>({
   cedula: '',
   nombre_completo: '',
-  nombre_corto: '',
+  primer_nombre: '',
+  otros_nombres: '',
+  primer_apellido: '',
+  segundo_apellido: '',
   salario_mensual: 0,
   auxilio_transporte: false,
   activo: true,
   fecha_ingreso: '',
   fecha_retiro: '',
-  cargo: ''
+  cargo: '',
+  email: '',
+  direccion: '',
+  municipio_id: '',
+  tipo_documento_id: undefined,
+  tipo_trabajador_id: undefined,
+  subtipo_trabajador_id: undefined,
+  tipo_contrato_id: undefined,
+  metodo_pago_id: undefined,
+  banco: undefined,
+  alto_riesgo_pension: false,
+  salario_integral: false,
+  tipo_cuenta: undefined,
+  numero_cuenta: ''
 });
 
+const updateFullName = () => {
+  const parts = [
+    formData.value.primer_nombre,
+    formData.value.otros_nombres,
+    formData.value.primer_apellido,
+    formData.value.segundo_apellido
+  ].filter(p => !!p);
+  formData.value.nombre_completo = parts.join(' ');
+};
+
+const loadCatalogs = async () => {
+  try {
+    const [
+      idents,
+      ciudades,
+      bancos,
+      trabajadores,
+      subtrabajadores,
+      contratos,
+      pagos,
+      cuentas
+    ] = await Promise.all([
+      tipoIdentService.getTipoIdents({ limit: 1000, empresaId: authStore.user?.empresaId }),
+      ciudadService.getAll(),
+      bancoService.getBancos({ limit: 1000 }),
+      nominaCatalogsService.getTipoTrabajador(),
+      nominaCatalogsService.getSubtipoTrabajador(),
+      nominaCatalogsService.getTipoContrato(),
+      nominaCatalogsService.getFormasPagos(),
+      nominaCatalogsService.getTipoCuenta()
+    ]);
+
+    tipoIdentOptions.value = idents.data.map(i => ({ label: i.nombre, value: Number(i.codigo) }));
+    ciudadOptions.value = ciudades.map(c => ({ label: c.nombre, value: c.codigo }));
+    bancoOptions.value = bancos.data.map(b => ({ label: b.nombre, value: Number(b.id) }));
+    tipoTrabajadorOptions.value = trabajadores.map((t: any) => ({ label: t.nombre, value: Number(t.id) }));
+    subtipoTrabajadorOptions.value = subtrabajadores.map((s: any) => ({ label: s.nombre, value: Number(s.id) }));
+    tipoContratoOptions.value = contratos.map((c: any) => ({ label: c.nombre, value: Number(c.id) }));
+    formasPagosOptions.value = pagos.map((p: any) => ({ label: p.nombre, value: Number(p.id) }));
+    tipoCuentaOptions.value = cuentas.map((c: any) => ({ label: c.nombre, value: Number(c.id) }));
+  } catch (error) {
+    console.error('Error al cargar catálogos:', error);
+    $q.notify({ type: 'negative', message: 'Error al cargar catálogos' });
+  }
+};
+
 const handleSubmit = async () => {
-  if (!formData.value.cedula || !formData.value.nombre_completo || !formData.value.salario_mensual || !formData.value.fecha_ingreso) {
+  const required = ['cedula', 'primer_nombre', 'primer_apellido', 'email', 'direccion', 'municipio_id', 'salario_mensual', 'fecha_ingreso'];
+  const missing = required.filter(k => !(formData.value as any)[k]);
+  
+  if (missing.length > 0) {
     $q.notify({
       type: 'warning',
-      message: 'Por favor complete los campos obligatorios (Cédula, Nombre, Salario y Fecha de Ingreso)'
+      message: 'Por favor complete los campos obligatorios'
     });
     return;
   }
 
   try {
     loading.value = true;
-    await empleadoService.create(formData.value);
+    
+    // Inyectar empresaId y usuario de creación
+    const payload = {
+      ...formData.value,
+      empresaId: authStore.user?.empresaId,
+      usuario_creacion: authStore.user?.id
+    };
+
+    await empleadoService.create(payload as any);
     $q.notify({
       type: 'positive',
       message: 'Empleado creado exitosamente'
@@ -53,6 +147,10 @@ const handleSubmit = async () => {
 const handleCancel = () => {
   router.push('/empleados');
 };
+
+onMounted(async () => {
+  await loadCatalogs();
+});
 </script>
 
 <template>
@@ -74,7 +172,7 @@ const handleCancel = () => {
           <q-icon name="badge" size="40px" color="primary" />
           <div class="header-text">
             <h1 class="form-title">Nuevo Empleado</h1>
-            <p class="form-subtitle">Complete la información del empleado</p>
+            <p class="form-subtitle">Complete la información del empleado para nómina electrónica</p>
           </div>
         </div>
       </div>
@@ -90,69 +188,125 @@ const handleCancel = () => {
             </div>
 
             <div class="row q-col-gutter-md">
-              <div class="col-12 col-md-4">
+              <div class="col-12 col-md-3">
+                <div class="input-wrapper">
+                  <label class="input-label">Tipo Documento <span class="required">*</span></label>
+                  <q-select
+                    v-model="formData.tipo_documento_id"
+                    :options="tipoIdentOptions"
+                    outlined
+                    emit-value
+                    map-options
+                    class="modern-input"
+                  />
+                </div>
+              </div>
+              <div class="col-12 col-md-3">
                 <div class="input-wrapper">
                   <label class="input-label">Cédula <span class="required">*</span></label>
                   <q-input
                     v-model="formData.cedula"
-                    placeholder="Ej: 1234567890"
+                    placeholder="12345678"
                     outlined
                     :rules="[val => !!val || 'Campo requerido']"
                     class="modern-input"
-                  >
-                    <template v-slot:prepend>
-                      <q-icon name="badge" color="grey-6" />
-                    </template>
-                  </q-input>
+                  />
                 </div>
               </div>
-              <div class="col-12 col-md-8">
+              <div class="col-12 col-md-6">
                 <div class="input-wrapper">
-                  <label class="input-label">Nombre Completo <span class="required">*</span></label>
+                  <label class="input-label">Nombre Completo (Automático)</label>
                   <q-input
                     v-model="formData.nombre_completo"
-                    placeholder="Ej: Juan Pérez García"
+                    readonly
                     outlined
-                    :rules="[val => !!val || 'Campo requerido']"
-                    class="modern-input"
-                  >
-                    <template v-slot:prepend>
-                      <q-icon name="person" color="grey-6" />
-                    </template>
-                  </q-input>
+                    class="modern-input bg-grey-2"
+                  />
                 </div>
               </div>
             </div>
 
-            <div class="row q-col-gutter-md">
-              <div class="col-12 col-md-6">
+            <div class="row q-col-gutter-md q-mt-sm">
+              <div class="col-12 col-md-3">
                 <div class="input-wrapper">
-                  <label class="input-label">Nombre Corto</label>
+                  <label class="input-label">Primer Nombre <span class="required">*</span></label>
                   <q-input
-                    v-model="formData.nombre_corto"
-                    placeholder="Ej: Juan Pérez"
+                    v-model="formData.primer_nombre"
+                    @update:model-value="updateFullName"
                     outlined
                     class="modern-input"
-                  >
-                    <template v-slot:prepend>
-                      <q-icon name="short_text" color="grey-6" />
-                    </template>
-                  </q-input>
+                  />
                 </div>
               </div>
-              <div class="col-12 col-md-6">
+              <div class="col-12 col-md-3">
                 <div class="input-wrapper">
-                  <label class="input-label">Cargo</label>
+                  <label class="input-label">Otros Nombres</label>
                   <q-input
-                    v-model="formData.cargo"
-                    placeholder="Ej: Operario"
+                    v-model="formData.otros_nombres"
+                    @update:model-value="updateFullName"
                     outlined
                     class="modern-input"
-                  >
-                    <template v-slot:prepend>
-                      <q-icon name="work" color="grey-6" />
-                    </template>
-                  </q-input>
+                  />
+                </div>
+              </div>
+              <div class="col-12 col-md-3">
+                <div class="input-wrapper">
+                  <label class="input-label">Primer Apellido <span class="required">*</span></label>
+                  <q-input
+                    v-model="formData.primer_apellido"
+                    @update:model-value="updateFullName"
+                    outlined
+                    class="modern-input"
+                  />
+                </div>
+              </div>
+              <div class="col-12 col-md-3">
+                <div class="input-wrapper">
+                  <label class="input-label">Segundo Apellido</label>
+                  <q-input
+                    v-model="formData.segundo_apellido"
+                    @update:model-value="updateFullName"
+                    outlined
+                    class="modern-input"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="row q-col-gutter-md q-mt-sm">
+              <div class="col-12 col-md-4">
+                <div class="input-wrapper">
+                  <label class="input-label">Email <span class="required">*</span></label>
+                  <q-input
+                    v-model="formData.email"
+                    type="email"
+                    outlined
+                    placeholder="ejemplo@correo.com"
+                    class="modern-input"
+                  />
+                </div>
+              </div>
+              <div class="col-12 col-md-4">
+                <div class="input-wrapper">
+                  <label class="input-label">Dirección <span class="required">*</span></label>
+                  <q-input
+                    v-model="formData.direccion"
+                    outlined
+                    class="modern-input"
+                  />
+                </div>
+              </div>
+              <div class="col-12 col-md-4">
+                <div class="input-wrapper">
+                  <label class="input-label">Municipio/Ciudad <span class="required">*</span></label>
+                  <q-select
+                    v-model="formData.municipio_id"
+                    :options="ciudadOptions"
+                    outlined
+                    emit-value
+                    map-options
+                    class="modern-input"
+                  />
                 </div>
               </div>
             </div>
@@ -166,79 +320,146 @@ const handleCancel = () => {
             </div>
 
             <div class="row q-col-gutter-md">
-              <div class="col-12 col-md-4">
+              <div class="col-12 col-md-3">
+                <div class="input-wrapper">
+                  <label class="input-label">Cargo</label>
+                  <q-input v-model="formData.cargo" outlined class="modern-input" />
+                </div>
+              </div>
+              <div class="col-12 col-md-3">
                 <div class="input-wrapper">
                   <label class="input-label">Salario Mensual <span class="required">*</span></label>
                   <q-input
                     v-model.number="formData.salario_mensual"
                     type="number"
-                    placeholder="0"
                     outlined
-                    :rules="[val => val > 0 || 'Debe ser mayor a 0']"
-                    class="modern-input"
                     prefix="$"
-                  >
-                    <template v-slot:prepend>
-                      <q-icon name="attach_money" color="grey-6" />
-                    </template>
-                  </q-input>
+                    class="modern-input"
+                  />
                 </div>
               </div>
-              <div class="col-12 col-md-4">
+              <div class="col-12 col-md-3">
                 <div class="input-wrapper">
-                  <label class="input-label">Fecha de Ingreso <span class="required">*</span></label>
-                  <q-input
-                    v-model="formData.fecha_ingreso"
-                    type="date"
-                    outlined
-                    :rules="[val => !!val || 'Campo requerido']"
-                    class="modern-input"
-                  >
-                    <template v-slot:prepend>
-                      <q-icon name="calendar_today" color="grey-6" />
-                    </template>
-                  </q-input>
+                  <label class="input-label">Fecha Ingreso <span class="required">*</span></label>
+                  <q-input v-model="formData.fecha_ingreso" type="date" outlined class="modern-input" />
                 </div>
               </div>
-              <div class="col-12 col-md-4">
+              <div class="col-12 col-md-3">
                 <div class="input-wrapper">
-                  <label class="input-label">Fecha de Retiro</label>
-                  <q-input
-                    v-model="formData.fecha_retiro"
-                    type="date"
-                    outlined
-                    class="modern-input"
-                  >
-                    <template v-slot:prepend>
-                      <q-icon name="event_busy" color="grey-6" />
-                    </template>
-                  </q-input>
+                  <label class="input-label">Fecha Retiro</label>
+                  <q-input v-model="formData.fecha_retiro" type="date" outlined class="modern-input" />
                 </div>
               </div>
             </div>
 
-            <div class="row q-col-gutter-md">
-              <div class="col-12 col-md-6">
+            <div class="row q-col-gutter-md q-mt-sm">
+              <div class="col-12 col-md-4">
                 <div class="input-wrapper">
-                  <label class="input-label">Auxilio de Transporte</label>
-                  <q-toggle
-                    v-model="formData.auxilio_transporte"
-                    label="Recibe auxilio de transporte"
-                    color="primary"
-                    class="modern-toggle"
+                  <label class="input-label">Tipo Trabajador</label>
+                  <q-select
+                    v-model="formData.tipo_trabajador_id"
+                    :options="tipoTrabajadorOptions"
+                    outlined
+                    emit-value
+                    map-options
+                    class="modern-input"
                   />
-                  <div class="hint-text">Aplica si el salario es <= 2 SMMLV</div>
                 </div>
               </div>
-              <div class="col-12 col-md-6">
+              <div class="col-12 col-md-4">
                 <div class="input-wrapper">
-                  <label class="input-label">Estado</label>
-                  <q-toggle
-                    v-model="formData.activo"
-                    label="Empleado activo"
-                    color="positive"
-                    class="modern-toggle"
+                  <label class="input-label">Subtipo Trabajador</label>
+                  <q-select
+                    v-model="formData.subtipo_trabajador_id"
+                    :options="subtipoTrabajadorOptions"
+                    outlined
+                    emit-value
+                    map-options
+                    class="modern-input"
                   />
+                </div>
+              </div>
+              <div class="col-12 col-md-4">
+                <div class="input-wrapper">
+                  <label class="input-label">Tipo Contrato</label>
+                  <q-select
+                    v-model="formData.tipo_contrato_id"
+                    :options="tipoContratoOptions"
+                    outlined
+                    emit-value
+                    map-options
+                    class="modern-input"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="row q-mt-md items-center">
+              <div class="col-12 col-md-3">
+                <q-toggle v-model="formData.auxilio_transporte" label="Auxilio Transporte" color="primary" />
+              </div>
+              <div class="col-12 col-md-3">
+                <q-toggle v-model="formData.alto_riesgo_pension" label="Alto Riesgo Pensión" color="primary" />
+              </div>
+              <div class="col-12 col-md-3">
+                <q-toggle v-model="formData.salario_integral" label="Salario Integral" color="primary" />
+              </div>
+              <div class="col-12 col-md-3">
+                <q-toggle v-model="formData.activo" label="Activo" color="positive" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Sección: Información de Pago -->
+          <div class="form-section">
+            <div class="section-header">
+              <q-icon name="payments" size="24px" color="primary" />
+              <h2 class="section-title">Información de Pago</h2>
+            </div>
+            <div class="row q-col-gutter-md">
+              <div class="col-12 col-md-3">
+                <div class="input-wrapper">
+                  <label class="input-label">Método de Pago</label>
+                  <q-select
+                    v-model="formData.metodo_pago_id"
+                    :options="formasPagosOptions"
+                    outlined
+                    emit-value
+                    map-options
+                    class="modern-input"
+                  />
+                </div>
+              </div>
+              <div class="col-12 col-md-3">
+                <div class="input-wrapper">
+                  <label class="input-label">Banco</label>
+                  <q-select
+                    v-model="formData.banco"
+                    :options="bancoOptions"
+                    outlined
+                    emit-value
+                    map-options
+                    class="modern-input"
+                  />
+                </div>
+              </div>
+              <div class="col-12 col-md-3">
+                <div class="input-wrapper">
+                  <label class="input-label">Tipo Cuenta</label>
+                  <q-select
+                    v-model="formData.tipo_cuenta"
+                    :options="tipoCuentaOptions"
+                    outlined
+                    emit-value
+                    map-options
+                    class="modern-input"
+                  />
+                </div>
+              </div>
+              <div class="col-12 col-md-3">
+                <div class="input-wrapper">
+                  <label class="input-label">Número de Cuenta</label>
+                  <q-input v-model="formData.numero_cuenta" outlined class="modern-input" />
                 </div>
               </div>
             </div>
@@ -259,7 +480,7 @@ const handleCancel = () => {
               unelevated
               color="primary"
               icon="save"
-              label="Guardar"
+              label="Guardar Empleado"
               type="submit"
               :loading="loading"
               class="action-btn save-btn"
