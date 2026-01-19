@@ -8,6 +8,7 @@ import { UpdateNominaDto } from './dto/update-nomina.dto';
 import { EmpleadosService } from '../empleados/empleados.service';
 import { PeriodosNominaService } from '../periodos-nomina/periodos-nomina.service';
 import { ConceptosNominaService } from '../conceptos-nomina/conceptos-nomina.service';
+import { ParametrosNominaService } from '../parametros-nomina/parametros-nomina.service';
 
 @Injectable()
 export class NominasService {
@@ -24,11 +25,35 @@ export class NominasService {
     private readonly periodosService: PeriodosNominaService,
     @Inject(forwardRef(() => ConceptosNominaService))
     private readonly conceptosService: ConceptosNominaService,
+    @Inject(forwardRef(() => ParametrosNominaService))
+    private readonly parametrosService: ParametrosNominaService,
   ) { }
 
   async findAll(page: number, limit: number, filters: Record<string, any>) {
     try {
       let query = `
+        WITH source_calculations AS (
+          SELECT 
+            n.id as nomina_id,
+            -- Basico segun dias
+            ROUND(CASE WHEN n.dias_pagados = 15 THEN n.salario_mensual / 2 ELSE (n.salario_mensual / 30) * n.dias_pagados END) as v_basico,
+            -- Horas Extras en vivo
+            COALESCE((SELECT SUM(valor_total) FROM public.horas_extras he WHERE he.periodo_id = n.periodo_id AND he.empleado_id = n.empleado_id AND he.tipo = 'DIURNA' AND he.aprobado = true), 0) as v_he_diurna,
+            COALESCE((SELECT SUM(valor_total) FROM public.horas_extras he WHERE he.periodo_id = n.periodo_id AND he.empleado_id = n.empleado_id AND he.tipo = 'FESTIVA' AND he.aprobado = true), 0) as v_he_festiva,
+            -- Otros Pagos y Deducciones
+            COALESCE((SELECT SUM(valor) FROM public.otros_pagos op WHERE op.periodo_id = n.periodo_id AND op.empleado_id = n.empleado_id AND op.tipo = 'INGRESO' AND op.aprobado = true), 0) as v_otros_ing,
+            COALESCE((SELECT SUM(valor) FROM public.otros_pagos op WHERE op.periodo_id = n.periodo_id AND op.empleado_id = n.empleado_id AND op.tipo = 'DEDUCCION' AND op.aprobado = true), 0) as v_otros_ded,
+            -- Parámetros (Salud, Pension, Auxilio)
+            COALESCE((SELECT porcentaje/100.0 FROM public.conceptos_nomina WHERE empresa_id = n.empresa_id AND subtipo = 'DEDUCCION_SALUD' LIMIT 1), 0.04) as pct_salud,
+            COALESCE((SELECT porcentaje/100.0 FROM public.conceptos_nomina WHERE empresa_id = n.empresa_id AND subtipo = 'DEDUCCION_PENSION' LIMIT 1), 0.04) as pct_pension,
+            COALESCE((SELECT valor FROM public.parametros_nomina pm WHERE pm.codigo = 'AUX_TRANSPORTE' AND pm.empresa_id = n.empresa_id AND pm.anio = EXTRACT(YEAR FROM p.fecha_inicio) LIMIT 1), 200000) as val_aux_transp
+          FROM public.nominas n
+          JOIN public.periodos_nomina p ON n.periodo_id = p.id
+          WHERE 1=1
+          ${filters.empresaId ? ` AND n.empresa_id = ${filters.empresaId}` : ''}
+          ${filters.periodoId ? ` AND n.periodo_id = ${filters.periodoId}` : ''}
+          ${filters.estado ? ` AND n.estado = '${filters.estado}'` : ''}
+        )
         SELECT
           n.id,
           n.periodo_id,
@@ -36,9 +61,6 @@ export class NominasService {
           n.salario_mensual,
           n.valor_hora,
           n.dias_pagados,
-          n.total_devengado,
-          n.total_deducciones,
-          n.neto_pagar,
           n.estado,
           n.observaciones,
           n.empresa_id,
@@ -48,17 +70,35 @@ export class NominasService {
           p.nombre as periodo_nombre,
           p.fecha_inicio,
           p.fecha_fin,
-          (SELECT SUM(valor_total) FROM public.nomina_detalle nd JOIN public.conceptos_nomina c ON nd.concepto_id = c.id WHERE nd.nomina_id = n.id AND c.subtipo = 'BASICO') as valor_basico,
-          (SELECT SUM(valor_total) FROM public.nomina_detalle nd JOIN public.conceptos_nomina c ON nd.concepto_id = c.id WHERE nd.nomina_id = n.id AND c.subtipo = 'HORA_EXTRA_DIURNA') as valor_he_diurna,
-          (SELECT SUM(valor_total) FROM public.nomina_detalle nd JOIN public.conceptos_nomina c ON nd.concepto_id = c.id WHERE nd.nomina_id = n.id AND c.subtipo = 'HORA_EXTRA_FESTIVA') as valor_he_festiva,
-          (SELECT SUM(valor_total) FROM public.nomina_detalle nd JOIN public.conceptos_nomina c ON nd.concepto_id = c.id WHERE nd.nomina_id = n.id AND c.subtipo = 'AUXILIO_TRANSPORTE') as valor_auxilio_transporte,
-          (SELECT SUM(valor_total) FROM public.nomina_detalle nd JOIN public.conceptos_nomina c ON nd.concepto_id = c.id WHERE nd.nomina_id = n.id AND c.subtipo = 'DEDUCCION_SALUD') as valor_salud,
-          (SELECT SUM(valor_total) FROM public.nomina_detalle nd JOIN public.conceptos_nomina c ON nd.concepto_id = c.id WHERE nd.nomina_id = n.id AND c.subtipo = 'DEDUCCION_PENSION') as valor_pension,
-          (SELECT SUM(valor_total) FROM public.nomina_detalle nd JOIN public.conceptos_nomina c ON nd.concepto_id = c.id WHERE nd.nomina_id = n.id AND c.tipo = 'DEVENGADO' AND c.subtipo NOT IN ('BASICO', 'HORA_EXTRA_DIURNA', 'HORA_EXTRA_FESTIVA', 'AUXILIO_TRANSPORTE')) as valor_otros_devengados,
-          (SELECT SUM(valor_total) FROM public.nomina_detalle nd JOIN public.conceptos_nomina c ON nd.concepto_id = c.id WHERE nd.nomina_id = n.id AND c.tipo = 'DEDUCCION' AND c.subtipo NOT IN ('DEDUCCION_SALUD', 'DEDUCCION_PENSION')) as valor_otras_deducciones
+          sc.v_basico as valor_basico,
+          sc.v_he_diurna as valor_he_diurna,
+          sc.v_he_festiva as valor_he_festiva,
+          -- Auxilio proporcional si aplica
+          CASE WHEN e.auxilio_transporte THEN 
+            ROUND(CASE WHEN n.dias_pagados = 15 THEN sc.val_aux_transp / 2 ELSE (sc.val_aux_transp / 30) * n.dias_pagados END)
+          ELSE 0 END as valor_auxilio_transporte,
+          -- Salud y Pension calculados sobre (Basico + HE)
+          ROUND((sc.v_basico + sc.v_he_diurna + sc.v_he_festiva) * sc.pct_salud) as valor_salud,
+          ROUND((sc.v_basico + sc.v_he_diurna + sc.v_he_festiva) * sc.pct_pension) as valor_pension,
+          sc.v_otros_ing as valor_otros_devengados,
+          sc.v_otros_ded as valor_otras_deducciones,
+          -- Totales calculados al vuelo para que coincidan con las columnas
+          (sc.v_basico + sc.v_he_diurna + sc.v_he_festiva + 
+           (CASE WHEN e.auxilio_transporte THEN ROUND(CASE WHEN n.dias_pagados = 15 THEN sc.val_aux_transp / 2 ELSE (sc.val_aux_transp / 30) * n.dias_pagados END) ELSE 0 END) + 
+           sc.v_otros_ing) as total_devengado,
+          (ROUND((sc.v_basico + sc.v_he_diurna + sc.v_he_festiva) * sc.pct_salud) + 
+           ROUND((sc.v_basico + sc.v_he_diurna + sc.v_he_festiva) * sc.pct_pension) + 
+           sc.v_otros_ded) as total_deducciones,
+          ((sc.v_basico + sc.v_he_diurna + sc.v_he_festiva + 
+           (CASE WHEN e.auxilio_transporte THEN ROUND(CASE WHEN n.dias_pagados = 15 THEN sc.val_aux_transp / 2 ELSE (sc.val_aux_transp / 30) * n.dias_pagados END) ELSE 0 END) + 
+           sc.v_otros_ing) - 
+           (ROUND((sc.v_basico + sc.v_he_diurna + sc.v_he_festiva) * sc.pct_salud) + 
+            ROUND((sc.v_basico + sc.v_he_diurna + sc.v_he_festiva) * sc.pct_pension) + 
+            sc.v_otros_ded)) as neto_pagar
         FROM public.nominas n
         INNER JOIN public.empleados e ON n.empleado_id = e.id
         INNER JOIN public.periodos_nomina p ON n.periodo_id = p.id
+        LEFT JOIN source_calculations sc ON sc.nomina_id = n.id
         WHERE 1=1
       `;
 
@@ -139,8 +179,17 @@ export class NominasService {
         throw new Error('Empleado o período no encontrado');
       }
 
-      // Calcular valor hora (salario_mensual / 220)
-      const valorHora = Number(empleado.salario_mensual) / 220;
+      // Calcular valor hora (salario_mensual / HORAS_LABORALES_MES)
+      const anio = new Date(periodo.fecha_inicio).getFullYear();
+
+      const paramHoras = await queryRunner.query(
+        `SELECT valor FROM parametros_nomina 
+         WHERE codigo = 'HORAS_LABORALES_MES' AND empresa_id = $1 AND anio = $2 
+         LIMIT 1`,
+        [createNominaDto.empresaId, anio]
+      );
+      const horasMes = paramHoras.length > 0 ? Number(paramHoras[0].valor) : 240;
+      const valorHora = Number(empleado.salario_mensual) / horasMes;
 
       // Crear nómina
       const nomina = this.nominaRepository.create({
@@ -198,8 +247,16 @@ export class NominasService {
           continue; // Ya existe, saltar
         }
 
-        // Calcular valor hora
-        const valorHora = Number(empleado.salario_mensual) / 220;
+        // Calcular valor hora (salario_mensual / HORAS_LABORALES_MES)
+        const anio = new Date(periodo.fecha_inicio).getFullYear();
+        const paramHoras = await queryRunner.query(
+          `SELECT valor FROM parametros_nomina 
+           WHERE codigo = 'HORAS_LABORALES_MES' AND empresa_id = $1 AND anio = $2 
+           LIMIT 1`,
+          [empresaId, anio]
+        );
+        const horasMes = paramHoras.length > 0 ? Number(paramHoras[0].valor) : 240;
+        const valorHora = Number(empleado.salario_mensual) / horasMes;
 
         // Crear nómina
         const nomina = this.nominaRepository.create({
@@ -440,9 +497,9 @@ export class NominasService {
     } catch (error) {
       throw error;
     }
-}
+  }
 
-  async aprobarNomina(nominaId: number, userId: number, observaciones ?: string) {
+  async aprobarNomina(nominaId: number, userId: number, observaciones?: string) {
     try {
       const nomina = await this.findOne(nominaId);
       if (nomina.estado !== 'BORRADOR') {
@@ -460,7 +517,7 @@ export class NominasService {
     } catch (error) {
       throw new Error(`Error al aprobar nómina: ${error.message}`);
     }
-}
+  }
 
   async marcarComoPagado(nominaId: number) {
     try {
@@ -477,7 +534,7 @@ export class NominasService {
     } catch (error) {
       throw new Error(`Error al marcar nómina como pagada: ${error.message}`);
     }
-}
+  }
 
   async update(id: number, updateNominaDto: UpdateNominaDto) {
     try {
@@ -490,7 +547,7 @@ export class NominasService {
     } catch (error) {
       throw new Error(`Error al actualizar nómina: ${error.message}`);
     }
-}
+  }
 
   async remove(id: number) {
     try {
@@ -503,7 +560,7 @@ export class NominasService {
     } catch (error) {
       throw new Error(`Error al eliminar nómina: ${error.message}`);
     }
-}
+  }
 
   async crearHoraExtra(dto: any) {
     try {
@@ -518,15 +575,32 @@ export class NominasService {
       }
 
       const empleado = await this.empleadosService.findOne(dto.empleadoId);
-      const valorHora = Number(empleado.salario_mensual) / 220;
+      const periodo = await this.periodosService.findOne(dto.periodoId);
+      const anio = new Date(periodo.fecha_inicio).getFullYear();
 
-      let valorHoraExtra = valorHora;
-      if (dto.tipo === 'DIURNA') {
-        valorHoraExtra = valorHora * 1.25; // 25% recargo
-      } else if (dto.tipo === 'FESTIVA') {
-        valorHoraExtra = valorHora * 1.80; // 80% recargo (Ajustado a solicitud del usuario)
+      // Obtener horas laborales mes
+      const paramHoras = await this.dataSource.query(
+        `SELECT valor FROM parametros_nomina 
+         WHERE codigo = 'HORAS_LABORALES_MES' AND empresa_id = $1 AND anio = $2 
+         LIMIT 1`,
+        [dto.empresaId, anio]
+      );
+      const horasMes = paramHoras.length > 0 ? Number(paramHoras[0].valor) : 240;
+      const valorHora = Number(empleado.salario_mensual) / horasMes;
+
+      // Obtener factor de recargo de conceptos
+      const conceptos = await this.conceptosService.findAll(1, 100, { empresaId: dto.empresaId, activo: true });
+      const conceptoHE = conceptos.data.find(c =>
+        (dto.tipo === 'DIURNA' && c.subtipo === 'HORA_EXTRA_DIURNA') ||
+        (dto.tipo === 'FESTIVA' && c.subtipo === 'HORA_EXTRA_FESTIVA')
+      );
+
+      let factor = dto.tipo === 'DIURNA' ? 1.25 : 1.80; // Fallbacks
+      if (conceptoHE && conceptoHE.porcentaje) {
+        factor = conceptoHE.porcentaje > 10 ? conceptoHE.porcentaje / 100 : conceptoHE.porcentaje;
       }
 
+      const valorHoraExtra = valorHora * factor;
       const valorTotal = Math.round(valorHoraExtra * Number(dto.cantidadHoras));
 
       const query = `
@@ -552,7 +626,7 @@ export class NominasService {
     } catch (error) {
       throw new Error(`Error al crear hora extra: ${error.message}`);
     }
-}
+  }
 
   async crearOtroPago(dto: any) {
     try {
@@ -588,7 +662,7 @@ export class NominasService {
     } catch (error) {
       throw new Error(`Error al crear otro pago: ${error.message}`);
     }
-}
+  }
 
   async getEmpleadosConNominasParaPeriodo(periodoId: number, empresaId: number) {
     try {

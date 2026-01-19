@@ -8,6 +8,7 @@ import { NominaDetalle } from '../entities/nomina-detalle.entity';
 import { EmpleadosModule } from '../empleados/empleados.module';
 import { PeriodosNominaModule } from '../periodos-nomina/periodos-nomina.module';
 import { ConceptosNominaModule } from '../conceptos-nomina/conceptos-nomina.module';
+import { ParametrosNominaModule } from '../parametros-nomina/parametros-nomina.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { ConceptosNominaModule } from '../conceptos-nomina/conceptos-nomina.modu
     EmpleadosModule,
     PeriodosNominaModule,
     ConceptosNominaModule,
+    ParametrosNominaModule,
   ],
   controllers: [NominasController, NominaCatalogsController],
   providers: [NominasService],

@@ -173,9 +173,14 @@ const handleAddNovedad = async () => {
 
     $q.notify({ type: 'positive', message: 'Novedad agregada' });
     
-    // Refresh only current employee data if possible, or reload all
-    // For now reload all to be safe and simple
+    // Refresh everything
     await loadNominaForPeriod();
+    
+    // Trigger official calculation in backend to sync totals
+    if (currentNominaData.value?.nomina?.id) {
+       await nominasService.calcularNomina(currentNominaData.value.nomina.id);
+       await loadNominaForPeriod(); // Reload once more to get official totals
+    }
     
     // Reset minimal form
     novedadForm.value.cantidad = null;
@@ -237,25 +242,49 @@ const calculateTotals = (nominaRow: any) => {
   const factorHED = getFactor(conceptoHED);
   const factorHEF = getFactor(conceptoHEF);
 
-  const salarioMensual = nominaRow.empleado.salario_mensual;
+  const salarioMensual = Number(nominaRow.empleado.salario_mensual);
   const dias = selectedPeriod.value?.dias_periodo || 15;
-  const basico = (salarioMensual / 30) * dias;
   
-  // Dynamic Calculation
-  const valorHora = horasMes > 0 ? (salarioMensual / horasMes) : 0;
+  // Basic Calculation (Same as Backend)
+  const basico = Math.round(dias === 15 ? salarioMensual / 2 : (salarioMensual / 30) * dias);
   
-  const he = (nominaRow.horasExtrasDiurnas * valorHora * factorHED) + 
-             (nominaRow.horasExtrasFestivas * valorHora * factorHEF); 
+  // Use official HE values calculated and stored by backend
+  const val_hed = (nominaRow.horasExtrasData?.diurnas || []).reduce((sum: number, he: any) => sum + Number(he.valor_total || 0), 0);
+  const val_hef = (nominaRow.horasExtrasData?.festivas || []).reduce((sum: number, he: any) => sum + Number(he.valor_total || 0), 0);
+  const he = val_hed + val_hef;
   
-  // Calculate proportionate Aux Transporte
-  const aux = nominaRow.empleado.auxilio_transporte ? (auxTransporteValor / 30) * dias : 0;
+  // Calculate proportionate Aux Transporte (Same as Backend)
+  const auxMensual = Number(auxTransporteValor);
+  const aux = nominaRow.empleado.auxilio_transporte ? Math.round(dias === 15 ? auxMensual / 2 : (auxMensual / 30) * dias) : 0;
   
-  const totalDev = basico + he + aux + nominaRow.otrosPagos;
+  const totalDev = Math.round(basico + he + aux + (nominaRow.otrosPagos || 0));
   
-  // Base for deductions (usually Basic + HE, sometimes AuxTrans is excluded from IBG)
+  // Base for deductions (matches backend: basic + HE)
   const ibc = basico + he; 
-  const totalDed = (ibc * saludPct) + (ibc * pensionPct) + nominaRow.otrasDeducciones;
   
+  // Dynamic Deductions based on Concepts (Same as Backend Loop)
+  let totalDed = (nominaRow.otrasDeducciones || 0);
+  
+  // Check Salud/Pension but use the generic concept matching
+  conceptos.value.filter(c => c.tipo === 'DEDUCCION' && c.porcentaje).forEach(ded => {
+      const base = (ded.subtipo === 'DEDUCCION_SALUD' || ded.subtipo === 'DEDUCCION_PENSION') 
+                 ? (basico + he) 
+                 : basico;
+      if (ded.porcentaje) {
+          totalDed += Math.round(base * (ded.porcentaje / 100));
+      }
+  });
+  
+  // Ensure we reflect the official total if nomina already exists and state is not draft
+  if (nominaRow.nomina && nominaRow.nomina.estado !== 'BORRADOR') {
+      return {
+          devengado: Number(nominaRow.nomina.total_devengado),
+          deducciones: Number(nominaRow.nomina.total_deducciones),
+          neto: Number(nominaRow.nomina.neto_pagar),
+          parametrosUsados: calculateTotals(null).parametrosUsados // Just for types
+      };
+  }
+
   return {
     devengado: totalDev,
     deducciones: totalDed,
@@ -312,10 +341,26 @@ const formatCurrency = (amount: number) => {
 };
 
 // Watchers
-watch(selectedPeriodId, () => {
+watch(selectedPeriodId, async (newVal) => {
   selectedEmployeeId.value = null;
+  if (newVal) {
+    const period = periodos.value.find(p => p.id === newVal);
+    if (period) {
+      const year = new Date(period.fecha_inicio).getFullYear();
+      await loadParametersForYear(year);
+    }
+  }
   loadNominaForPeriod();
 });
+
+const loadParametersForYear = async (year: number) => {
+  try {
+    const paramsData = await parametroNominaService.getParametros({ anio: year, limit: 50 });
+    parametros.value = paramsData.data || [];
+  } catch (error) {
+    console.error('Error loading parameters for year:', year, error);
+  }
+};
 
 onMounted(() => {
   loadInitialData();
