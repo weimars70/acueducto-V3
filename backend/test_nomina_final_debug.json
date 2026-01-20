@@ -1,0 +1,15 @@
+{
+    "establishment_municipality": 5266000,
+    "payroll_period_id": 2,
+    "worker": {
+        "payroll_type_document_identification_id": 13,
+        "identification_number": 71396904,
+        "surname": "MARIN",
+        "first_name": "DIONICIO"
+    },
+    "accrued": {
+        "worked_days": 11,
+        "salary": "0.00"
+    },
+    "net_value": "916666.67"
+}

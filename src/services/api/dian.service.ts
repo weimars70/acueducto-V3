@@ -67,5 +67,12 @@ export const dianService = {
             timeout: 5000 // 5 segundos timeout para progreso
         });
         return data;
+    },
+
+    /**
+     * Obtiene el JSON de la nómina electrónica listo para la DIAN
+     */
+    async getNominaJson(nominaId: number): Promise<any> {
+        return apiClient.get(`/dian-nomina/json/${nominaId}`).then((res: any) => res.data);
     }
 };

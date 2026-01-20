@@ -52,4 +52,13 @@ export class Empresa {
 
     @Column({ name: 'port_email', nullable: true })
     portEmail: number;
+
+    @Column({ name: 'tipo_documento_id', nullable: true })
+    tipoDocumentoId: number;
+
+    @Column({ name: 'municipio_id', nullable: true })
+    municipioId: string;
+
+    @Column({ name: 'email_contacto', nullable: true })
+    emailContacto: string;
 }

@@ -3,18 +3,34 @@ import { ref, computed } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
 import { periodoNominaService } from '../services/api/periodo-nomina.service';
+import { nominaCatalogsService } from '../services/api/nomina-catalogs.service';
 import type { CreatePeriodoNominaDto } from '../types/periodo-nomina';
 
 const $q = useQuasar();
 const router = useRouter();
 const loading = ref(false);
+const payrollPeriods = ref([]);
+
+const loadCatalogs = async () => {
+  try {
+    payrollPeriods.value = await nominaCatalogsService.getPayrollPeriods();
+  } catch (error) {
+    console.error('Error loading catalogs:', error);
+    $q.notify({
+        type: 'negative',
+        message: 'Error al cargar las frecuencias de nómina'
+    });
+  }
+};
+loadCatalogs();
 
 const formData = ref<CreatePeriodoNominaDto>({
   nombre: '',
   fecha_inicio: '',
   fecha_fin: '',
   dias_periodo: 0,
-  estado: 'ABIERTO'
+  estado: 'ABIERTO',
+  id_payroll_periods: undefined
 });
 
 // Calcular días automáticamente cuando cambian las fechas
@@ -187,6 +203,30 @@ const handleCancel = () => {
                       <q-icon name="calendar_view_day" color="grey-6" />
                     </template>
                   </q-input>
+                </div>
+              </div>
+            </div>
+
+            <div class="row q-col-gutter-md">
+              <div class="col-12 col-md-6">
+                <div class="input-wrapper">
+                  <label class="input-label">Frecuencia de Nómina <span class="required">*</span></label>
+                  <q-select
+                    v-model="formData.id_payroll_periods"
+                    :options="payrollPeriods"
+                    option-value="id"
+                    option-label="nombre"
+                    emit-value
+                    map-options
+                    outlined
+                    :rules="[val => !!val || 'Campo requerido']"
+                    class="modern-input"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon name="schedule" color="grey-6" />
+                    </template>
+                  </q-select>
+                  <div class="hint-text">Seleccione la frecuencia de pago (Mensual, Quincenal, etc.)</div>
                 </div>
               </div>
               <div class="col-12 col-md-6">

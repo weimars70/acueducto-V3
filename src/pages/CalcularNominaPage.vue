@@ -8,6 +8,8 @@ import { empleadoService } from '../services/api/empleado.service';
 import type { PeriodoNomina } from '../types/periodo-nomina';
 import type { Empleado } from '../types/empleado';
 import { useExport } from '../composables/useExport';
+import { nominaCatalogsService } from '../services/api/nomina-catalogs.service';
+import { dianService } from '../services/api/dian.service';
 
 const $q = useQuasar();
 const router = useRouter();
@@ -18,17 +20,63 @@ const {
   exportNominaVouchers,
   generateNominaVouchers
 } = useExport();
+
+// Catalogos y Datos DIAN
+const payrollPeriods = ref([]);
+
+const loadNominaCatalogs = async () => {
+    try {
+        const periods = await nominaCatalogsService.getPayrollPeriods();
+        payrollPeriods.value = periods;
+    } catch (e) {
+        console.error('Error loading payroll periods catalog', e);
+    }
+}
+
+// Inicializar catálogos
+onMounted(() => {
+  loadNominaCatalogs();
+});
+
+const downloadDianJson = async (nominaId: number, empleado: any) => {
+    try {
+        $q.loading.show({ message: 'Generando JSON DIAN...' });
+        const json = await dianService.getNominaJson(nominaId);
+        
+        // Crear Blob y descargar
+        const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `NE_${empleado.cedula}_${json.consecutive}.json`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+
+        $q.notify({
+            type: 'positive',
+            message: 'JSON DIAN descargado correctamente'
+        });
+    } catch (e: any) {
+        console.error('Error downloading DIAN JSON', e);
+        $q.notify({
+            type: 'negative',
+            message: 'Error al descargar el JSON de la DIAN'
+        });
+    } finally {
+        $q.loading.hide();
+    }
+};
 const loading = ref(false);
 const showPreviewModal = ref(false);
 const showCreatePeriodModal = ref(false);
 const previewPdfUrl = ref('');
 const currentVouchers = ref<any[]>([]);
 const previewFilename = ref('');
-const newPeriod = ref({
+const newPeriod = ref<any>({
   nombre: '',
   fecha_inicio: '',
   fecha_fin: '',
-  dias_periodo: 15
+  dias_periodo: 15,
+  id_payroll_periods: undefined
 });
 const periodoId = ref<number | null>(null);
 const periodo = ref<PeriodoNomina | null>(null);
@@ -709,36 +757,6 @@ watch([() => newPeriod.value.fecha_inicio, () => newPeriod.value.fecha_fin], ([s
   }
 });
 
-const handleCreatePeriod = async () => {
-  try {
-    $q.loading.show({ message: 'Creando período...' });
-    const created = await periodoNominaService.create(newPeriod.value);
-    $q.notify({
-      type: 'positive',
-      message: 'Período creado exitosamente'
-    });
-    showCreatePeriodModal.value = false;
-    await loadPeriodos();
-    periodoId.value = created.id;
-    await loadData();
-    // Reset form
-    newPeriod.value = {
-      nombre: '',
-      fecha_inicio: '',
-      fecha_fin: '',
-      dias_periodo: 15
-    };
-  } catch (error: any) {
-    console.error('Error al crear período:', error);
-    $q.notify({
-      type: 'negative',
-      message: error?.response?.data?.message || 'Error al crear el período'
-    });
-  } finally {
-    $q.loading.hide();
-  }
-};
-
 onMounted(() => {
   loadPeriodos();
 });
@@ -989,6 +1007,24 @@ onUnmounted(() => {
               </div>
             </div>
 
+            <q-select
+              v-model="newPeriod.id_payroll_periods"
+              :options="payrollPeriods"
+              option-value="id"
+              option-label="nombre"
+              emit-value
+              map-options
+              outlined
+              dense
+              label="Frecuencia de Nómina"
+              :rules="[val => !!val || 'Requerido']"
+              class="q-mb-md"
+            >
+              <template v-slot:prepend>
+                <q-icon name="schedule" />
+              </template>
+            </q-select>
+
             <q-input
               v-model.number="newPeriod.dias_periodo"
               label="Días del Período"
@@ -1153,6 +1189,17 @@ onUnmounted(() => {
                     @click="router.push(`/nominas/${row.nomina.id}`)"
                   >
                     <q-tooltip>Ver Detalle</q-tooltip>
+                  </q-btn>
+                  <q-btn
+                    v-if="row.nomina"
+                    flat
+                    dense
+                    round
+                    icon="code"
+                    color="purple-7"
+                    @click="downloadDianJson(row.nomina.id, row.empleado)"
+                  >
+                    <q-tooltip>Descargar JSON DIAN</q-tooltip>
                   </q-btn>
                   <q-btn
                     v-if="row.nomina && row.nomina.estado === 'BORRADOR'"

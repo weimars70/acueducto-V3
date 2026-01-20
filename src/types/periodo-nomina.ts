@@ -10,6 +10,7 @@ export interface PeriodoNomina {
   usuario_creacion?: number;
   fecha_cierre?: string | Date;
   fecha_pago?: string | Date;
+  id_payroll_periods?: number;
 }
 
 export interface CreatePeriodoNominaDto {
@@ -18,6 +19,7 @@ export interface CreatePeriodoNominaDto {
   fecha_fin: string;
   dias_periodo: number;
   estado?: string;
+  id_payroll_periods?: number;
 }
 
-export interface UpdatePeriodoNominaDto extends Partial<CreatePeriodoNominaDto> {}
+export interface UpdatePeriodoNominaDto extends Partial<CreatePeriodoNominaDto> { }

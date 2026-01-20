@@ -19,5 +19,9 @@ export const nominaCatalogsService = {
 
     async getTipoCuenta() {
         return apiClient.get('/nomina-catalogs/tipo-cuenta').then((res: any) => res.data);
+    },
+
+    async getPayrollPeriods() {
+        return apiClient.get('/nomina-catalogs/payroll-periods').then((res: any) => res.data);
     }
 };

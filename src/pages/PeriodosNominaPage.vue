@@ -23,6 +23,7 @@ const pagination = ref({
 
 const columns = [
   { name: 'nombre', label: 'Nombre', field: 'nombre', align: 'left' as const, sortable: true },
+  { name: 'frecuencia', label: 'Frecuencia', field: 'id_payroll_periods', align: 'left' as const },
   { name: 'fecha_inicio', label: 'Fecha Inicio', field: 'fecha_inicio', align: 'center' as const, sortable: true },
   { name: 'fecha_fin', label: 'Fecha Fin', field: 'fecha_fin', align: 'center' as const, sortable: true },
   { name: 'dias_periodo', label: 'Días', field: 'dias_periodo', align: 'center' as const },
@@ -217,7 +218,27 @@ const handleExportPDF = () => {
   }
 };
 
+// Cargar frecuencias para mostrar nombres en lugar de IDs
+import { nominaCatalogsService } from '../services/api/nomina-catalogs.service';
+
+const payrollPeriodsCatalog = ref<any[]>([]);
+
+const loadCatalogs = async () => {
+    try {
+        payrollPeriodsCatalog.value = await nominaCatalogsService.getPayrollPeriods();
+    } catch (e) {
+        console.error('Error loading catalogs', e);
+    }
+}
+
+const getFrecuenciaNombre = (id: number | undefined) => {
+    if (!id) return 'No definida';
+    const found = payrollPeriodsCatalog.value.find(p => p.id === id);
+    return found ? found.nombre : 'No definida';
+};
+
 onMounted(() => {
+  loadCatalogs();
   loadData();
 });
 </script>
@@ -326,6 +347,10 @@ onMounted(() => {
         :rows-per-page-options="[12, 24, 48]"
         binary-state-sort
       >
+        <template v-slot:body-cell-frecuencia="props">
+          <q-td :props="props">{{ getFrecuenciaNombre(props.row.id_payroll_periods) }}</q-td>
+        </template>
+
         <template v-slot:body-cell-fecha_inicio="props">
           <q-td :props="props">{{ formatDate(props.row.fecha_inicio) }}</q-td>
         </template>
@@ -439,6 +464,9 @@ onMounted(() => {
               <div class="col">
                 <div class="text-h6 text-weight-bold text-grey-9">
                   {{ periodo.nombre }}
+                </div>
+                <div class="text-caption text-grey-7">
+                  {{ getFrecuenciaNombre(periodo.id_payroll_periods) }}
                 </div>
               </div>
               <div class="col-auto">

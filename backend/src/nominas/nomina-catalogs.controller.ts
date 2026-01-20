@@ -46,4 +46,11 @@ export class NominaCatalogsController {
             [req.user.empresaId]
         );
     }
+
+    @Get('payroll-periods')
+    async getPayrollPeriods() {
+        return this.dataSource.query(
+            'SELECT id, name as nombre FROM payroll_periods ORDER BY name ASC'
+        );
+    }
 }

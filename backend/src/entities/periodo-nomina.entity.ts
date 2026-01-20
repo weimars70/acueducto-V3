@@ -34,4 +34,7 @@ export class PeriodoNomina {
 
   @Column({ type: 'timestamp', nullable: true })
   fecha_pago: Date;
+
+  @Column({ name: 'id_payroll_periods', nullable: true })
+  idPayrollPeriods: number;
 }
