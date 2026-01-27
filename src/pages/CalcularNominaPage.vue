@@ -456,6 +456,60 @@ const handleDeleteItem = async (id: number, type: 'HE' | 'OP') => {
   });
 };
 
+const handleEditarItem = async (item: any, type: 'HE' | 'OP') => {
+  if (type === 'HE') {
+    $q.dialog({
+      title: 'Editar Horas Extras',
+      message: `Fecha: ${item.fecha.split('T')[0]}`,
+      prompt: {
+        model: item.cantidad_horas.toString(),
+        type: 'number',
+        label: 'Cantidad de horas',
+      },
+      cancel: true,
+      persistent: true
+    }).onOk(async (val) => {
+      try {
+        $q.loading.show();
+        await nominasService.updateHoraExtra(item.id, { cantidadHoras: Number(val) });
+        $q.notify({ type: 'positive', message: 'Actualizado correctamente' });
+        await loadData();
+      } catch (e: any) {
+        $q.notify({ type: 'negative', message: e?.response?.data?.message || 'Error al actualizar' });
+      } finally {
+        $q.loading.hide();
+      }
+    });
+  } else {
+    $q.dialog({
+      title: 'Editar Otro Pago / Deducción',
+      message: item.concepto,
+      prompt: {
+        model: item.valor.toString(),
+        type: 'number',
+        label: 'Valor',
+      },
+      cancel: true,
+      persistent: true
+    }).onOk(async (val) => {
+      try {
+        $q.loading.show();
+        await nominasService.updateOtroPago(item.id, { 
+          valor: Number(val), 
+          concepto: item.concepto, 
+          tipo: item.tipo 
+        });
+        $q.notify({ type: 'positive', message: 'Actualizado correctamente' });
+        await loadData();
+      } catch (e: any) {
+        $q.notify({ type: 'negative', message: e?.response?.data?.message || 'Error al actualizar' });
+      } finally {
+        $q.loading.hide();
+      }
+    });
+  }
+};
+
 const handleGenerarNominas = async () => {
   if (!periodoId.value) {
     $q.notify({
@@ -1221,13 +1275,14 @@ onUnmounted(() => {
                       <q-tooltip>Agregar Hora Extra Diurna</q-tooltip>
                     </q-btn>
                     <q-menu v-if="row.horasExtrasData.diurnas.length > 0">
-                      <q-list style="min-width: 150px">
+                      <q-list style="min-width: 180px">
                         <q-item v-for="he in row.horasExtrasData.diurnas" :key="he.id">
                           <q-item-section>
                             <q-item-label>{{ he.cantidad_horas }}h - {{ he.fecha.split('T')[0] }}</q-item-label>
                           </q-item-section>
-                          <q-item-section side>
-                            <q-btn flat round dense size="xs" icon="delete" color="red" @click="handleDeleteItem(he.id, 'HE')" />
+                          <q-item-section side class="row no-wrap">
+                            <q-btn flat round dense size="sm" icon="edit" color="blue" @click="handleEditarItem(he, 'HE')" />
+                            <q-btn flat round dense size="sm" icon="delete" color="red" @click="handleDeleteItem(he.id, 'HE')" />
                           </q-item-section>
                         </q-item>
                       </q-list>
@@ -1253,13 +1308,14 @@ onUnmounted(() => {
                       <q-tooltip>Agregar Hora Extra Festiva</q-tooltip>
                     </q-btn>
                     <q-menu v-if="row.horasExtrasData.festivas.length > 0">
-                      <q-list style="min-width: 150px">
+                      <q-list style="min-width: 180px">
                         <q-item v-for="he in row.horasExtrasData.festivas" :key="he.id">
                           <q-item-section>
                             <q-item-label>{{ he.cantidad_horas }}h - {{ he.fecha.split('T')[0] }}</q-item-label>
                           </q-item-section>
-                          <q-item-section side>
-                            <q-btn flat round dense size="xs" icon="delete" color="red" @click="handleDeleteItem(he.id, 'HE')" />
+                          <q-item-section side class="row no-wrap">
+                            <q-btn flat round dense size="sm" icon="edit" color="blue" @click="handleEditarItem(he, 'HE')" />
+                            <q-btn flat round dense size="sm" icon="delete" color="red" @click="handleDeleteItem(he.id, 'HE')" />
                           </q-item-section>
                         </q-item>
                       </q-list>
@@ -1286,14 +1342,15 @@ onUnmounted(() => {
                       <q-tooltip>Agregar Otro Pago</q-tooltip>
                     </q-btn>
                     <q-menu v-if="row.otrosPagosData.filter(op => op.tipo === 'INGRESO').length > 0">
-                      <q-list style="min-width: 200px">
+                      <q-list style="min-width: 250px">
                         <q-item v-for="op in row.otrosPagosData.filter(op => op.tipo === 'INGRESO')" :key="op.id">
                           <q-item-section>
                             <q-item-label>{{ op.concepto }}</q-item-label>
                             <q-item-label caption>{{ formatCurrency(op.valor) }}</q-item-label>
                           </q-item-section>
-                          <q-item-section side>
-                            <q-btn flat round dense size="xs" icon="delete" color="red" @click="handleDeleteItem(op.id, 'OP')" />
+                          <q-item-section side class="row no-wrap">
+                            <q-btn flat round dense size="sm" icon="edit" color="blue" @click="handleEditarItem(op, 'OP')" />
+                            <q-btn flat round dense size="sm" icon="delete" color="red" @click="handleDeleteItem(op.id, 'OP')" />
                           </q-item-section>
                         </q-item>
                       </q-list>
@@ -1321,14 +1378,15 @@ onUnmounted(() => {
                       <q-tooltip>Agregar Deducción</q-tooltip>
                     </q-btn>
                     <q-menu v-if="row.otrosPagosData.filter(op => op.tipo === 'DEDUCCION').length > 0">
-                      <q-list style="min-width: 200px">
+                      <q-list style="min-width: 250px">
                         <q-item v-for="op in row.otrosPagosData.filter(op => op.tipo === 'DEDUCCION')" :key="op.id">
                           <q-item-section>
                             <q-item-label>{{ op.concepto }}</q-item-label>
                             <q-item-label caption>{{ formatCurrency(op.valor) }}</q-item-label>
                           </q-item-section>
-                          <q-item-section side>
-                            <q-btn flat round dense size="xs" icon="delete" color="red" @click="handleDeleteItem(op.id, 'OP')" />
+                          <q-item-section side class="row no-wrap">
+                            <q-btn flat round dense size="sm" icon="edit" color="blue" @click="handleEditarItem(op, 'OP')" />
+                            <q-btn flat round dense size="sm" icon="delete" color="red" @click="handleDeleteItem(op.id, 'OP')" />
                           </q-item-section>
                         </q-item>
                       </q-list>
@@ -1464,6 +1522,28 @@ onUnmounted(() => {
 
   .text-center {
     text-align: center;
+  }
+
+  /* Estilos para celdas interactivas */
+  td {
+     &.text-right, &.text-center {
+        &:has(.q-menu) {
+           cursor: pointer;
+           position: relative;
+           
+           &:hover {
+              background-color: #e3f2fd !important;
+              &::after {
+                 content: '▼';
+                 position: absolute;
+                 top: 2px;
+                 right: 2px;
+                 font-size: 8px;
+                 color: #1976d2;
+              }
+           }
+        }
+     }
   }
 }
 </style>

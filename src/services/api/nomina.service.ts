@@ -116,6 +116,14 @@ class NominasService {
   async deleteHoraExtra(id: number): Promise<void> {
     await apiClient.delete(`${this.basePath}/horas-extras/${id}`);
   }
+
+  async updateOtroPago(id: number, dto: any): Promise<void> {
+    await apiClient.put(`${this.basePath}/otros-pagos/${id}`, dto);
+  }
+
+  async updateHoraExtra(id: number, dto: any): Promise<void> {
+    await apiClient.put(`${this.basePath}/horas-extras/${id}`, dto);
+  }
 }
 
 export const nominasService = new NominasService();

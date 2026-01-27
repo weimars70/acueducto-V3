@@ -695,6 +695,63 @@ export class NominasService {
     }
   }
 
+  async updateOtroPago(id: number, dto: any, empresaId: number) {
+    try {
+      const op = await this.dataSource.query(
+        'SELECT * FROM otros_pagos WHERE id = $1 AND empresa_id = $2',
+        [id, empresaId]
+      );
+      if (op.length === 0) throw new Error('Otro pago no encontrado');
+
+      const nominaExistente = await this.dataSource.query(
+        'SELECT estado FROM nominas WHERE empleado_id = $1 AND periodo_id = $2',
+        [op[0].empleado_id, op[0].periodo_id]
+      );
+
+      if (nominaExistente.length > 0 && nominaExistente[0].estado !== 'BORRADOR') {
+        throw new Error('No se puede editar de una nómina aprobada o pagada');
+      }
+
+      await this.dataSource.query(
+        'UPDATE otros_pagos SET valor = $1, concepto = $2, tipo = $3 WHERE id = $4',
+        [dto.valor, dto.concepto, dto.tipo, id]
+      );
+      return { message: 'Actualizado correctamente' };
+    } catch (error) {
+      throw new Error(`Error al actualizar: ${error.message}`);
+    }
+  }
+
+  async updateHoraExtra(id: number, dto: any, empresaId: number) {
+    try {
+      const he = await this.dataSource.query(
+        'SELECT * FROM horas_extras WHERE id = $1 AND empresa_id = $2',
+        [id, empresaId]
+      );
+      if (he.length === 0) throw new Error('Hora extra no encontrada');
+
+      const nominaExistente = await this.dataSource.query(
+        'SELECT estado FROM nominas WHERE empleado_id = $1 AND periodo_id = $2',
+        [he[0].empleado_id, he[0].periodo_id]
+      );
+
+      if (nominaExistente.length > 0 && nominaExistente[0].estado !== 'BORRADOR') {
+        throw new Error('No se puede editar de una nómina aprobada o pagada');
+      }
+
+      // Recalcular valor total basado en cantidad y valor hora guardado
+      const valorTotal = Math.round(he[0].valor_hora * Number(dto.cantidadHoras));
+
+      await this.dataSource.query(
+        'UPDATE horas_extras SET cantidad_horas = $1, valor_total = $2 WHERE id = $3',
+        [dto.cantidadHoras, valorTotal, id]
+      );
+      return { message: 'Actualizado correctamente' };
+    } catch (error) {
+      throw new Error(`Error al actualizar: ${error.message}`);
+    }
+  }
+
   async removeHoraExtra(id: number, empresaId: number) {
     try {
       const he = await this.dataSource.query(

@@ -126,10 +126,22 @@ export class NominasController {
     return this.nominasService.removeOtroPago(+id, empresaId);
   }
 
+  @Put('otros-pagos/:id')
+  updateOtroPago(@Param('id') id: string, @Body() dto: any, @Request() req: any) {
+    const empresaId = req.user.empresaId;
+    return this.nominasService.updateOtroPago(+id, dto, empresaId);
+  }
+
   @Delete('horas-extras/:id')
   removeHoraExtra(@Param('id') id: string, @Request() req: any) {
     const empresaId = req.user.empresaId;
     return this.nominasService.removeHoraExtra(+id, empresaId);
+  }
+
+  @Put('horas-extras/:id')
+  updateHoraExtra(@Param('id') id: string, @Body() dto: any, @Request() req: any) {
+    const empresaId = req.user.empresaId;
+    return this.nominasService.updateHoraExtra(+id, dto, empresaId);
   }
 }
 
