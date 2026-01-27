@@ -119,5 +119,17 @@ export class NominasController {
     const empresaId = req.user.empresaId;
     return this.nominasService.getEmpleadosConNominasParaPeriodo(+periodoId, empresaId);
   }
+
+  @Delete('otros-pagos/:id')
+  removeOtroPago(@Param('id') id: string, @Request() req: any) {
+    const empresaId = req.user.empresaId;
+    return this.nominasService.removeOtroPago(+id, empresaId);
+  }
+
+  @Delete('horas-extras/:id')
+  removeHoraExtra(@Param('id') id: string, @Request() req: any) {
+    const empresaId = req.user.empresaId;
+    return this.nominasService.removeHoraExtra(+id, empresaId);
+  }
 }
 

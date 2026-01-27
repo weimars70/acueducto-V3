@@ -65,6 +65,14 @@ const currentNominaData = computed(() => {
 });
 
 const missingParameters = computed(() => {
+  if (!selectedPeriodId.value || loading.value) return [];
+  
+  // Si tenemos registros cargados y alguno ya trae el auxilio, no asustamos al usuario
+  if (nominasMap.value.size > 0) {
+      const someHasAuxVal = Array.from(nominasMap.value.values()).some(e => e.valorAuxTransporte > 0);
+      if (someHasAuxVal) return [];
+  }
+
   const missing = [];
   const params = parametros.value;
   if (params.length === 0 && !loading.value) return []; // Don't show if empty initially or loading
@@ -192,6 +200,33 @@ const handleAddNovedad = async () => {
   } finally {
     calculating.value = false;
   }
+};
+
+const handleDeleteItem = async (id: number, type: 'HE' | 'OP') => {
+  $q.dialog({
+    title: 'Confirmar Eliminación',
+    message: `¿Está seguro de eliminar esta ${type === 'HE' ? 'hora extra' : 'novedad'}?`,
+    cancel: true,
+    persistent: true
+  }).onOk(async () => {
+    try {
+      calculating.value = true;
+      if (type === 'HE') {
+        await nominasService.deleteHoraExtra(id);
+      } else {
+        await nominasService.deleteOtroPago(id);
+      }
+      $q.notify({ type: 'positive', message: 'Eliminado correctamente' });
+      await loadNominaForPeriod();
+    } catch (error: any) {
+      $q.notify({ 
+        type: 'negative', 
+        message: error?.response?.data?.message || 'Error al eliminar' 
+      });
+    } finally {
+      calculating.value = false;
+    }
+  });
 };
 
 const calculateTotals = (nominaRow: any) => {
@@ -565,26 +600,35 @@ onMounted(() => {
                           v-if="currentNominaData.otrosPagosData?.length || currentNominaData.horasExtrasData?.diurnas?.length"
                         >
                           <div class="q-pl-md">
-                             <div v-for="(op, idx) in currentNominaData.otrosPagosData" :key="'op'+idx" class="row justify-between q-py-xs text-caption">
-                                <span>{{ op.concepto }}</span>
-                                <span>{{ formatCurrency(op.valor) }}</span>
+                             <div v-for="(op, idx) in currentNominaData.otrosPagosData" :key="'op'+idx" class="row justify-between items-center q-py-xs text-caption">
+                                <div>
+                                   <q-btn flat round dense size="xs" icon="delete" color="red" class="q-mr-xs" @click.stop="handleDeleteItem(op.id, 'OP')" />
+                                   <span>{{ op.concepto }}</span>
+                                </div>
+                                <span class="text-weight-bold">{{ formatCurrency(op.valor) }}</span>
                              </div>
 
                              <template v-if="currentNominaData.horasExtrasData?.diurnas?.length">
                                  <q-separator class="q-my-xs" />
                                  <div class="text-caption text-weight-bold q-mb-xs text-grey-8">H.E. Diurnas:</div>
-                                 <div v-for="(he, idx) in currentNominaData.horasExtrasData.diurnas" :key="'hed'+idx" class="row justify-between q-py-xs text-caption q-pl-sm">
-                                    <span>{{ he.fecha.substring(0,10) }}</span>
-                                    <span>{{ he.cantidad }}h</span>
+                                 <div v-for="(he, idx) in currentNominaData.horasExtrasData.diurnas" :key="'hed'+idx" class="row justify-between items-center q-py-xs text-caption q-pl-sm">
+                                    <div>
+                                       <q-btn flat round dense size="xs" icon="delete" color="red" class="q-mr-xs" @click.stop="handleDeleteItem(he.id, 'HE')" />
+                                       <span>{{ he.fecha.substring(0,10) }}</span>
+                                    </div>
+                                    <span>{{ he.cantidad_horas || he.cantidad }}h</span>
                                  </div>
                              </template>
 
                              <template v-if="currentNominaData.horasExtrasData?.festivas?.length">
                                  <q-separator class="q-my-xs" />
                                  <div class="text-caption text-weight-bold q-mb-xs text-grey-8">H.E. Festivas:</div>
-                                 <div v-for="(he, idx) in currentNominaData.horasExtrasData.festivas" :key="'hef'+idx" class="row justify-between q-py-xs text-caption q-pl-sm">
-                                    <span>{{ he.fecha.substring(0,10) }}</span>
-                                    <span>{{ he.cantidad }}h</span>
+                                 <div v-for="(he, idx) in currentNominaData.horasExtrasData.festivas" :key="'hef'+idx" class="row justify-between items-center q-py-xs text-caption q-pl-sm">
+                                    <div>
+                                       <q-btn flat round dense size="xs" icon="delete" color="red" class="q-mr-xs" @click.stop="handleDeleteItem(he.id, 'HE')" />
+                                       <span>{{ he.fecha.substring(0,10) }}</span>
+                                    </div>
+                                    <span>{{ he.cantidad_horas || he.cantidad }}h</span>
                                  </div>
                              </template>
                           </div>

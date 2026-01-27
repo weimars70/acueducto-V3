@@ -108,6 +108,14 @@ class NominasService {
     const response = await apiClient.get<any[]>(`${this.basePath}/periodo/${periodoId}/empleados`);
     return response.data;
   }
+
+  async deleteOtroPago(id: number): Promise<void> {
+    await apiClient.delete(`${this.basePath}/otros-pagos/${id}`);
+  }
+
+  async deleteHoraExtra(id: number): Promise<void> {
+    await apiClient.delete(`${this.basePath}/horas-extras/${id}`);
+  }
 }
 
 export const nominasService = new NominasService();

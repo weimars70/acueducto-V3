@@ -670,6 +670,55 @@ export class NominasService {
     }
   }
 
+  async removeOtroPago(id: number, empresaId: number) {
+    try {
+      const op = await this.dataSource.query(
+        'SELECT * FROM otros_pagos WHERE id = $1 AND empresa_id = $2',
+        [id, empresaId]
+      );
+      if (op.length === 0) throw new Error('Otro pago no encontrado');
+
+      // Verificar estado de la nómina vinculada
+      const nominaExistente = await this.dataSource.query(
+        'SELECT estado FROM nominas WHERE empleado_id = $1 AND periodo_id = $2',
+        [op[0].empleado_id, op[0].periodo_id]
+      );
+
+      if (nominaExistente.length > 0 && nominaExistente[0].estado !== 'BORRADOR') {
+        throw new Error('No se puede eliminar de una nómina aprobada o pagada');
+      }
+
+      await this.dataSource.query('DELETE FROM otros_pagos WHERE id = $1', [id]);
+      return { message: 'Eliminado correctamente' };
+    } catch (error) {
+      throw new Error(`Error al eliminar: ${error.message}`);
+    }
+  }
+
+  async removeHoraExtra(id: number, empresaId: number) {
+    try {
+      const he = await this.dataSource.query(
+        'SELECT * FROM horas_extras WHERE id = $1 AND empresa_id = $2',
+        [id, empresaId]
+      );
+      if (he.length === 0) throw new Error('Hora extra no encontrada');
+
+      const nominaExistente = await this.dataSource.query(
+        'SELECT estado FROM nominas WHERE empleado_id = $1 AND periodo_id = $2',
+        [he[0].empleado_id, he[0].periodo_id]
+      );
+
+      if (nominaExistente.length > 0 && nominaExistente[0].estado !== 'BORRADOR') {
+        throw new Error('No se puede eliminar de una nómina aprobada o pagada');
+      }
+
+      await this.dataSource.query('DELETE FROM horas_extras WHERE id = $1', [id]);
+      return { message: 'Eliminado correctamente' };
+    } catch (error) {
+      throw new Error(`Error al eliminar: ${error.message}`);
+    }
+  }
+
   async getEmpleadosConNominasParaPeriodo(periodoId: number, empresaId: number) {
     try {
       console.log('--- Iniciando agregación de datos para la tabla de nómina (Periodo: ' + periodoId + ') ---');
