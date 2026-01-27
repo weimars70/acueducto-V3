@@ -12,6 +12,7 @@ start backend:  yarn backend
 open new terminal start frontend: yarn dev
 
 
+
 compilar app mobile
 
 npm run build
@@ -19,3 +20,7 @@ npx cap sync android
 npx cap open android
 
 #Asomielr2025*
+
+#setetxid nomina 25a13b64-3bad-40db-bbc0-4f6f7626d614
+
+# tockend nomina 4acf1833b3a763a2d7a6253c82cbcfb1e51c6eecd2a4e05d5fdfbc84871369fa

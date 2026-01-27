@@ -5,6 +5,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { nominasService } from '../services/api/nomina.service';
 import { periodoNominaService } from '../services/api/periodo-nomina.service';
 import { empleadoService } from '../services/api/empleado.service';
+import { parametroNominaService } from '../services/api/parametro-nomina.service';
 import type { PeriodoNomina } from '../types/periodo-nomina';
 import type { Empleado } from '../types/empleado';
 import { useExport } from '../composables/useExport';
@@ -84,10 +85,22 @@ const periodos = ref<PeriodoNomina[]>([]);
 const empleadosData = ref<any[]>([]);
 const empresaId = ref(1); // TODO: obtener del store de auth
 const filter = ref('');
+const parametros = ref<any[]>([]);
+
+const missingParameters = computed(() => {
+  if (!periodoId.value || loading.value) return [];
+  const missing = [];
+  const hasAux = parametros.value.find(p => p.codigo === 'AUX_TRANSPORTE' || p.codigo === 'AUX_TRANS');
+  if (!hasAux) {
+    missing.push('Auxilio de Transporte (Parámetro: AUX_TRANSPORTE)');
+  }
+  return missing;
+});
 
 interface EmpleadoNominaRow {
   empleado: Empleado;
   nomina: any;
+  valorAuxTransporte: number;
   horasExtrasDiurnas: number;
   horasExtrasFestivas: number;
   otrosPagos: number;
@@ -98,12 +111,12 @@ interface EmpleadoNominaRow {
 
 const loadPeriodos = async () => {
   try {
-    console.log('Cargando períodos de nómina...');
+    //console.log('Cargando períodos de nómina...');
     const response = await periodoNominaService.getPeriodos({ page: 1, limit: 100 });
-    console.log('Respuesta de períodos:', response);
+    //console.log('Respuesta de períodos:', response);
 
     periodos.value = response.data || [];
-    console.log('Períodos cargados:', periodos.value.length);
+    //console.log('Períodos cargados:', periodos.value.length);
 
     if (periodos.value.length === 0) {
       $q.notify({
@@ -153,17 +166,28 @@ const loadData = async () => {
 
   try {
     loading.value = true;
-    console.log('Cargando empleados para período:', periodoId.value);
+    console.log('--- Iniciando carga de datos para periodo ID:', periodoId.value, '---');
 
     const data = await nominasService.getEmpleadosConNominas(periodoId.value);
-    console.log('Empleados recibidos:', data);
-    console.log('Cantidad de empleados:', data?.length || 0);
+    console.log('1. Datos de empleados y nóminas recibidos:', data);
+    console.log('Total registros:', data?.length || 0);
 
     empleadosData.value = data || [];
 
     // Cargar período
-    periodo.value = await periodoNominaService.getPeriodo(periodoId.value);
-    console.log('Período cargado:', periodo.value);
+    const periodoInfo = await periodoNominaService.getPeriodo(periodoId.value);
+    periodo.value = periodoInfo;
+    console.log('2. Información del período cargada:', periodo.value);
+
+    // Cargar parámetros para el año del periodo
+    if (periodo.value) {
+      const anio = new Date(periodo.value.fecha_inicio).getFullYear();
+      const paramsResponse = await parametroNominaService.getParametros({ anio, limit: 50 });
+      parametros.value = paramsResponse.data || [];
+      console.log('3. Parámetros cargados:', parametros.value);
+    }
+    
+    console.log('--- Carga completa ---');
 
     if (empleadosData.value.length === 0) {
       $q.notify({
@@ -224,7 +248,21 @@ const calcularHEFestiva = (row: EmpleadoNominaRow, valorHora: number) => {
 
 const calcularAuxilioTransporte = (row: EmpleadoNominaRow, diasPeriodo: number) => {
   if (!row.empleado.auxilio_transporte) return 0;
-  const auxilioMensual = 200000; // TODO: obtener de parámetros
+  
+  // Usar el valor que viene directamente del backend si está disponible
+  let auxilioMensual = row.valorAuxTransporte;
+  
+  // Si por alguna razón no viene en el row (ej: cache), buscamos en los parámetros cargados
+  if (!auxilioMensual || auxilioMensual === 0) {
+    const paramAux = parametros.value.find(p => p.codigo === 'AUX_TRANSPORTE' || p.codigo === 'AUX_TRANS');
+    if (paramAux) {
+      auxilioMensual = Number(paramAux.valor);
+    } else {
+      console.error('ERROR: No se encontró el parámetro AUX_TRANSPORTE en la base de datos ni en el row.');
+      return 0;
+    }
+  }
+  
   if (diasPeriodo === 15) {
     return auxilioMensual / 2;
   }
@@ -757,6 +795,40 @@ watch([() => newPeriod.value.fecha_inicio, () => newPeriod.value.fecha_fin], ([s
   }
 });
 
+const handleCreatePeriod = async () => {
+  try {
+    $q.loading.show({ message: 'Creando período...' });
+    const response = await periodoNominaService.create(newPeriod.value);
+    $q.notify({
+      type: 'positive',
+      message: 'Período creado exitosamente'
+    });
+    showCreatePeriodModal.value = false;
+    // Reset form
+    newPeriod.value = {
+      nombre: '',
+      fecha_inicio: '',
+      fecha_fin: '',
+      dias_periodo: 15,
+      id_payroll_periods: undefined
+    };
+    await loadPeriodos();
+    // Seleccionar el nuevo periodo
+    if (response && response.id) {
+       periodoId.value = response.id;
+       await loadData();
+    }
+  } catch (error: any) {
+    console.error('Error al crear período:', error);
+    $q.notify({
+      type: 'negative',
+      message: error?.response?.data?.message || 'Error al crear el período'
+    });
+  } finally {
+    $q.loading.hide();
+  }
+};
+
 onMounted(() => {
   loadPeriodos();
 });
@@ -834,6 +906,25 @@ onUnmounted(() => {
         </div>
       </q-card-section>
     </q-card>
+
+    <!-- Missing Parameters Warning -->
+    <div v-if="missingParameters.length > 0 && periodoId" class="q-mb-md">
+      <q-banner dense class="bg-red text-white rounded-borders shadow-2">
+        <template v-slot:avatar>
+          <q-icon name="error" color="white" />
+        </template>
+        <div class="text-subtitle1 text-weight-bold">¡Error de Configuración!</div>
+        <div>
+          No se puede calcular correctamente el auxilio de transporte porque falta el parámetro en la base de datos para el año de este periodo.
+        </div>
+        <ul class="q-my-xs">
+          <li v-for="p in missingParameters" :key="p">{{ p }}</li>
+        </ul>
+        <template v-slot:action>
+          <q-btn flat color="white" label="Configurar Ahora" @click="router.push('/parametros-nomina')" />
+        </template>
+      </q-banner>
+    </div>
 
     <!-- Actions Bar -->
     <q-card flat class="q-mb-md shadow-1" v-if="periodoId">

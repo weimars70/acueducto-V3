@@ -254,7 +254,8 @@ const calculateTotals = (nominaRow: any) => {
   const he = val_hed + val_hef;
   
   // Calculate proportionate Aux Transporte (Same as Backend)
-  const auxMensual = Number(auxTransporteValor);
+  // Decidir qué valor mensual usar: el que viene en el row (oficial) o el del parámetro (local)
+  const auxMensual = nominaRow.valorAuxTransporte || Number(auxTransporteValor);
   const aux = nominaRow.empleado.auxilio_transporte ? Math.round(dias === 15 ? auxMensual / 2 : (auxMensual / 30) * dias) : 0;
   
   const totalDev = Math.round(basico + he + aux + (nominaRow.otrosPagos || 0));

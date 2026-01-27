@@ -5,12 +5,12 @@ import { AuthGuard } from '@nestjs/passport';
 export class JwtAuthGuard extends AuthGuard('jwt') {
   canActivate(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest();
-    console.log('🔒 JWT Guard - Request:', {
+    /*console.log('🔒 JWT Guard - Request:', {
       url: request.url,
       method: request.method,
       hasAuthHeader: !!request.headers.authorization,
       authHeader: request.headers.authorization?.substring(0, 20) + '...'
-    });
+    });*/
 
     return super.canActivate(context);
   }
@@ -27,17 +27,17 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       const message = info?.message === 'jwt expired'
         ? 'Sesión expirada. Por favor inicie sesión nuevamente.'
         : info?.message === 'No auth token'
-        ? 'Token de autenticación no proporcionado.'
-        : 'No autorizado.';
+          ? 'Token de autenticación no proporcionado.'
+          : 'No autorizado.';
 
       throw new UnauthorizedException(message);
     }
 
-    console.log('✅ JWT Guard - Authentication successful:', {
-      userId: user.userId,
-      email: user.email,
-      empresaId: user.empresaId
-    });
+    /* console.log('✅ JWT Guard - Authentication successful:', {
+       userId: user.userId,
+       email: user.email,
+       empresaId: user.empresaId
+     });*/
 
     return user;
   }

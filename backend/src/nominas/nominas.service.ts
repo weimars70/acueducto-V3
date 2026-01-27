@@ -314,6 +314,7 @@ export class NominasService {
   }
 
   async calcularNominaInternal(nominaId: number, queryRunner: any) {
+    console.log('Iniciando calcularNominaInternal para nominaId:', nominaId);
     try {
       const nomina = await queryRunner.manager.findOne(Nomina, {
         where: { id: nominaId },
@@ -391,23 +392,28 @@ export class NominasService {
 
       // Calcular auxilio de transporte
       const empleado = await this.empleadosService.findOne(nomina.empleadoId);
+      console.log('--- [BACKEND] Iniciando cálculo de Auxilio para Empleado:', empleado.id, 'Flag:', empleado.auxilio_transporte);
       if (empleado.auxilio_transporte) {
         const conceptoAux = conceptos.data.find(c => c.subtipo === 'AUXILIO_TRANSPORTE');
+        console.log('Concepto Auxilio:', conceptoAux ? 'Encontrado' : 'No Encontrado');
         if (conceptoAux) {
-          // Obtener valor del auxilio de transporte desde parámetros
-          const anio = new Date().getFullYear();
+          // Obtener valor del auxilio de transporte desde parámetros (Usando el año del periodo)
+          const anio = new Date(nomina.periodo.fecha_inicio).getFullYear();
           const paramAux = await queryRunner.query(
             `SELECT valor FROM parametros_nomina
                WHERE codigo LIKE 'AUX_TRANSPORTE%' AND empresa_id = $1 AND anio = $2
                ORDER BY anio DESC LIMIT 1`,
             [nomina.empresaId, anio]
           );
+          console.log('Resultado Query Parámetros (AÑO ' + anio + '):', paramAux);
           const valorAuxMensual = paramAux.length > 0 ? Number(paramAux[0].valor) : 200000;
           // Para períodos de 15 días: auxilio / 2
           // Para otros períodos: (auxilio / 30) * dias_pagados
           const valorAuxPeriodo = Math.round(nomina.diasPagados === 15
             ? Number(valorAuxMensual) / 2
             : (Number(valorAuxMensual) / 30) * nomina.diasPagados);
+
+          console.log('Valor final calculado para el periodo:', valorAuxPeriodo);
 
           const detalleAux = this.detalleRepository.create({
             nominaId: nominaId,
@@ -666,6 +672,7 @@ export class NominasService {
 
   async getEmpleadosConNominasParaPeriodo(periodoId: number, empresaId: number) {
     try {
+      console.log('--- Iniciando agregación de datos para la tabla de nómina (Periodo: ' + periodoId + ') ---');
       // Obtener período
       const periodo = await this.periodosService.findOne(periodoId);
 
@@ -674,24 +681,39 @@ export class NominasService {
         `SELECT * FROM empleados WHERE activo = true AND empresa_id = $1 ORDER BY nombre_completo`,
         [empresaId]
       );
+      console.log('Backend: Empleados activos encontrados:', empleados.length);
 
       // Obtener nóminas existentes para el período
       const nominas = await this.dataSource.query(
         `SELECT * FROM nominas WHERE periodo_id = $1 AND empresa_id = $2`,
         [periodoId, empresaId]
       );
+      console.log('Backend: Nóminas encontradas para el periodo:', nominas.length);
 
       // Obtener horas extras
       const horasExtras = await this.dataSource.query(
         `SELECT * FROM horas_extras WHERE periodo_id = $1 AND empresa_id = $2 AND aprobado = true`,
         [periodoId, empresaId]
       );
+      console.log('Backend: Horas extras aprobadas:', horasExtras.length);
 
       // Obtener otros pagos
       const otrosPagos = await this.dataSource.query(
         `SELECT * FROM otros_pagos WHERE periodo_id = $1 AND empresa_id = $2 AND aprobado = true`,
         [periodoId, empresaId]
       );
+      console.log('Backend: Otros pagos/deducciones aprobados:', otrosPagos.length);
+
+      // --- NUEVO: Obtener el parámetro de Auxilio de Transporte para este periodo ---
+      const anio = new Date(periodo.fecha_inicio).getFullYear();
+      const paramAux = await this.dataSource.query(
+        `SELECT valor FROM parametros_nomina 
+         WHERE codigo LIKE 'AUX_TRANSPORTE%' AND empresa_id = $1 AND anio = $2 
+         LIMIT 1`,
+        [empresaId, anio]
+      );
+      console.log('--- [QUERY TABLA] Parametros de transporte recuperados:', paramAux);
+      const valorAuxTransporte = paramAux.length > 0 ? Number(paramAux[0].valor) : 0;
 
       // Combinar datos
       const resultado = empleados.map((empleado: any) => {
@@ -709,6 +731,7 @@ export class NominasService {
           empleado,
           nomina: nomina || null,
           periodo,
+          valorAuxTransporte, // Enviamos el valor base encontrado en DB
           horasExtrasDiurnas: totalHEDiurnas,
           horasExtrasFestivas: totalHEFestivas,
           otrosPagos: totalOtros,
