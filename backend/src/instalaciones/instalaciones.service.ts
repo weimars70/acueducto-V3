@@ -46,15 +46,31 @@ export class InstalacionesService {
         LIMIT 1
       `;
 
-      const result = await this.instalacionRepository.query(query, [codigo]);
-      console.log('📊 Query result from view_instalaciones:', result);
+      console.log('📝 SQL Query:', query);
+      console.log('🔢 SQL Params:', [codigo]);
 
-      if (!result || result.length === 0) {
-        throw new NotFoundException(`Instalación con código ${codigo} no encontrada`);
+      const result = await this.instalacionRepository.query(query, [codigo]);
+      console.log('📊 Result from view_instalaciones:', result);
+
+      let instalacion = result && result.length > 0 ? result[0] : null;
+
+      if (!instalacion) {
+        console.warn(`⚠️ No se encontró en view_instalaciones. Buscando directamente en tabla 'instalaciones'...`);
+        const fallbackQuery = `SELECT * FROM instalaciones WHERE codigo = $1 LIMIT 1`;
+        const fallbackResult = await this.instalacionRepository.query(fallbackQuery, [codigo]);
+        console.log('📊 Result from table instalaciones:', fallbackResult);
+
+        if (fallbackResult && fallbackResult.length > 0) {
+          instalacion = fallbackResult[0];
+          console.log('✅ Encontrado en tabla base (pero NO en la vista)');
+        }
       }
 
-      const instalacion = result[0];
-      console.log('📋 Instalación desde view_instalaciones:', instalacion);
+      if (!instalacion) {
+        throw new NotFoundException(`Instalación con código ${codigo} no encontrada en ninguna tabla`);
+      }
+
+      console.log('📋 Instalación a procesar:', instalacion);
       console.log('📋 Campos específicos de la vista:', {
         codigo: instalacion.codigo,
         nombre: instalacion.nombre,

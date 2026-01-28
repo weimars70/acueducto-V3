@@ -22,8 +22,9 @@ export class InstalacionesController {
     // console.log('📋 Código:', query.codigo, 'tipo:', typeof query.codigo);
 
     try {
-      //console.log('🔄 Llamando a instalacionesService.findOne con código:', query.codigo);
-      const result = await this.instalacionesService.findOne(query.codigo);
+      const codigoNum = Number(query.codigo);
+      //console.log('🔄 Llamando a instalacionesService.findOne con código:', codigoNum);
+      const result = await this.instalacionesService.findOne(codigoNum);
       //console.log('✅ Instalación encontrada:', result);
       return result;
     } catch (error) {
