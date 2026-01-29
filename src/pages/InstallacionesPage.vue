@@ -173,6 +173,21 @@
                   </template>
                 </q-input>
 
+                <!-- Filtro para DV -->
+                <q-input
+                  v-else-if="col.name === 'dv'"
+                  v-model="filters.dv"
+                  dense
+                  outlined
+                  placeholder="Buscar..."
+                  @keyup.enter="applyFilters"
+                  clearable
+                >
+                  <template v-slot:append>
+                    <q-icon name="search" />
+                  </template>
+                </q-input>
+
                 <!-- Filtro para Dirección -->
                 <q-input
                   v-else-if="col.name === 'direccion'"
@@ -268,6 +283,12 @@
           <template v-slot:body-cell-ident="props">
             <q-td :props="props">
               <span v-html="highlightText(props.row.ident, filters.ident)"></span>
+            </q-td>
+          </template>
+
+          <template v-slot:body-cell-dv="props">
+            <q-td :props="props">
+              <span v-html="highlightText(props.row.dv, filters.dv)"></span>
             </q-td>
           </template>
 
@@ -369,6 +390,7 @@ const filters = ref({
   codigo: '',
   nombre: '',
   ident: '',
+  dv: '',
   telefono: '',
   direccion: '',
   latitud: '',
@@ -443,6 +465,14 @@ const defaultColumns = [
     field: 'ident',
     sortable: true,
     style: 'width: 8%;'
+  },
+  {
+    name: 'dv',
+    label: 'DV',
+    align: 'center' as const,
+    field: 'dv',
+    sortable: true,
+    style: 'width: 3%;'
   },
   {
     name: 'telefono',
@@ -565,6 +595,7 @@ const loadInstalaciones = async () => {
         codigo: filters.value.codigo || undefined,
         nombre: filters.value.nombre || undefined,
         ident: filters.value.ident || undefined,
+        dv: filters.value.dv || undefined,
         direccion: filters.value.direccion || undefined,
         latitud: filters.value.latitud || undefined,
         longitud: filters.value.longitud || undefined,
@@ -706,6 +737,7 @@ const exportColumns: ExportColumn[] = [
   { field: 'codigo', label: 'Código' },
   { field: 'nombre', label: 'Nombre' },
   { field: 'ident', label: 'Identificación' },
+  { field: 'dv', label: 'DV' },
   { field: 'telefono', label: 'Teléfono' },
   { field: 'estrato_nombre', label: 'Estrato' },
   { field: 'direccion', label: 'Dirección' },

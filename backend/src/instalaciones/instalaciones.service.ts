@@ -201,6 +201,12 @@ export class InstalacionesService {
           paramCount++;
         }
 
+        if (filters.dv && filters.dv.trim()) {
+          query += ` AND dv ILIKE $${paramCount}`;
+          queryParams.push(`%${filters.dv.trim()}%`);
+          paramCount++;
+        }
+
         if (filters.suscriptor && filters.suscriptor.trim()) {
           query += ` AND suscriptor ILIKE $${paramCount}`;
           queryParams.push(`%${filters.suscriptor.trim()}%`);
