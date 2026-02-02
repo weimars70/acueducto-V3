@@ -14,6 +14,9 @@ export class TipoIdent {
   @Column({ name: 'empresa_id', type: 'integer' })
   empresaId: number;
 
+  @Column({ name: 'id_dian', type: 'integer', nullable: true })
+  idDian?: number;
+
   @Column({ type: 'text', nullable: true })
   usuario?: string;
 }

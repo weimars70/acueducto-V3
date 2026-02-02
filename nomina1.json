@@ -1,0 +1,70 @@
+{
+    "type_document_id": 9,
+    "establishment_name": "Acueducto Comunal el Socorro",
+    "establishment_address": "Calle 40S Nª 24E-19",
+    "establishment_phone": "3216230655",
+    "establishment_municipality": 47,
+    "establishment_email": "lineaeticacueductoelsocorro@gmail.com",
+    "head_note": "Nómina Electrónica - Generada automáticamente",
+    "foot_note": "",
+    "novelty": {
+        "novelty": false,
+        "uuidnov": ""
+    },
+    "period": {
+        "admision_date": "2020-01-01",
+        "settlement_start_date": "2025-12-21",
+        "settlement_end_date": "2025-12-31",
+        "worked_time": 88,
+        "issue_date": "2026-02-02"
+    },
+    "worker_code": "70564400",
+    "prefix": "NI",
+    "consecutive": 11,
+    "payroll_period_id": 2,
+    "notes": "Envío de nómina electrónica",
+    "worker": {
+        "type_worker_id": 1,
+        "sub_type_worker_id": 1,
+        "payroll_type_document_identification_id": 3,
+        "municipality_id": 47,
+        "type_contract_id": 1,
+        "high_risk_pension": false,
+        "identification_number": 70564400,
+        "surname": "ZAPATA",
+        "second_surname": "SERNA",
+        "first_name": "JOAQUIN",
+        "address": "RURAL",
+        "integral_salarary": false,
+        "salary": "1950000.00"
+    },
+    "payment": {
+        "payment_method_id": 31,
+        "bank_name": "Efectivo",
+        "account_type": "Cuenta Ahorros",
+        "account_number": "0"
+    },
+    "payment_dates": [
+        {
+            "payment_date": "2025-12-31"
+        }
+    ],
+    "accrued": {
+        "worked_days": 11,
+        "salary": "715000.00",
+        "transportation_allowance": "0.00",
+        "HEDs": [],
+        "HEDDFs": [],
+        "other_concepts": [],
+        "accrued_total": "715000.00"
+    },
+    "deductions": {
+        "eps_type_law_deductions_id": 1,
+        "eps_deduction": "0.00",
+        "pension_type_law_deductions_id": 5,
+        "pension_deduction": "0.00",
+        "other_deductions": [],
+        "deductions_total": "0.00"
+    },
+    "net_value": "715000.00"
+}

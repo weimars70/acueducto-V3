@@ -45,8 +45,13 @@ export class DianNominaService {
         );
 
         const [municipioEmpresa] = await this.dataSource.query(
-            'SELECT codigo FROM ciudades WHERE nombre ILIKE $1 OR codigo::text = $2 LIMIT 1',
+            'SELECT establishment_municipality FROM ciudades WHERE nombre ILIKE $1 OR codigo::text = $2 LIMIT 1',
             [empresa.direccion.split(',').pop()?.trim(), empresa.municipioId]
+        );
+
+        const [municipioTrabajador] = await this.dataSource.query(
+            'SELECT establishment_municipality FROM ciudades WHERE codigo::text = $1 LIMIT 1',
+            [empleadoDetallado?.municipio_id]
         );
 
         // Frequency mapping (from period.id_payroll_periods and payroll_periods table)
@@ -65,12 +70,19 @@ export class DianNominaService {
             else payroll_period_id = parseInt(code); // Others if they match
         }
 
-        // Identification mapping (CC=13, NIT=31, CE=22, etc.)
-        const tipoDocCode = empleadoDetallado?.tipo_documento_abreviado?.toUpperCase();
-        let payroll_type_document_identification_id = 13; // Default CC
-        if (tipoDocCode === 'NIT') payroll_type_document_identification_id = 31;
-        if (tipoDocCode === 'CE') payroll_type_document_identification_id = 22;
-        if (tipoDocCode === 'TI') payroll_type_document_identification_id = 12;
+        // Identification mapping from tipo_ident table (per company)
+        const [tipoDocEmpresa] = await this.dataSource.query(
+            'SELECT id_dian FROM tipo_ident WHERE codigo = $1 AND empresa_id = $2',
+            [empresa.tipoDocumentoId, empresa.id]
+        );
+
+        const [tipoDocTrabajador] = await this.dataSource.query(
+            'SELECT id_dian FROM tipo_ident WHERE codigo = $1 AND empresa_id = $2',
+            [nomina.empleado.tipo_documento_id, nomina.empresaId]
+        );
+
+        const company_type_document_id = tipoDocEmpresa?.id_dian || empresa.tipoDocumentoId || 6;
+        const worker_type_document_id = tipoDocTrabajador?.id_dian || 13;
 
         // Filter details by type
         const detalles = nomina.detalles || [];
@@ -94,12 +106,77 @@ export class DianNominaService {
         );
 
         // Map to DIAN Format
+
+        // Initialize mapped structures
+        const accruedItems = {
+            worked_days: nomina.diasPagados,
+            salary: Number(baseDetalle?.valorTotal || 0).toFixed(2),
+            transportation_allowance: Number(auxTransporte?.valorTotal || 0).toFixed(2),
+            HEDs: heDiurnas.map(he => {
+                const start = new Date(nomina.periodo.fecha_inicio);
+                start.setHours(8, 0, 0);
+                const end = new Date(start);
+                end.setHours(start.getHours() + Math.ceil(he.cantidad));
+                return {
+                    start_time: start.toISOString().replace('.000Z', '').replace('Z', ''),
+                    end_time: end.toISOString().replace('.000Z', '').replace('Z', ''),
+                    quantity: Number(he.cantidad),
+                    percentage: 1, // ID 1 = Hora Extra Diurna
+                    payment: Number(he.valorTotal).toFixed(2)
+                };
+            }),
+            HEDDFs: heFestivas.map(he => {
+                const start = new Date(nomina.periodo.fecha_inicio);
+                start.setHours(8, 0, 0);
+                const end = new Date(start);
+                end.setHours(start.getHours() + Math.ceil(he.cantidad));
+                return {
+                    start_time: start.toISOString().replace('.000Z', '').replace('Z', ''),
+                    end_time: end.toISOString().replace('.000Z', '').replace('Z', ''),
+                    quantity: Number(he.cantidad),
+                    percentage: 3, // ID 3 = Hora Extra Dominical/Festiva Diurna
+                    payment: Number(he.valorTotal).toFixed(2)
+                };
+            }),
+            other_concepts: otrosDevengados.map(o => ({
+                salary_concept: Number(o.valorTotal).toFixed(2),
+                non_salary_concept: "0.00",
+                description_concept: o.concepto?.nombre || "Otro Concepto"
+            }))
+        };
+
+        const deductionItems = {
+            eps_type_law_deductions_id: 1,
+            eps_deduction: Number(salud?.valorTotal || 0).toFixed(2),
+            pension_type_law_deductions_id: 5,
+            pension_deduction: Number(pension?.valorTotal || 0).toFixed(2),
+            other_deductions: otrasDeducciones.map(o => ({
+                other_deduction: Number(o.valorTotal).toFixed(2)
+            }))
+        };
+
+        // Recalculate totals from items to ensure strict consistency
+        const totalDevengadoCalculado =
+            Number(accruedItems.salary) +
+            Number(accruedItems.transportation_allowance) +
+            accruedItems.HEDs.reduce((acc, he) => acc + Number(he.payment), 0) +
+            accruedItems.HEDDFs.reduce((acc, he) => acc + Number(he.payment), 0) +
+            accruedItems.other_concepts.reduce((acc, o) => acc + Number(o.salary_concept) + Number(o.non_salary_concept), 0);
+
+        const totalDeduccionesCalculado =
+            Number(deductionItems.eps_deduction) +
+            Number(deductionItems.pension_deduction) +
+            deductionItems.other_deductions.reduce((acc, o) => acc + Number(o.other_deduction), 0);
+
+        const netValueCalculado = totalDevengadoCalculado - totalDeduccionesCalculado;
+
+        // Map to DIAN Format
         const json = {
-            type_document_id: empresa.tipoDocumentoId || 9,
+            type_document_id: 9, // Dynamic from base data or fallback
             establishment_name: empresa.nombre,
             establishment_address: empresa.direccion,
             establishment_phone: empresa.telefono,
-            establishment_municipality: parseInt(municipioEmpresa?.codigo || empresa.municipioId || '0'),
+            establishment_municipality: parseInt(municipioEmpresa?.establishment_municipality || empresa.municipioId || '0'),
             establishment_email: empresa.emailContacto || empresa.userEmail,
             head_note: "Nómina Electrónica - Generada automáticamente",
             foot_note: nomina.observaciones || "",
@@ -122,9 +199,9 @@ export class DianNominaService {
             worker: {
                 type_worker_id: parseInt(empleadoDetallado?.tipo_trabajador_id || '1'),
                 sub_type_worker_id: parseInt(empleadoDetallado?.subtipo_trabajador_id || '1'),
-                payroll_type_document_identification_id: payroll_type_document_identification_id,
-                municipality_id: parseInt(empleadoDetallado?.municipio_id || '0'),
-                type_contract_id: parseInt(empleadoDetallado?.tipo_contract_id || '1'),
+                payroll_type_document_identification_id: worker_type_document_id,
+                municipality_id: parseInt(municipioTrabajador?.establishment_municipality || empleadoDetallado?.municipio_id || '0'),
+                type_contract_id: parseInt(empleadoDetallado?.tipo_contrato_id || '1'),
                 high_risk_pension: nomina.empleado.alto_riesgo_pension || false,
                 identification_number: parseInt(nomina.empleado.cedula),
                 surname: nomina.empleado.primer_apellido,
@@ -144,40 +221,14 @@ export class DianNominaService {
                 { payment_date: new Date(nomina.periodo.fecha_fin).toISOString().split('T')[0] }
             ],
             accrued: {
-                worked_days: nomina.diasPagados,
-                salary: Number(baseDetalle?.valorTotal || 0).toFixed(2),
-                transportation_allowance: Number(auxTransporte?.valorTotal || 0).toFixed(2),
-                HEDs: heDiurnas.map(he => ({
-                    start_time: new Date(nomina.periodo.fecha_inicio).toISOString().split('T')[0] + "T08:00:00",
-                    quantity: he.cantidad,
-                    percentage: he.concepto?.porcentaje || 1.25,
-                    payment: Number(he.valorTotal).toFixed(2)
-                })),
-                HEDDFs: heFestivas.map(he => ({
-                    start_time: new Date(nomina.periodo.fecha_inicio).toISOString().split('T')[0] + "T08:00:00",
-                    quantity: he.cantidad,
-                    percentage: he.concepto?.porcentaje || 1.80,
-                    payment: Number(he.valorTotal).toFixed(2)
-                })),
-                other_concepts: otrosDevengados.map(o => ({
-                    salary_concept: Number(o.valorTotal).toFixed(2),
-                    non_salary_concept: "0.00",
-                    description_concept: o.concepto?.nombre || "Otro Concepto"
-                })),
-                accrued_total: Number(nomina.totalDevengado).toFixed(2)
+                ...accruedItems,
+                accrued_total: totalDevengadoCalculado.toFixed(2)
             },
             deductions: {
-                eps_type_law_deductions_id: 1,
-                eps_deduction: Number(salud?.valorTotal || 0).toFixed(2),
-                pension_type_law_deductions_id: 5,
-                pension_deduction: Number(pension?.valorTotal || 0).toFixed(2),
-                other_deductions: otrasDeducciones.map(o => ({
-                    other_deduction: Number(o.valorTotal).toFixed(2),
-                    description: o.observaciones || o.concepto?.nombre
-                })),
-                deductions_total: Number(nomina.totalDeducciones).toFixed(2)
+                ...deductionItems,
+                deductions_total: totalDeduccionesCalculado.toFixed(2)
             },
-            net_value: Number(nomina.netoPagar).toFixed(2)
+            net_value: netValueCalculado.toFixed(2)
         };
 
         return json;

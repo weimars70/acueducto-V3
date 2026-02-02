@@ -1,0 +1,111 @@
+import axios from 'axios';
+
+async function testApi() {
+    const url = 'http://2.58.80.90:81/api/ubl2.1/payroll/4213102f-d257-49d6-81d0-1e3a099522ae';
+    const token = '830b6616b1b2c93bc67efdc972389c0503e46077fe0751333934fd2acd4afc57';
+
+    const data = {
+        "type_document_id": 9,
+        "establishment_name": "Acueducto Comunal el Socorro",
+        "establishment_address": "Calle 40S Nª 24E-19",
+        "establishment_phone": "3216230655",
+        "establishment_municipality": 47,
+        "establishment_email": "lineaeticacueductoelsocorro@gmail.com",
+        "head_note": "Nómina Electrónica - Generada automáticamente",
+        "foot_note": "",
+        "novelty": {
+            "novelty": false,
+            "uuidnov": ""
+        },
+        "period": {
+            "admision_date": "2017-02-17",
+            "settlement_start_date": "2026-01-11",
+            "settlement_end_date": "2026-01-20",
+            "worked_time": 80,
+            "issue_date": "2026-02-02"
+        },
+        "worker_code": "43740653",
+        "prefix": "NI",
+        "consecutive": 15,
+        "payroll_period_id": 4,
+        "notes": "Envío de nómina electrónica",
+        "worker": {
+            "type_worker_id": 1,
+            "sub_type_worker_id": 1,
+            "payroll_type_document_identification_id": 3,
+            "municipality_id": 47,
+            "type_contract_id": 1,
+            "high_risk_pension": false,
+            "identification_number": 43740653,
+            "surname": "CORREA",
+            "second_surname": "PARRA",
+            "first_name": "LILIANA",
+            "address": "CRA 24EE 39DSUR-85",
+            "integral_salarary": false,
+            "salary": "2364750.00"
+        },
+        "payment": {
+            "payment_method_id": 31,
+            "bank_name": "Efectivo",
+            "account_type": "Cuenta Ahorros",
+            "account_number": "0"
+        },
+        "payment_dates": [
+            {
+                "payment_date": "2026-01-20"
+            }
+        ],
+        "accrued": {
+            "worked_days": 10,
+            "salary": "788250.00",
+            "transportation_allowance": "83032.00",
+            "HEDs": [
+                {
+                    "start_time": "2026-01-11T08:00:00",
+                    "quantity": "4.00",
+                    "percentage": "125.00",
+                    "payment": "49266.00"
+                }
+            ],
+            "HEDDFs": [],
+            "other_concepts": [],
+            "accrued_total": "936913.00"
+        },
+        "deductions": {
+            "eps_type_law_deductions_id": 1,
+            "eps_deduction": "33501.00",
+            "pension_type_law_deductions_id": 5,
+            "pension_deduction": "33501.00",
+            "other_deductions": [
+                {
+                    "other_deduction": "16365.00",
+                    "description": "AJUSTE"
+                },
+                {
+                    "other_deduction": "50000.00",
+                    "description": "PRESTAMO"
+                }
+            ],
+            "deductions_total": "117002.00"
+        },
+        "net_value": "819911.00"
+    };
+
+    try {
+        console.log('Sending literal JSON from example...');
+        const response = await axios.post(url, data, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+        console.log('SUCCESS:', response.status);
+        console.log('Data:', JSON.stringify(response.data, null, 2));
+    } catch (error) {
+        console.error('FAIL:', error.response?.status);
+        console.error('Error Data:', JSON.stringify(error.response?.data, null, 2));
+    }
+}
+
+testApi();
