@@ -219,7 +219,7 @@
                   icon="email"
                   size="sm"
                   color="red-7"
-                  @click.stop="enviarEmail(props.row)"
+                  @click.stop="openEmailDialog(props.row)"
                   class="accion-btn"
                 >
                   <q-tooltip>Enviar Email</q-tooltip>
@@ -299,6 +299,59 @@
         </q-table>
       </div>
     </div>
+    <!-- Dialogo para enviar Email -->
+    <q-dialog v-model="emailDialog" persistent>
+      <q-card style="min-width: 400px; border-radius: 12px;">
+        <q-card-section class="bg-primary text-white row items-center q-pb-md">
+          <div class="text-h6">Enviar Factura por Email</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup class="text-white" />
+        </q-card-section>
+
+        <q-card-section class="q-pt-md">
+          <div class="text-subtitle1 q-mb-md">Confirmar destinatarios</div>
+          
+          <q-input
+            v-model="emailForm.to"
+            outlined
+            label="Email Principal (Destinatario)"
+            dense
+            type="email"
+            class="q-mb-md"
+            :rules="[val => !!val || 'El email es obligatorio', val => /.+@.+\..+/.test(val) || 'Email inválido']"
+          >
+            <template v-slot:prepend>
+              <q-icon name="email" color="primary" />
+            </template>
+          </q-input>
+
+          <q-input
+            v-model="emailForm.cc"
+            outlined
+            label="Email Copia (Opcional)"
+            dense
+            type="email"
+            hint="Enviar una copia a esta dirección"
+          >
+            <template v-slot:prepend>
+               <q-icon name="cc_bcc" color="secondary" />
+            </template>
+          </q-input>
+        </q-card-section>
+
+        <q-card-actions align="right" class="q-pa-md text-primary">
+          <q-btn flat label="Cancelar" v-close-popup color="grey-8" />
+          <q-btn 
+            unelevated 
+            label="Enviar Factura" 
+            color="primary" 
+            @click="enviarEmailConfirmado"
+            :loading="emailLoading"
+            icon="send"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -950,19 +1003,47 @@ const enviarDian = async (factura: Factura) => {
   }
 };
 
-const enviarEmail = async (factura: Factura) => {
-  try {
-    // Validar que tenga email
-    if (!factura.email || factura.email.trim() === '') {
+const emailDialog = ref(false);
+const emailLoading = ref(false);
+const emailForm = ref({
+  to: '',
+  cc: ''
+});
+const selectedFactura = ref<Factura | null>(null);
+
+const openEmailDialog = (factura: Factura) => {
+  if (!factura.email || factura.email.trim() === '') {
       $q.notify({
         type: 'warning',
-        message: 'El cliente no tiene email registrado',
+        message: 'El cliente no tiene email registrado. Puede ingresarlo manualmente.',
         position: 'center'
       });
-      return;
-    }
+  }
+  
+  selectedFactura.value = factura;
+  emailForm.value = {
+    to: factura.email || '',
+    cc: ''
+  };
+  emailDialog.value = true;
+};
 
+const enviarEmailConfirmado = async () => {
+  if (!selectedFactura.value) return;
+  
+  const factura = selectedFactura.value;
+  const to = emailForm.value.to;
+  const cc = emailForm.value.cc;
+
+  if (!to) {
+      $q.notify({ type: 'warning', message: 'El email destinatario es obligatorio' });
+      return;
+  }
+
+  try {
+    emailLoading.value = true;
     $q.loading.show({ message: 'Generando factura y enviando por email...' });
+
 
     // Usar exactamente la misma lógica que enviarWhatsapp para generar el PDF
     const empresa = await facturasService.getEmpresaInfo();
@@ -1139,8 +1220,10 @@ const enviarEmail = async (factura: Factura) => {
     });
 
     // Enviar por Email
+    // Enviar por Email
     await emailService.enviarFacturaEmail({
-      emailDestinatario: factura.email,
+      emailDestinatario: to,
+      copia: cc || undefined, // Use cc variable which comes from emailForm.value.cc
       pdfBase64: base64,
       factura: factura.factura.toString(),
       prefijo: factura.prefijo,
@@ -1149,9 +1232,11 @@ const enviarEmail = async (factura: Factura) => {
 
     $q.notify({
       type: 'positive',
-      message: `Factura enviada por email a ${factura.email}`,
+      message: `Factura enviada correctamente`,
       position: 'center'
     });
+    
+    emailDialog.value = false;
 
   } catch (error: any) {
     console.error('Error al enviar email:', error);
@@ -1161,9 +1246,12 @@ const enviarEmail = async (factura: Factura) => {
       position: 'center'
     });
   } finally {
+    emailLoading.value = false;
     $q.loading.hide();
   }
 };
+
+
 
 const enviarWhatsapp = async (factura: Factura) => {
   try {

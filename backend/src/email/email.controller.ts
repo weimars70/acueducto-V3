@@ -16,6 +16,7 @@ export class EmailController {
 
         return this.emailService.sendInvoiceEmail({
             ...body,
+            copia: body.copia,
             empresaId
         });
     }

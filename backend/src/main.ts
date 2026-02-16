@@ -75,7 +75,8 @@ async function bootstrap() {
 
   // 🖥️ Puerto dinámico
   const port = process.env.PORT || 3030;
-  await app.listen(port);
+  const server = await app.listen(port);
+  server.setTimeout(600000); // 10 minutos
   console.log(`🚀 API corriendo en http://localhost:${port}`);
 }
 bootstrap();

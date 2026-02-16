@@ -19,11 +19,19 @@ const optionsYears = [currentYear, currentYear - 1];
 const loadMeses = async () => {
     try {
         const data = await prefacturaService.getMeses();
-        // Mapear para q-select si es necesario, o usar directamente si devuelve id/nombre
-        optionsMeses.value = data.map((m: any) => ({
-             label: m.nombre, // Ajustar según columna real de BD
-             value: m.id      // Ajustar según columna real de BD
-        }));
+
+        // 1. Filtrar duplicados por nombre y mapear ID
+        const uniqueMeses = new Map();
+        data.forEach((m: any) => {
+            const label = m.nombre || m.mes || m.descripcion; // Fallback names
+            const value = m.id || m.codigo || m.mes_id || m.mes || label; // Fallback IDs
+
+            if (label && !uniqueMeses.has(label)) {
+                uniqueMeses.set(label, { label, value });
+            }
+        });
+
+        optionsMeses.value = Array.from(uniqueMeses.values());
 
         // Si la carga falla o devuelve vacío, llenar manualmente 1-12 como fallback
         if (optionsMeses.value.length === 0) {
@@ -45,28 +53,110 @@ const handleGenerar = async () => {
       return;
   }
 
+  const dto = {
+      mes: typeof form.value.mes === 'object' ? form.value.mes.value : form.value.mes,
+      year: form.value.year
+  };
+
   try {
     loading.value = true;
-    await prefacturaService.generar({
-        mes: typeof form.value.mes === 'object' ? form.value.mes.value : form.value.mes,
-        year: form.value.year
-    });
     
-    $q.notify({ 
-        type: 'positive', 
-        message: 'Prefactura generada exitosamente',
-        icon: 'check_circle'
+    // 1. Verificar si ya existe
+    const check = await prefacturaService.verificar(dto);
+    loading.value = false;
+
+    if (check.exists) {
+        $q.dialog({
+            title: '<div class="text-red text-weight-bold text-h5 text-center">¡Atención!</div>',
+            message: '<div class="text-center text-h6 text-red-9 text-weight-bold q-pa-md">Ya se hizo prefactura para este mes</div>',
+            html: true,
+            ok: {
+                label: 'Entendido',
+                color: 'negative',
+                push: true,
+                size: 'lg'
+            },
+            persistent: true,
+            class: 'text-center'
+        });
+        return;
+    }
+
+    // 2. Confirmar generación
+    $q.dialog({
+        title: '<div class="text-primary text-weight-bold text-h5 text-center">¿Confirmar Generación?</div>',
+        message: '<div class="text-center text-body1 q-pa-md text-grey-8">Está a punto de generar la prefactura para el periodo seleccionado.<br><br><span class="text-negative text-weight-bold text-uppercase" style="font-size: 1.1em;"><i class="q-icon material-icons q-mr-xs">warning</i>El proceso no podrá revertirse</span></div>',
+        html: true,
+        persistent: true,
+        ok: {
+            label: 'Sí, Generar',
+            color: 'primary',
+            push: true,
+            size: 'lg',
+            icon: 'play_arrow',
+            class: 'q-px-lg'
+        },
+        cancel: {
+            label: 'Cancelar',
+            color: 'grey-7',
+            flat: true,
+            size: 'md'
+        },
+        class: 'rubik-font' 
+    }).onOk(async () => {
+        try {
+            loading.value = true;
+            await prefacturaService.generar(dto);
+            
+            // Buscar nombre del mes para el mensaje
+            const selectedMes = optionsMeses.value.find(m => m.value === dto.mes);
+            const mesNombre = selectedMes ? selectedMes.label : dto.mes;
+
+            $q.dialog({
+                title: '<div class="text-positive text-weight-bold text-h5 text-center">¡Proceso Exitoso!</div>',
+                message: `<div class="text-center text-body1 q-pa-md text-grey-9">
+                            La prefactura se ha generado correctamente para el periodo:<br><br>
+                            <div class="text-h4 text-primary text-weight-bolder bg-blue-1 q-py-sm rounded-borders">${mesNombre} ${dto.year}</div>
+                          </div>`,
+                html: true,
+                ok: {
+                    label: 'Aceptar',
+                    color: 'positive',
+                    push: true,
+                    size: 'lg',
+                    icon: 'check'
+                },
+                persistent: true
+            });
+
+        } catch (error) {
+            console.error(error);
+            $q.dialog({
+                title: '<div class="text-negative text-weight-bold text-h5 text-center">¡Error en el Proceso!</div>',
+                message: '<div class="text-center text-body1 q-pa-md text-grey-9">Ocurrió un error al intentar generar la prefactura.<br><br><span class="text-grey-7 text-caption">Por favor, intente nuevamente o contacte a soporte si el problema persiste.</span></div>',
+                html: true,
+                ok: {
+                    label: 'Aceptar',
+                    color: 'negative',
+                    push: true,
+                    size: 'lg',
+                    icon: 'error_outline'
+                },
+                persistent: true
+            });
+        } finally {
+            loading.value = false;
+        }
     });
 
   } catch (error) {
     console.error(error);
+    loading.value = false;
     $q.notify({ 
         type: 'negative', 
-        message: 'Error al generar la prefactura. Verifique que no exista ya para este periodo.',
+        message: 'Error verificando prefactura.',
         icon: 'error'
     });
-  } finally {
-    loading.value = false;
   }
 };
 
@@ -142,7 +232,9 @@ onMounted(() => {
                     icon="play_arrow"
                 >
                     <template v-slot:loading>
-                        <q-spinner-facebook />
+                        <div class="marquee-container">
+                             <span>Procesando prefactura... Por favor espere...</span>
+                        </div>
                     </template>
                 </q-btn>
             </div>
@@ -180,5 +272,27 @@ onMounted(() => {
 .submit-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(25, 118, 210, 0.4);
+}
+
+.marquee-container {
+    overflow: hidden;
+    white-space: nowrap;
+    width: 250px;
+    position: relative;
+    /* Ensure text is visible even if button sets opacity for label */
+    opacity: 1;
+}
+
+.marquee-container span {
+    display: inline-block;
+    padding-left: 100%;
+    animation: marquee 5s linear infinite;
+    font-weight: bold;
+    color: white; /* Ensure visibility on primary button */
+}
+
+@keyframes marquee {
+    0%   { transform: translate(0, 0); }
+    100% { transform: translate(-100%, 0); }
 }
 </style>

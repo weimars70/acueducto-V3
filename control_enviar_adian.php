@@ -133,6 +133,9 @@ if (false === {dataset}) {
 			];
 			//$clean_data = stripslashes(json_decode($data));
 			$json_data = json_encode($data, JSON_PRETTY_PRINT);
+            // DEBUG: Loguear el JSON generado para revisar el correo
+            error_log("JSON a enviar a DIAN (Factura $prefijo-$factura): " . $json_data);
+            
 			//print_r($json_data);
 			$servidor='http://108.181.193.178:81/apidian2/public/api/ubl2.1/eqdoc';
 			$tocken ='830b6616b1b2c93bc67efdc972389c0503e46077fe0751333934fd2acd4afc57';

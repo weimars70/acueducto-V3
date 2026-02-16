@@ -15,6 +15,11 @@ export class PrefacturaController {
         return this.prefacturaService.generarPrefactura(dto, empresaId, usuarioEmail);
     }
 
+    @Post('verificar')
+    verificar(@Body() dto: GenerarPrefacturaDto) {
+        return this.prefacturaService.verificarPrefactura(dto);
+    }
+
     @Get('meses')
     getMeses() {
         return this.prefacturaService.getMeses();

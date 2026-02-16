@@ -6,6 +6,7 @@ export interface SendEmailFacturaDto {
     factura: string;
     prefijo?: string;
     nombreCliente: string;
+    copia?: string;
 }
 
 export const emailService = {

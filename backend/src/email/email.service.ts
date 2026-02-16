@@ -11,6 +11,7 @@ export interface SendEmailDto {
     factura: string;
     prefijo?: string;
     nombreCliente: string;
+    copia?: string;
 }
 
 @Injectable()
@@ -24,9 +25,9 @@ export class EmailService {
      * Envía una factura por email con PDF adjunto
      */
     async sendInvoiceEmail(data: SendEmailDto): Promise<any> {
-        const { empresaId, emailDestinatario, pdfBase64, factura, prefijo, nombreCliente } = data;
+        const { empresaId, emailDestinatario, pdfBase64, factura, prefijo, nombreCliente, copia } = data;
 
-        console.log('📧 [Email] Iniciando envío de factura:', { empresaId, emailDestinatario, factura, prefijo });
+        console.log('📧 [Email] Iniciando envío de factura:', { empresaId, emailDestinatario, copia, factura, prefijo });
 
         try {
             // 1. Obtener configuración de Email de la empresa
@@ -75,6 +76,16 @@ export class EmailService {
                 );
             }
 
+            // Validar copia si existe
+            if (copia && !emailRegex.test(copia)) {
+                console.error('❌ [Email] Email copia inválido:', copia);
+                throw new HttpException(
+                    'Email copia inválido',
+                    HttpStatus.BAD_REQUEST,
+                );
+            }
+
+            // 3. Crear transporter de nodemailer
             // 3. Crear transporter de nodemailer
             const transporter = nodemailer.createTransport({
                 host: empresa.hostEmail,
@@ -89,13 +100,25 @@ export class EmailService {
                 }
             });
 
+            // Verificar conexión
+            try {
+                await transporter.verify();
+                console.log('✅ [Email] Conexión SMTP verificada correctamente');
+            } catch (verifyError: any) {
+                console.error('❌ [Email] Error al verificar conexión SMTP:', verifyError);
+                throw new HttpException(
+                    `Error de conexión con el servidor de correo: ${verifyError.message}`,
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+
             // 4. Preparar mensaje
             const facturaCompleta = prefijo ? `${prefijo}-${factura}` : factura;
 
             // Convertir base64 a buffer
             const pdfBuffer = Buffer.from(pdfBase64, 'base64');
 
-            const mailOptions = {
+            const mailOptions: nodemailer.SendMailOptions = {
                 from: `"${empresa.nombre}" <${empresa.userEmail}>`,
                 to: emailDestinatario,
                 subject: `Factura ${facturaCompleta} - ${empresa.nombre}`,
@@ -126,19 +149,54 @@ export class EmailService {
             };
 
             console.log('📧 [Email] Enviando email a:', emailDestinatario);
+            if (copia) {
+                console.log('📧 [Email] Enviando copia (CC) a:', copia);
+            }
             console.log('📦 [Email] Tamaño del PDF:', pdfBuffer.length, 'bytes');
 
-            // 5. Enviar email
-            const info = await transporter.sendMail(mailOptions);
+            // 5. Enviar email principal
+            console.log('📧 [Email] Enviando email principal a:', emailDestinatario);
+            const infoPrincipal = await transporter.sendMail({ ...mailOptions, to: emailDestinatario });
+            console.log('✅ [Email] Resultado envio principal:', infoPrincipal);
 
-            console.log('✅ [Email] Email enviado exitosamente:', info.messageId);
+            let copiaEnviada = false;
+            let errorCopia = null;
+
+            // 6. Enviar copia (si existe) como un correo SEPARADO
+            if (copia) {
+                try {
+                    console.log('📧 [Email] Enviando SEGUNDO CORREO (Copia) a:', copia);
+                    const infoCopia = await transporter.sendMail({ ...mailOptions, to: copia });
+                    console.log('✅ [Email] Resultado envio copia:', infoCopia);
+                    copiaEnviada = true;
+                } catch (copiaErr: any) {
+                    console.error('⚠️ [Email] Error al enviar la copia:', copiaErr);
+                    errorCopia = copiaErr.message;
+                    // No lanzamos error para no afectar el envío principal
+                }
+            }
+
+            if (infoPrincipal.rejected && infoPrincipal.rejected.length > 0) {
+                console.warn('⚠️ [Email] Algunos destinatarios fueron rechazados:', infoPrincipal.rejected);
+                // Podríamos lanzar error si el destinatario principal fue rechazado
+                if (infoPrincipal.rejected.includes(emailDestinatario)) {
+
+                    throw new HttpException(
+                        'El servidor de correo rechazó el destinatario principal.',
+                        HttpStatus.BAD_REQUEST
+                    );
+                }
+            }
 
             return {
                 success: true,
-                message: 'Factura enviada por email exitosamente',
+                message: copia ? 'Se intentó enviar a ambos correos.' : 'Factura enviada exitosamente.',
                 email: emailDestinatario,
+                copia: copia ? { enviado: copiaEnviada, email: copia, error: errorCopia } : null,
                 factura: facturaCompleta,
-                messageId: info.messageId
+                messageId: infoPrincipal.messageId,
+                accepted: infoPrincipal.accepted,
+                rejected: infoPrincipal.rejected
             };
 
         } catch (error: any) {

@@ -24,7 +24,16 @@ export class PrefacturaService {
         }
     }
 
+    async verificarPrefactura(dto: GenerarPrefacturaDto): Promise<{ exists: boolean }> {
+        const result = await this.dataSource.query(
+            'SELECT count(*) as contador FROM public.consumo WHERE year = $1 AND mes = $2 AND prefactura = true',
+            [dto.year, dto.mes]
+        );
+        const contador = parseInt(result[0].contador, 10);
+        return { exists: contador > 0 };
+    }
+
     async getMeses(): Promise<any[]> {
-        return await this.dataSource.query('SELECT * FROM meses ORDER BY id ASC');
+        return await this.dataSource.query('SELECT DISTINCT * FROM meses ORDER BY 1 ASC');
     }
 }
