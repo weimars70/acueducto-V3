@@ -92,14 +92,32 @@ export interface FacturasFilters {
 
 interface FacturaResponse extends PaginatedResponse<Factura> { }
 
+export interface FacturaDetalle {
+    concepto: string;
+    descripcion: string;
+    valor_und: number;
+    unidades: number;
+    total: number;
+}
+
 export const facturasService = {
     async getFacturas(filters: FacturasFilters = {}): Promise<FacturaResponse> {
         const { data } = await apiClient.get('/facturas', { params: filters });
         return data;
     },
 
+    async getInvoiceDetails(params: { prefijo: string, factura: number, year: number, mes: number, instalacion: number }): Promise<FacturaDetalle[]> {
+        const { data } = await apiClient.post('/facturas/detalle', params);
+        return data;
+    },
+
     async getEmpresaInfo(): Promise<any> {
         const { data } = await apiClient.get('/facturas/empresa-info');
+        return data;
+    },
+
+    async sendFacturaDianEmail(params: { prefix: string, number: string, email_cc_list: { email: string }[], base64graphicrepresentation: string }): Promise<any> {
+        const { data } = await apiClient.post('/facturas/enviar-email-dian', params);
         return data;
     }
 };

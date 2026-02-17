@@ -117,4 +117,40 @@ export class FacturasController {
             body.enviarWhatsapp
         );
     }
+    @Post('detalle')
+    async getInvoiceDetails(
+        @Body() body: {
+            prefijo: string;
+            factura: number;
+            year: number;
+            mes: number;
+            instalacion: number;
+        },
+        @Request() req: any
+    ) {
+        return this.facturasService.getInvoiceDetails(
+            body.prefijo,
+            body.factura,
+            body.year,
+            body.mes,
+            body.instalacion
+        );
+    }
+    @Post('enviar-email-dian')
+    async enviarEmailDian(
+        @Body() body: {
+            prefix: string;
+            number: string;
+            email_cc_list: { email: string }[];
+            base64graphicrepresentation: string;
+        },
+        @Request() req: any
+    ) {
+        return this.facturasService.sendFacturaDianEmail(
+            body.prefix,
+            body.number,
+            body.email_cc_list,
+            body.base64graphicrepresentation
+        );
+    }
 }

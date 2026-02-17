@@ -269,4 +269,77 @@ export class FacturasService {
             throw new Error(`Error al obtener facturas para envío masivo: ${error.message}`);
         }
     }
+    async getInvoiceDetails(
+        prefijo: string,
+        factura: number,
+        year: number,
+        mes: number,
+        instalacion: number
+    ) {
+        try {
+            const details = await this.dataSource.query(
+                `SELECT concepto, descripcion, valor_und, unidades, total
+                 FROM public.facturas_detalle 
+                 WHERE prefijo = $1 
+                   AND factura = $2 
+                   AND year = $3 
+                   AND mes = $4 
+                   AND instalacion = $5`,
+                [prefijo, factura, year, mes, instalacion]
+            );
+            return details;
+        } catch (error: any) {
+            console.error('Error al obtener detalles de la factura:', error);
+            throw new Error(`Error al obtener detalles de la factura: ${error.message}`);
+        }
+    }
+
+    async sendFacturaDianEmail(
+        prefix: string,
+        number: string,
+        emailCcList: { email: string }[],
+        base64Graphic: string
+    ) {
+        try {
+            const hostFacturas = process.env.HOST_FACTURAS;
+            const token = process.env.DIAN_TOKEN;
+
+            if (!hostFacturas) throw new Error('HOST_FACTURAS no está definido en las variables de entorno');
+            if (!token) throw new Error('DIAN_TOKEN no está definido en las variables de entorno');
+
+            const url = hostFacturas;
+
+            const payload = {
+                prefix: prefix,
+                number: number,
+                showacceptrejectbuttons: false,
+                email_cc_list: emailCcList,
+                base64graphicrepresentation: base64Graphic
+            };
+
+            console.log('Enviando email DIAN a:', url);
+            console.log('Payload:', JSON.stringify(payload, null, 2));
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Error en la petición a la DIAN: ${response.status} - ${errorText}`);
+            }
+
+            const data = await response.json();
+            return data;
+
+        } catch (error: any) {
+            console.error('Error al enviar factura por email DIAN:', error);
+            throw new Error(`Error al enviar factura por email DIAN: ${error.message}`);
+        }
+    }
 }

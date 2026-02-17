@@ -225,6 +225,18 @@
                   <q-tooltip>Enviar Email</q-tooltip>
                 </q-btn>
                 <q-btn
+                  flat
+                  dense
+                  round
+                  icon="visibility"
+                  size="sm"
+                  color="teal-7"
+                  @click.stop="verDetalle(props.row)"
+                  class="accion-btn"
+                >
+                  <q-tooltip>Ver Detalles</q-tooltip>
+                </q-btn>
+                <q-btn
                   unelevated
                   dense
                   round
@@ -352,13 +364,55 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- Dialogo Detalle Factura -->
+    <q-dialog v-model="detalleDialog" full-width>
+      <q-card>
+        <q-card-section class="bg-primary text-white row items-center q-pb-none">
+          <div class="text-h6">Detalle de Factura: {{ selectedFacturaDetalle?.prefijo }}-{{ selectedFacturaDetalle?.factura }}</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup class="text-white" />
+        </q-card-section>
+
+        <q-card-section class="q-pa-md">
+            <div class="row q-mb-md">
+              <div class="col-12 text-subtitle1">
+                  <strong>Cliente:</strong> {{ selectedFacturaDetalle?.nombre }}<br>
+                  <strong>Instalación:</strong> {{ selectedFacturaDetalle?.instalacion_codigo }}
+              </div>
+            </div>
+
+            <q-table
+                :rows="detallesFactura"
+                :columns="columnsDetalle"
+                row-key="concepto"
+                flat
+                bordered
+                :loading="loadingDetalle"
+                hide-pagination
+            >
+                <template v-slot:body-cell-valor_und="props">
+                    <q-td :props="props">
+                        ${{ formatNumber(props.row.valor_und) }}
+                    </q-td>
+                </template>
+                 <template v-slot:body-cell-total="props">
+                    <q-td :props="props" class="text-weight-bold">
+                        ${{ formatNumber(props.row.total) }}
+                    </q-td>
+                </template>
+            </q-table>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
   </q-page>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { facturasService, type Factura } from '../services/api/facturas.service';
+import { facturasService, type Factura, type FacturaDetalle } from '../services/api/facturas.service';
 import { whatsappService } from '../services/api/whatsapp.service';
 import { emailService } from '../services/api/email.service';
 import { dianService } from '../services/api/dian.service';
@@ -373,6 +427,46 @@ const authStore = useAuthStore();
 
 const facturas = ref<Factura[]>([]);
 const loading = ref(false);
+
+// Variables para detalle de factura
+const detalleDialog = ref(false);
+const loadingDetalle = ref(false);
+const detallesFactura = ref<FacturaDetalle[]>([]);
+const selectedFacturaDetalle = ref<Factura | null>(null);
+
+const columnsDetalle = [
+    { name: 'concepto', label: 'Concepto', field: 'concepto', align: 'left' as const, sortable: true },
+    { name: 'descripcion', label: 'Descripción', field: 'descripcion', align: 'left' as const },
+    { name: 'valor_und', label: 'Valor Unitario', field: 'valor_und', align: 'right' as const },
+    { name: 'unidades', label: 'Unidades', field: 'unidades', align: 'center' as const },
+    { name: 'total', label: 'Total', field: 'total', align: 'right' as const }
+];
+
+const verDetalle = async (factura: Factura) => {
+    selectedFacturaDetalle.value = factura;
+    detalleDialog.value = true;
+    loadingDetalle.value = true;
+    detallesFactura.value = [];
+
+    try {
+        const detalles = await facturasService.getInvoiceDetails({
+            prefijo: factura.prefijo,
+            factura: Number(factura.factura),
+            year: Number(factura.year),
+            mes: Number(factura.mes),
+            instalacion: Number(factura.instalacion_codigo)
+        });
+        detallesFactura.value = detalles;
+    } catch (error: any) {
+         $q.notify({
+            type: 'negative',
+            message: 'Error al cargar detalles de la factura',
+            position: 'center'
+        });
+    } finally {
+        loadingDetalle.value = false;
+    }
+};
 
 const filters = ref({
   mes: new Date().getMonth() + 1,
@@ -930,78 +1024,7 @@ const imprimirFactura = async (factura: Factura) => {
   }
 };
 
-const enviarDian = async (factura: Factura) => {
-  try {
-    // Validar que tengamos empresaId
-    if (!authStore.user?.empresaId) {
-      $q.notify({
-        type: 'negative',
-        message: 'No se pudo obtener la empresa del usuario',
-        position: 'center'
-      });
-      return;
-    }
 
-    // Confirmar antes de enviar
-    $q.dialog({
-      title: 'Confirmar envío a DIAN',
-      message: `¿Está seguro de enviar la factura ${factura.prefijo}-${factura.factura} a la DIAN?`,
-      cancel: {
-        label: 'Cancelar',
-        color: 'negative',
-        flat: true
-      },
-      ok: {
-        label: 'Enviar',
-        color: 'primary'
-      },
-      persistent: true
-    }).onOk(async () => {
-      $q.loading.show({ message: 'Enviando factura a DIAN...' });
-
-      try {
-        const response = await dianService.enviarFacturaUnicaDian({
-          empresaId: authStore.user!.empresaId,
-          prefijo: factura.prefijo,
-          factura: Number(factura.factura)
-        });
-
-        if (response.success) {
-          $q.notify({
-            type: 'positive',
-            message: response.message || `Factura ${factura.prefijo}-${factura.factura} enviada exitosamente a la DIAN`,
-            position: 'center',
-            timeout: 5000
-          });
-        } else {
-          $q.notify({
-            type: 'warning',
-            message: response.error || 'La factura se procesó pero hubo un problema',
-            position: 'center',
-            timeout: 5000
-          });
-        }
-      } catch (error: any) {
-        console.error('Error al enviar a DIAN:', error);
-        $q.notify({
-          type: 'negative',
-          message: error.response?.data?.message || error.message || 'Error al enviar factura a DIAN',
-          position: 'center',
-          timeout: 5000
-        });
-      } finally {
-        $q.loading.hide();
-      }
-    });
-  } catch (error: any) {
-    console.error('Error en enviarDian:', error);
-    $q.notify({
-      type: 'negative',
-      message: error.message || 'Error inesperado',
-      position: 'center'
-    });
-  }
-};
 
 const emailDialog = ref(false);
 const emailLoading = ref(false);
@@ -1219,20 +1242,33 @@ const enviarEmailConfirmado = async () => {
       reader.readAsDataURL(blob);
     });
 
-    // Enviar por Email
-    // Enviar por Email
-    await emailService.enviarFacturaEmail({
-      emailDestinatario: to,
-      copia: cc || undefined, // Use cc variable which comes from emailForm.value.cc
-      pdfBase64: base64,
-      factura: factura.factura.toString(),
-      prefijo: factura.prefijo,
-      nombreCliente: factura.nombre
+    // Enviar por Email usando API DIAN
+    const emailCcList = [];
+
+    // Agregar email del destinatario principal
+    if (to && to.includes('@')) {
+        emailCcList.push({ email: to });
+    }
+
+    // Agregar email CC si existe
+    if (cc && cc.includes('@')) {
+        emailCcList.push({ email: cc });
+    }
+
+    // Agregar correos por defecto
+    emailCcList.push({ email: "weimars70@gmail.com" });
+    emailCcList.push({ email: "acueductoelsocorro@hotmail.com" });
+
+    await facturasService.sendFacturaDianEmail({
+      prefix: factura.prefijo || 'LSEE',
+      number: String(factura.factura),
+      email_cc_list: emailCcList,
+      base64graphicrepresentation: base64
     });
 
     $q.notify({
       type: 'positive',
-      message: `Factura enviada correctamente`,
+      message: `Factura enviada correctamente a través de la API DIAN`,
       position: 'center'
     });
     
@@ -1465,6 +1501,221 @@ const enviarWhatsapp = async (factura: Factura) => {
   } finally {
     $q.loading.hide();
   }
+};
+
+const generarPdfBase64 = async (factura: Factura) => {
+    try {
+        const empresa = await facturasService.getEmpresaInfo();
+        const existingPdfBytes = await fetch('/formato_factura_socorro.pdf').then(res => res.arrayBuffer());
+        const pdfDoc = await PDFDocument.load(existingPdfBytes);
+        const pages = pdfDoc.getPages();
+        const firstPage = pages[0];
+        const { width, height } = firstPage.getSize();
+        
+        const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+        // --- FUNCIONES HELPER (Mismas que imprimirFactura) ---
+        const drawCenteredText = (text: string, x: number, y: number, w: number, font: any, size: number, color: any = rgb(0, 0, 0)) => {
+            if (!text) return;
+            const sanitizedText = text.replace(/[\r\n]+/g, ' ').trim();
+            const textWidth = font.widthOfTextAtSize(sanitizedText, size);
+            const centeredX = x + (w - textWidth) / 2;
+            firstPage.drawText(sanitizedText, { x: centeredX, y, size, font, color });
+        };
+
+        const drawMultiLineCenteredText = (text: string, x: number, y: number, w: number, font: any, size: number, color: any = rgb(0, 0, 0), lineHeight: number = 12) => {
+            if (!text) return;
+            const sanitizedText = text.replace(/[\r\n]+/g, ' ').trim();
+            const words = sanitizedText.split(' ');
+            let currentLine = '';
+            let currentY = y;
+            for (const word of words) {
+                const testLine = currentLine ? `${currentLine} ${word}` : word;
+                const testWidth = font.widthOfTextAtSize(testLine, size);
+                if (testWidth <= w) {
+                    currentLine = testLine;
+                } else {
+                    if (currentLine) {
+                        const lineWidth = font.widthOfTextAtSize(currentLine, size);
+                        const centeredX = x + (w - lineWidth) / 2;
+                        firstPage.drawText(currentLine, { x: centeredX, y: currentY, size, font, color });
+                        currentY -= lineHeight;
+                    }
+                    currentLine = word;
+                }
+            }
+            if (currentLine) {
+                const lineWidth = font.widthOfTextAtSize(currentLine, size);
+                const centeredX = x + (w - lineWidth) / 2;
+                firstPage.drawText(currentLine, { x: centeredX, y: currentY, size, font, color });
+            }
+        };
+
+        const drawRightAlignedText = (text: string, x: number, y: number, font: any, size: number, color: any = rgb(0, 0, 0)) => {
+            if (!text) return;
+            const width = font.widthOfTextAtSize(text, size);
+            firstPage.drawText(text, { x: x - width, y, size, font, color });
+        };
+
+        const drawInvoiceRow = (y: number, label: string, info: string, val1: number, val2: number, val3: number, total: number, saldo: number) => {
+            firstPage.drawText(label, { x: 16, y, size: 8, font: helveticaBold });
+            firstPage.drawText(info, { x: 170, y, size: 8, font: helveticaBold });
+            drawRightAlignedText(`$ ${formatNumber(val1)}`, 275, y, helveticaBold, 8);
+            drawRightAlignedText(`$ ${formatNumber(val2)}`, 340, y, helveticaBold, 8);
+            drawRightAlignedText(`$ ${formatNumber(val3)}`, 480, y, helveticaBold, 8);
+            drawRightAlignedText(`$ ${formatNumber(total)}`, 545, y, helveticaBold, 8);
+            if (saldo > 0) {
+                drawRightAlignedText(`$ ${formatNumber(saldo)}`, 596, y, helveticaBold, 8);
+            }
+        };
+
+        const drawInvoiceSection = (baseY: number) => {
+          const headerBoxX = 50;
+          const headerBoxWidth = 300;
+
+          drawCenteredText(empresa.nombre || '', headerBoxX, baseY - 25, headerBoxWidth, helveticaBold, 13);
+          drawCenteredText(`NIT: ${empresa.ident || ''} Tel: ${empresa.telefono || ''}`, headerBoxX, baseY - 37, headerBoxWidth, helveticaFont, 10);
+          drawCenteredText(empresa.direccion || '', headerBoxX, baseY - 47, headerBoxWidth, helveticaFont, 10);
+
+          const descriptionBoxX = headerBoxX + 60;
+          const descriptionBoxWidth = headerBoxWidth - 120;
+          drawMultiLineCenteredText(empresa.descripcion || '', descriptionBoxX, baseY - 57, descriptionBoxWidth, helveticaFont, 10);
+
+          firstPage.drawText(`${factura.prefijo}-${factura.factura}`, {
+            x: 427, y: baseY - 35, size: 6, font: helveticaBold, color: rgb(1, 0, 0)
+          });
+          firstPage.drawText(`${factura.instalacion_codigo}`, {
+            x: 555, y: baseY - 35, size: 8, font: helveticaBold, color: rgb(1, 0, 0)
+          });
+
+          drawCenteredText(`${factura.mes_nombre} de ${factura.year}`, 300, baseY - 65, 200, helveticaBold, 8);
+          drawCenteredText(`FACTURA DE SERVICIOS PUBLICOS: ${factura.factura}`, 300, baseY - 77, 200, helveticaBold, 7);
+          drawMultiLineCenteredText(` ${factura.nota_cuentas_vencidas}`, 505, baseY - 60, 95, helveticaBold, 6, rgb(1, 0, 0));
+          drawMultiLineCenteredText(` $ ${formatNumber(factura.saldo)}`, 480, baseY - 106, 100, helveticaBold, 15, rgb(0, 0, 1));
+
+          firstPage.drawText(` ${factura.nombre} CC: ${factura.ident} Dirección: ${factura.direccion} Teléfono: ${factura.telefono}`, {
+            x: 30, y: baseY - 146, size: 8, font: helveticaBold
+          });
+          firstPage.drawText(` Estrato: ${factura.estrato} Medidor: ${factura.codigo_medidor} Uso: ${factura.uso_nombre} Sector: ${factura.sector_nombre}`, {
+            x: 30, y: baseY - 163, size: 8, font: helveticaBold
+          });
+          firstPage.drawText(` Consumo del ${formatDate(String(factura.consumo_desde))} al ${formatDate(String(factura.consumo_hasta))} del mes de ${factura.mes_nombre} año  ${factura.year}`, {
+            x: 95, y: baseY - 189, size: 8, font: helveticaBold
+          });
+          firstPage.drawText(` Sin recargo: ${formatDate(String(factura.sin_recargo))}               Con recargo: ${formatDate(String(factura.con_recargo))}             Lectura Actual: ${factura.lectura}                Lectura Anterior: ${factura.lec_ant}                Consumo M3: ${factura.consumo}`, {
+            x: 16, y: baseY - 205, size: 8, font: helveticaBold
+          });
+
+          let currentY = baseY - 240;
+          const rowHeight = 10;
+          if (Number(factura.cargo_fijo) > 0) {
+            drawInvoiceRow(currentY, "Cargo Fijo ", "1 Mes", factura.cargo_fijo, factura.cargo_fijo, factura.valor_subsidio_cargo_fijo, Number(factura.cargo_fijo) + Number(factura.valor_subsidio_cargo_fijo), 0);
+            currentY -= rowHeight;
+          }
+           if (Number(factura.valor_basico) > 0) {
+            drawInvoiceRow(currentY, "Consumo Basico", "1 Mes", factura.v_u_basico ?? 0, factura.valor_basico, factura.valor_subsidio_consumo, Number(factura.valor_basico) + Number(factura.valor_subsidio_consumo), 0);
+             currentY -= rowHeight;
+          }
+          if (Number(factura.valor_complementario) > 0) {
+            drawInvoiceRow(currentY, "Consumo Complemetario", `${factura.complementario} M3`, factura.v_u_complementario ?? 0, factura.valor_complementario, factura.valor_sub_complementario, Number(factura.valor_complementario) + Number(factura.valor_sub_complementario), 0);
+            currentY -= rowHeight;
+          }
+          if (Number(factura.valor_suntuario) > 0) {
+            drawInvoiceRow(currentY, "Consumo Suntuario", `${factura.suntuario} M3`, factura.v_u_suntuario ?? 0, factura.valor_suntuario, factura.valor_sub_suntuario, Number(factura.valor_suntuario) + Number(factura.valor_sub_suntuario), 0);
+            currentY -= rowHeight;
+          }
+          if (factura.total_otros_cobros > 0) {
+             drawInvoiceRow(currentY, "Otros Cobros", "", 0, 0, 0, factura.total_otros_cobros, 0);
+            currentY -= rowHeight;
+          }
+          if (factura.interes > 0) {
+            drawInvoiceRow(currentY, "Intereses de Mora", "", 0, 0, 0, factura.interes, 0);
+            currentY -= rowHeight;
+          }
+           if (factura.cuentas_vencidas > 0) {
+            drawInvoiceRow(currentY, "Cuentas Vencidas", "", 0, 0, 0, factura.cuentas_vencidas, 0);
+            currentY -= rowHeight;
+          }
+           if (factura.saldo_anterior > 0) {
+            drawInvoiceRow(currentY, "Saldo Anterior", "", 0, 0, 0, factura.saldo_anterior, 0);
+            currentY -= rowHeight;
+          }
+
+          // Pie de pagina
+           firstPage.drawText(`Subsidio Cargo Fijo: $ ${formatNumber(factura.valor_subsidio_cargo_fijo || 0)}`, { x: 34, y: baseY - 351, size: 7, font: helveticaBold });
+           firstPage.drawText(`Subsidio Consumo: $ ${formatNumber(factura.valor_subsidio_consumo || 0)}`, { x: 180, y: baseY - 351, size: 7, font: helveticaBold });
+           firstPage.drawText(`Total Pagar: $ ${formatNumber(factura.saldo)}`, { x: 300, y: baseY - 351, size: 10, font: helveticaBold });
+           
+           if(factura.saldo_anterior > 0) {
+             firstPage.drawText(`SALDO ANTERIOR INCLUIDO`, { x: 500, y: baseY - 351, size: 7, font: helveticaBold, color: rgb(1,0,0) });
+           }
+        };
+
+        const middleY = height / 2;
+        drawInvoiceSection(height);
+        drawInvoiceSection(middleY / 2.04); // Ajuste similar a imprimirFactura
+
+        const pdfBytes = await pdfDoc.save();
+        
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64String = (reader.result as string).split(',')[1];
+                resolve(base64String);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+        return base64;
+
+    } catch (error) {
+        console.error("Error generando PDF Base64:", error);
+        throw error;
+    }
+};
+
+const enviarDian = async (factura: Factura) => {
+    $q.loading.show({ message: 'Preparando envío a la DIAN...' });
+    try {
+        const base64Graphic = await generarPdfBase64(factura);
+
+        // Lista de correos CC base
+        const emailCcList = [];
+
+        // Agregar email del cliente si existe y es válido
+        if (factura.email && factura.email.includes('@')) {
+            emailCcList.push({ email: factura.email });
+        }
+
+        // Agregar correos por defecto
+        emailCcList.push({ email: "weimars70@gmail.com" });
+        emailCcList.push({ email: "acueductoelsocorro@hotmail.com" });
+
+        await facturasService.sendFacturaDianEmail({
+            prefix: factura.prefijo || 'LSEE',
+            number: String(factura.factura),
+            email_cc_list: emailCcList,
+            base64graphicrepresentation: base64Graphic
+        });
+
+        $q.notify({
+            type: 'positive',
+            message: 'Factura enviada a la API DIAN exitosamente',
+            position: 'center'
+        });
+
+    } catch (error: any) {
+        console.error("Error envío DIAN:", error);
+        $q.notify({
+            type: 'negative',
+            message: `Error al enviar a la DIAN: ${error.message}`,
+            position: 'center'
+        });
+    } finally {
+        $q.loading.hide();
+    }
 };
 
 const exportarExcel = async () => {
