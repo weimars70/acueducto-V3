@@ -1245,19 +1245,15 @@ const enviarEmailConfirmado = async () => {
     // Enviar por Email usando API DIAN
     const emailCcList = [];
 
-    // Agregar email del destinatario principal
+    // Agregar email del destinatario principal (del formulario)
     if (to && to.includes('@')) {
         emailCcList.push({ email: to });
     }
 
-    // Agregar email CC si existe
+    // Agregar email CC si existe (del formulario)
     if (cc && cc.includes('@')) {
         emailCcList.push({ email: cc });
     }
-
-    // Agregar correos por defecto
-    emailCcList.push({ email: "weimars70@gmail.com" });
-    emailCcList.push({ email: "acueductoelsocorro@hotmail.com" });
 
     await facturasService.sendFacturaDianEmail({
       prefix: factura.prefijo || 'LSEE',
@@ -1681,17 +1677,13 @@ const enviarDian = async (factura: Factura) => {
     try {
         const base64Graphic = await generarPdfBase64(factura);
 
-        // Lista de correos CC base
+        // Lista de correos - solo el email del registro seleccionado
         const emailCcList = [];
 
         // Agregar email del cliente si existe y es válido
         if (factura.email && factura.email.includes('@')) {
             emailCcList.push({ email: factura.email });
         }
-
-        // Agregar correos por defecto
-        emailCcList.push({ email: "weimars70@gmail.com" });
-        emailCcList.push({ email: "acueductoelsocorro@hotmail.com" });
 
         await facturasService.sendFacturaDianEmail({
             prefix: factura.prefijo || 'LSEE',

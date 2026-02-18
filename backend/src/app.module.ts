@@ -53,6 +53,7 @@ import { WhatsappModule } from './whatsapp/whatsapp.module';
 import { EmailModule } from './email/email.module';
 import { DianModule } from './dian/dian.module';
 import { MigracionContabilidadModule } from './facturacion/migracion-contabilidad/migracion-contabilidad.module';
+import { TasksModule } from './tasks/tasks.module';
 
 @Module({
   imports: [
@@ -113,6 +114,7 @@ import { MigracionContabilidadModule } from './facturacion/migracion-contabilida
     EmailModule,
     DianModule,
     MigracionContabilidadModule,
+    TasksModule,
   ],
 })
 export class AppModule { }
