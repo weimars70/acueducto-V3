@@ -16,11 +16,20 @@ export class TasksService {
      * - Exporta la tabla items a un archivo Excel
      * - Crea una tabla items_YYYY_MM con los datos actuales
      */
-    @Cron('0 22 L * *', {
+    @Cron('0 22 * * *', {
         name: 'export-items-monthly',
         timeZone: 'America/Bogota'
     })
-    async handleMonthlyItemsExport() {
+    async handleMonthlyItemsExport(checkDate = true) {
+        if (checkDate) {
+            const date = new Date();
+            const lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+
+            if (date.getDate() !== lastDayOfMonth) {
+                return;
+            }
+        }
+
         this.logger.log('🕒 Iniciando tarea programada: Exportación mensual de items');
 
         try {
@@ -113,6 +122,6 @@ export class TasksService {
      */
     async executeManually() {
         this.logger.log('🔧 Ejecutando tarea manualmente...');
-        await this.handleMonthlyItemsExport();
+        await this.handleMonthlyItemsExport(false);
     }
 }
