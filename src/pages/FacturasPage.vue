@@ -937,6 +937,19 @@ const imprimirFactura = async (factura: Factura) => {
             );
             currentY -= rowHeight;
         }
+         if (Number(factura.ajuste_a_centenas) !== 0) {
+            drawInvoiceRow(
+                currentY,
+                "Ajuste a Centenas",
+                `1`,
+                factura.ajuste_a_centenas ?? 0,
+                factura.ajuste_a_centenas,
+                0,
+                Number(factura.ajuste_a_centenas),
+                0,
+            );
+            currentY -= rowHeight;
+        }
         drawMultiLineCenteredText(` $${formatNumber(factura.total_total)}`, 470, baseY - 364, 100, helveticaBold, 12, rgb(1, 1, 1));
 
         
@@ -1209,6 +1222,10 @@ const enviarEmailConfirmado = async () => {
         drawInvoiceRow(currentY, "Cuota Diferida", `1`, factura.cuota_diferido ?? 0, factura.cuota_diferido, 0, Number(factura.cuota_diferido), Number(factura.saldo_diferido));
         currentY -= rowHeight;
       }
+      if (Number(factura.ajuste_a_centenas) !== 0) {
+        drawInvoiceRow(currentY, "Ajuste a Centenas", `1`, factura.ajuste_a_centenas ?? 0, factura.ajuste_a_centenas, 0, Number(factura.ajuste_a_centenas), 0);
+        currentY -= rowHeight;
+      }
       drawMultiLineCenteredText(` $${formatNumber(factura.total_total)}`, 470, baseY - 364, 100, helveticaBold, 12, rgb(1, 1, 1));
 
       if (Number(factura.interes) > 0) {
@@ -1440,6 +1457,10 @@ const enviarWhatsapp = async (factura: Factura) => {
         drawInvoiceRow(currentY, "Cuota Diferida", `1`, factura.cuota_diferido ?? 0, factura.cuota_diferido, 0, Number(factura.cuota_diferido), Number(factura.saldo_diferido));
         currentY -= rowHeight;
       }
+      if (Number(factura.ajuste_a_centenas) !== 0) {
+        drawInvoiceRow(currentY, "Ajuste a Centenas", `1`, factura.ajuste_a_centenas ?? 0, factura.ajuste_a_centenas, 0, Number(factura.ajuste_a_centenas), 0);
+        currentY -= rowHeight;
+      }
       drawMultiLineCenteredText(` $${formatNumber(factura.total_total)}`, 470, baseY - 364, 100, helveticaBold, 12, rgb(1, 1, 1));
 
       if (Number(factura.interes) > 0) {
@@ -1619,6 +1640,10 @@ const generarPdfBase64 = async (factura: Factura) => {
           }
           if (Number(factura.valor_suntuario) > 0) {
             drawInvoiceRow(currentY, "Consumo Suntuario", `${factura.suntuario} M3`, factura.v_u_suntuario ?? 0, factura.valor_suntuario, factura.valor_sub_suntuario, Number(factura.valor_suntuario) + Number(factura.valor_sub_suntuario), 0);
+            currentY -= rowHeight;
+          }
+           if (Number(factura.ajuste_a_centenas) !== 0) {
+            drawInvoiceRow(currentY, "Ajuste a Centenas", `1`, factura.ajuste_a_centenas ?? 0, factura.ajuste_a_centenas, 0, Number(factura.ajuste_a_centenas), 0);
             currentY -= rowHeight;
           }
           if (factura.total_otros_cobros > 0) {

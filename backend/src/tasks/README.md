@@ -17,18 +17,17 @@ Tarea programada que se ejecuta automáticamente **el último día de cada mes a
 
 ### Configuración del Cron
 ```typescript
-@Cron('0 22 L * *', {
+@Cron('0 22 * * *', {
     name: 'export-items-monthly',
     timeZone: 'America/Bogota'
 })
 ```
 
-- `0 22 L * *` significa:
-  - `0` - Minuto 0
-  - `22` - Hora 22 (10:00 PM)
-  - `L` - Último día del mes
-  - `*` - Todos los meses
-  - `*` - Todos los días de la semana
+- `0 22 * * *` significa que la tarea se ejecuta **todos los días** a las 22:00.
+- Internamente, la función verifica si el día actual es el **último día del mes**.
+  - Si es el último día, ejecuta la exportación.
+  - Si no es el último día, termina sin hacer nada.
+- Esta estrategia se usa porque la librería `cron` no soporta el alias `L`.
 
 ### Ejecución Manual (Para Pruebas)
 
